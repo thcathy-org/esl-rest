@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       					   http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+       					   http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd">
+
+	<bean id="com.esl.service.io.ExcelImportService" class="com.esl.service.io.ExcelImportService">
+		<property name="databasePath" value="f:/upload/esl_data.xls" />
+		<property name="importers">
+			<list>
+				<ref bean="irregularVerbExcelImporter"/>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="com.esl.service.io.CSVImportService" class="com.esl.service.io.CSVImportService">
+		<property name="importers">
+			<list>
+				<ref bean="irregularVerbCSVImporter"/>
+			</list>
+		</property>
+	</bean>
+       					   
+    <bean id="irregularVerbExcelImporter" class="com.esl.service.io.IrregularVerbExcelImporter">
+    	<property name="irregularVerbDAO" ref="irregularVerbDAO" />
+    </bean>
+    <bean id="irregularVerbCSVImporter" class="com.esl.service.io.IrregularVerbCSVImporter">
+    	<property name="filePath" value="c:/workspace/FFS/doc/csv/irregularverb.txt" />
+    	<property name="irregularVerbDAO" ref="irregularVerbDAO" />
+    </bean>
+</beans>
