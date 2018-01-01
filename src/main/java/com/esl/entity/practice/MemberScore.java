@@ -2,6 +2,7 @@ package com.esl.entity.practice;
 
 import com.esl.entity.IAuditable;
 import com.esl.model.Member;
+import com.fasterxml.jackson.annotation.JsonGetter;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -66,6 +67,7 @@ public class MemberScore implements Serializable, IAuditable {
 	public Date getLastUpdatedDate() {return lastUpdatedDate;}
 	public void setLastUpdatedDate(Date lastUpdatedDate) {this.lastUpdatedDate = lastUpdatedDate;}
 
+	@JsonGetter
 	public Date getYearMonthAsDate() throws ParseException {
 		SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMM");
 		return dateformat.parse(String.valueOf(scoreYearMonth));
