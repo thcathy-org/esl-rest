@@ -5,7 +5,6 @@ import com.esl.model.group.MemberGroup;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -13,9 +12,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "dictation")
-public class Dictation extends UserCreatedPractice implements Serializable {
-	private static final long serialVersionUID = 241260641293991555L;
-
+public class Dictation extends UserCreatedPractice {
 	public enum AgeGroup {
 		@Column(name="AGE_GROUP")
 		@Enumerated(EnumType.STRING)

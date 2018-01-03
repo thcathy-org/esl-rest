@@ -1,5 +1,7 @@
 package com.esl.entity.dictation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
@@ -25,6 +27,7 @@ public class Vocab implements Serializable {
 
 	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
 	@JoinColumn(name="DICTATION_ID")
+	@JsonIgnore
 	private Dictation dictation;
 
 	@Temporal(TemporalType.TIMESTAMP)
