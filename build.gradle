@@ -30,6 +30,8 @@ dependencies {
 	compile 'org.springframework.boot:spring-boot-starter-security'
 	compile 'org.springframework.boot:spring-boot-starter-web'
 	compile 'org.apache.commons:commons-lang3:3.7'
+	compile 'commons-io:commons-io:2.6'
+	compile 'commons-codec:commons-codec:1.11'
 	compile 'org.jsoup:jsoup:1.11.2'
 	compile 'javax.cache:cache-api'
 	compile 'org.ehcache:ehcache:3.4.0'
