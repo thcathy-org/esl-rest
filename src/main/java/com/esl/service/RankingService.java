@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -72,14 +71,6 @@ public class RankingService {
             //return topScore(MemberScore.lastMonthBy(offset));
             return topScore(MemberScore.allTimesMonth());
         }
-    }
-
-    @Scheduled(fixedRate=600000)
-    public void changeRandomRanking() {
-        log.info("changeRandomRanking");
-        do {
-            randomTopScore().thenAccept(r -> scheduledRandomRanking = r);
-        } while (scheduledRandomRanking == null || scheduledRandomRanking.getScores().size() < 1);
     }
 
     public MemberScoreRanking getScheduledRandomRanking() {
