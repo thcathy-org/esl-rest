@@ -1,5 +1,7 @@
 package com.esl.controller;
 
+import com.esl.dao.dictation.DictationDAO;
+import com.esl.entity.dictation.Dictation;
 import com.esl.model.dictation.DictationStatistics;
 import com.esl.service.DictationStatService;
 import org.slf4j.Logger;
@@ -10,6 +12,7 @@ import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,6 +32,7 @@ public class DictationController {
 	public static int maxDictationStatistics = 5;
 
 	@Autowired DictationStatService statService;
+	@Autowired DictationDAO dictationDAO;
 
 	@CacheResult(cacheName = "dictation")
     @RequestMapping(value = "/random-stat")
@@ -39,6 +43,18 @@ public class DictationController {
 			return ResponseEntity.ok(statService.randomDictationStatistics(maxDictationStatistics));
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(null);
+		}
+	}
+
+	@RequestMapping(value = "/get/{id}")
+	public ResponseEntity<Dictation> getDictationById(@PathVariable long id) {
+		log.debug("get dictation id: {}", id);
+
+		try {
+			return ResponseEntity.ok(dictationDAO.get(id));
+		} catch (Exception e) {
+			log.warn("fail in getting dictation", e);
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
 		}
 	}
 

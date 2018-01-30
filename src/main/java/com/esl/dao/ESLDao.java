@@ -21,6 +21,13 @@ public abstract class ESLDao<T> implements IESLDao<T> {
 
 	@PersistenceContext	protected EntityManager em;
 
+	public ESLDao() {
+		Class<?> clazz = getClass();
+		while (!(clazz.getGenericSuperclass() instanceof ParameterizedType))
+			clazz = (Class<?>) getClass().getGenericSuperclass();
+		this.entityClass = (Class<?>) ((ParameterizedType)clazz.getGenericSuperclass()).getActualTypeArguments()[0];
+	}
+
 	/**
 	 * Hibernate reattach object to session
 	 * 
