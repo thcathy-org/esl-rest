@@ -3,6 +3,7 @@ package com.esl.controller;
 import com.esl.dao.dictation.DictationDAO;
 import com.esl.entity.dictation.Dictation;
 import com.esl.model.dictation.DictationStatistics;
+import com.esl.service.DictationService;
 import com.esl.service.DictationStatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,11 +34,12 @@ public class DictationController {
 
 	@Autowired DictationStatService statService;
 	@Autowired DictationDAO dictationDAO;
+	@Autowired DictationService dictationService;
 
 	@CacheResult(cacheName = "dictation")
     @RequestMapping(value = "/random-stat")
     public ResponseEntity<DictationStatistics> randomStatistics() {
-		log.debug("request random stat");
+		log.info("request random stat");
 
 		try {
 			return ResponseEntity.ok(statService.randomDictationStatistics(maxDictationStatistics));
@@ -48,12 +50,24 @@ public class DictationController {
 
 	@RequestMapping(value = "/get/{id}")
 	public ResponseEntity<Dictation> getDictationById(@PathVariable long id) {
-		log.debug("get dictation id: {}", id);
+		log.info("get dictation id: {}", id);
 
 		try {
 			return ResponseEntity.ok(dictationDAO.get(id));
 		} catch (Exception e) {
 			log.warn("fail in getting dictation", e);
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+		}
+	}
+
+	@RequestMapping(value = "/recommend/{id}")
+	public ResponseEntity<Dictation> recommendDictation(@PathVariable long id) {
+		log.info("get dictation id: {}", id);
+
+		try {
+			return ResponseEntity.ok(dictationService.recommendDictation(id));
+		} catch (Exception e) {
+			log.warn("fail in recommend dictation", e);
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
 		}
 	}
