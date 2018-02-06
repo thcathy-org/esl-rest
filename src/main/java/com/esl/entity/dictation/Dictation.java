@@ -9,6 +9,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "dictation")
@@ -288,6 +290,12 @@ public class Dictation extends UserCreatedPractice {
 		} else {
 			return DictationType.Article;
 		}
+	}
+
+	public Map<Long, Vocab> vocabToMap() {
+		return vocabs.stream().collect(
+				Collectors.toMap(v -> v.getId(), v -> v)
+		);
 	}
 
 }

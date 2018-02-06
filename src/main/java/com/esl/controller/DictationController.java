@@ -2,6 +2,7 @@ package com.esl.controller;
 
 import com.esl.dao.dictation.DictationDAO;
 import com.esl.entity.dictation.Dictation;
+import com.esl.entity.rest.CreateDictationHistoryRequest;
 import com.esl.model.dictation.DictationStatistics;
 import com.esl.service.DictationService;
 import com.esl.service.DictationStatService;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -69,6 +71,18 @@ public class DictationController {
 		} catch (Exception e) {
 			log.warn("fail in recommend dictation", e);
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+		}
+	}
+
+	@RequestMapping(value = "/history/create")
+	public ResponseEntity<Dictation> createHistory(@RequestBody CreateDictationHistoryRequest request) {
+		log.info("create history for dictation id: {}", request.dictationId);
+
+		try {
+			return ResponseEntity.ok(dictationService.addHistory(request));
+		} catch (Exception e) {
+			log.warn("fail in create dictation history", e);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 	}
 
