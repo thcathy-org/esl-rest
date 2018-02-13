@@ -1,4 +1,4 @@
-package com.esl.config;
+package com.esl.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -27,10 +27,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.cors()
 				.and()
 				.csrf().disable().authorizeRequests()
-				.antMatchers(HttpMethod.GET, "/rest/fund/**").hasRole("admin")
-				.antMatchers(HttpMethod.GET, "/rest/forum/wishlist/**").hasRole("admin")
-				.antMatchers(HttpMethod.GET, "/rest/createholding/**").hasRole("admin")
-				.antMatchers(HttpMethod.GET, "/rest/stock/holding/**").hasRole("admin")
+				.antMatchers(HttpMethod.GET, "/member/**").authenticated()
+				.antMatchers(HttpMethod.POST, "/member/**").authenticated()
 				.anyRequest().permitAll()
 				.and()
 				.addFilter(new JWTAuthorizationFilter(authenticationManager(), certificatePath))

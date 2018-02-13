@@ -1,12 +1,9 @@
-package com.esl.config;
+package com.esl.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.lang.Collections;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
@@ -19,21 +16,15 @@ import java.io.InputStream;
 import java.security.PublicKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
-    public static final String CLAIM_ROLE_KEY = "https://squote.funfunspell.com/roles";
-
     private PublicKey key;
 
     public JWTAuthorizationFilter(AuthenticationManager authManager, String certificatePath) {
         super(authManager);
 
         try {
-            CertificateFactory fact = null;
-            fact = CertificateFactory.getInstance("X.509");
+            CertificateFactory fact = CertificateFactory.getInstance("X.509");
             InputStream is =  this.getClass().getResourceAsStream(certificatePath);
             X509Certificate cer = (X509Certificate) fact.generateCertificate(is);
             this.key = cer.getPublicKey();
@@ -69,10 +60,9 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
                         .getBody();
 
                 String user = claims.getSubject();
-                List<GrantedAuthority> roles = extractRoles((List<String>) claims.get(CLAIM_ROLE_KEY));
 
                 if (user != null) {
-                    return new UsernamePasswordAuthenticationToken(user, null, roles);
+                    return new UsernamePasswordAuthenticationToken(user, null, null);
                 }
                 return null;
             }
@@ -80,12 +70,5 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
             e.printStackTrace();
         }
         return null;
-    }
-
-    private List<GrantedAuthority> extractRoles(List<String> claims) {
-        if (Collections.isEmpty(claims)) return new ArrayList<>();
-
-        return claims.stream().map(s -> new SimpleGrantedAuthority("ROLE_" + s))
-                .collect(Collectors.toList());
     }
 }
