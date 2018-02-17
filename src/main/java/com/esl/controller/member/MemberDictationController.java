@@ -1,8 +1,10 @@
 package com.esl.controller.member;
 
+import com.esl.dao.MemberDAO;
 import com.esl.dao.dictation.DictationDAO;
-import com.esl.entity.rest.CreateDictationHistoryRequest;
-import com.esl.model.dictation.DictationStatistics;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.rest.CreateDictationRequest;
+import com.esl.model.Member;
 import com.esl.service.DictationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,16 +24,18 @@ public class MemberDictationController {
 
 	@Autowired DictationDAO dictationDAO;
 	@Autowired DictationService dictationService;
+	@Autowired MemberDAO memberDAO;
 
     @RequestMapping(value = "/create")
-    public ResponseEntity<DictationStatistics> createDictation(@RequestBody CreateDictationHistoryRequest request) {
+    public ResponseEntity<Dictation> createDictation(@RequestBody CreateDictationRequest request) {
 		log.info("create a new dictation");
 
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			log.info("authentication.getName(): {}", authentication.getName());
+			Member member = memberDAO.getMemberByUserID(authentication.getName());
+			log.info("created by userId: {}", member.getUserId());
 
-			return ResponseEntity.ok(null);
+			return ResponseEntity.ok(dictationService.createAndSaveDictation(member,request));
 		} catch (Exception e) {
 			log.warn("fail in create dictation", e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);

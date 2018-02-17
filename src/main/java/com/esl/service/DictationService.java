@@ -6,6 +6,7 @@ import com.esl.entity.dictation.Dictation;
 import com.esl.entity.dictation.DictationHistory;
 import com.esl.entity.dictation.Vocab;
 import com.esl.entity.rest.CreateDictationHistoryRequest;
+import com.esl.entity.rest.CreateDictationRequest;
 import com.esl.entity.rest.VocabPracticeHistory;
 import com.esl.model.Member;
 import org.slf4j.Logger;
@@ -15,8 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.stream.Collectors;
 
 @Transactional
 @Service
@@ -82,5 +85,29 @@ public class DictationService {
 		}
 		dictationHistoryDAO.persist(history);
 		return history;
+	}
+
+	public Dictation createAndSaveDictation(Member creator, CreateDictationRequest request) {
+		Dictation d = dictationFrom(request);
+		d.setCreator(creator);
+		dictationDAO.persist(d);
+		logger.info("Dictation created: {}", d.toString());
+		return d;
+	}
+
+	private Dictation dictationFrom(CreateDictationRequest request) {
+		Dictation d = new Dictation();
+		d.setTitle(request.title);
+		d.setDescription(request.description);
+		d.setSuitableStudent(request.suitableStudent);
+
+		List<Vocab> vocabs = request.vocabulary.stream().map(word -> {
+			Vocab vocab = new Vocab(word);
+			vocab.setDictation(d);
+			return vocab;
+		}).collect(Collectors.toList());
+		d.setVocabs(vocabs);
+
+		return d;
 	}
 }

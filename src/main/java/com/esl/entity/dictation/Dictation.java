@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 @Entity
 @Table(name = "dictation")
 public class Dictation extends UserCreatedPractice {
+
 	public enum AgeGroup {
 		@Column(name="AGE_GROUP")
 		@Enumerated(EnumType.STRING)
@@ -39,6 +40,10 @@ public class Dictation extends UserCreatedPractice {
 			}
 			return AgeAny;
 		}
+	}
+
+	public enum StudentLevel {
+		Any, Kindergarten, JuniorPrimary, SeniorPrimary, JuniorSecondary, SeniorSecondary;
 	}
 
 	public enum DictationType {
@@ -97,6 +102,10 @@ public class Dictation extends UserCreatedPractice {
 
 	@Column(name="ARTICLE")
 	private String article;
+
+	@Column(name = "SUITABLE_STUDENT")
+	@Enumerated(EnumType.STRING)
+	private StudentLevel suitableStudent;
 
 	@ManyToOne()
 	@JoinColumn(name="MEMBER_ID")
@@ -234,6 +243,9 @@ public class Dictation extends UserCreatedPractice {
 
 	public boolean isShowImage() {return showImage;	}
 	public void setShowImage(boolean showImage) {this.showImage = showImage;}
+
+	public StudentLevel getSuitableStudent() {return suitableStudent;	}
+	public void setSuitableStudent(StudentLevel suitableStudent) {	this.suitableStudent = suitableStudent;	}
 
 	public List<Vocab> getVocabs() {return vocabs;}
 	public void setVocabs(List<Vocab> vocabs) {	this.vocabs = vocabs;}

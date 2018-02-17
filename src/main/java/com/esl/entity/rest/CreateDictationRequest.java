@@ -2,12 +2,12 @@ package com.esl.entity.rest;
 
 import com.esl.entity.dictation.Dictation;
 
-public class EditDictationRequest {
+import java.util.List;
+
+public class CreateDictationRequest {
     public String title;
     public String description;
-    public String[] tags;
-    public Dictation.DictationType type;
     public boolean showImage;
-    public String[] vocabs;
+    public List<String> vocabulary;
     public Dictation.StudentLevel suitableStudent;
 }
