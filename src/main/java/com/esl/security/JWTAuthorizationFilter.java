@@ -19,9 +19,11 @@ import java.security.cert.X509Certificate;
 
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
     private PublicKey key;
+    private boolean isTesting;
 
-    public JWTAuthorizationFilter(AuthenticationManager authManager, String certificatePath) {
+    public JWTAuthorizationFilter(AuthenticationManager authManager, String certificatePath, boolean isTesting) {
         super(authManager);
+        this.isTesting = isTesting;
 
         try {
             CertificateFactory fact = CertificateFactory.getInstance("X.509");
@@ -37,9 +39,7 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
     protected void doFilterInternal(HttpServletRequest req,
                                     HttpServletResponse res,
                                     FilterChain chain) throws IOException, ServletException {
-        String header = req.getHeader("Authorization");
-
-        if (header == null || !header.startsWith("Bearer")) {
+        if (noAuthorizationHeader(req)) {
             chain.doFilter(req, res);
             return;
         }
@@ -50,13 +50,21 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
         chain.doFilter(req, res);
     }
 
+    private boolean noAuthorizationHeader(HttpServletRequest req) {
+        String header = req.getHeader("Authorization");
+        return header == null || !header.startsWith("Bearer");
+    }
+
     private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
+        UsernamePasswordAuthenticationToken userToken = isTestingWithToken(request);
+        if (userToken != null) return userToken;
+
         try {
             String token = request.getHeader("Authorization");
             if (token != null) {
                 // parse the token.
                 Claims claims = Jwts.parser().setSigningKey(key)
-                        .parseClaimsJws(token.replace("Bearer", "").replaceAll("\"",""))
+                        .parseClaimsJws(token.replace("Bearer", "").replaceAll("\"", ""))
                         .getBody();
 
                 String user = claims.getSubject();
@@ -68,6 +76,15 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        return null;
+    }
+
+    public UsernamePasswordAuthenticationToken isTestingWithToken(HttpServletRequest req) {
+        String header = req.getHeader("Authorization");
+        if (isTesting && header != null ) {
+            String userId = header.replace("Bearer", "").replaceAll("\"", "").trim();
+            return new UsernamePasswordAuthenticationToken(userId, null, null);
         }
         return null;
     }

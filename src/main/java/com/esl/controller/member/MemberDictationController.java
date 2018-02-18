@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(value = "/member/dictation")
 public class MemberDictationController {
@@ -40,6 +42,23 @@ public class MemberDictationController {
 			log.warn("fail in create dictation", e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
+	}
+
+	@RequestMapping(value = "/getall")
+	public ResponseEntity<List<Dictation>> getMyDictations() {
+    	log.info("get all dictations");
+
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			log.info("userId: {}", authentication.getName());
+			Member member = memberDAO.getMemberByUserID(authentication.getName());
+
+			return ResponseEntity.ok(dictationDAO.listByMember(member));
+		} catch (Exception e) {
+			log.warn("fail in get all dictations", e);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+
 	}
 
 }

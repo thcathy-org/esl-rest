@@ -37,7 +37,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 		if (member == null) throw new IllegalParameterException(new String[]{"member"}, new Object[]{member});
 
 		logger.info("listByDictation: input member[" + member.getUserId() + "]");
-		String queryStr = "FROM Dictation d WHERE d.creator = :member";
+		String queryStr = "FROM Dictation d WHERE d.creator = :member ORDER BY d.id DESC";
 		javax.persistence.Query query = em.createQuery(queryStr).setParameter("member", member);
 		return query.getResultList();
 	}

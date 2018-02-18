@@ -21,6 +21,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Value(value = "${auth0.cert}")
 	private String certificatePath;
 
+	@Value(value = "${testing}")
+	private boolean isTesting;
+
 	@Override
     protected void configure(HttpSecurity http) throws Exception {
 		http
@@ -31,7 +34,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.antMatchers(HttpMethod.POST, "/member/**").authenticated()
 				.anyRequest().permitAll()
 				.and()
-				.addFilter(new JWTAuthorizationFilter(authenticationManager(), certificatePath))
+				.addFilter(new JWTAuthorizationFilter(authenticationManager(), certificatePath, isTesting))
 				// this disables session creation on Spring Security
 				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				.and()
