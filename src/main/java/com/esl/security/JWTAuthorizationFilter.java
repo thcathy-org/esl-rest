@@ -81,9 +81,9 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
     }
 
     public UsernamePasswordAuthenticationToken isTestingWithToken(HttpServletRequest req) {
-        String header = req.getHeader("Authorization");
+        String header = req.getHeader("UserId");
         if (isTesting && header != null ) {
-            String userId = header.replace("Bearer", "").replaceAll("\"", "").trim();
+            String userId = header.trim();
             return new UsernamePasswordAuthenticationToken(userId, null, null);
         }
         return null;
