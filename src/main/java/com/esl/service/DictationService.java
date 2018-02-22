@@ -7,12 +7,14 @@ import com.esl.entity.dictation.DictationHistory;
 import com.esl.entity.dictation.Vocab;
 import com.esl.entity.rest.CreateDictationHistoryRequest;
 import com.esl.entity.rest.CreateDictationRequest;
+import com.esl.entity.rest.EditDictationRequest;
 import com.esl.entity.rest.VocabPracticeHistory;
 import com.esl.model.Member;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sun.plugin.dom.exception.InvalidAccessException;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -95,7 +97,26 @@ public class DictationService {
 		return d;
 	}
 
-	private Dictation dictationFrom(CreateDictationRequest request) {
+	public Dictation createOrAmendDictation(Member creator, EditDictationRequest request) throws IllegalAccessException {
+		Dictation d;
+		if (request.isCreate()) {
+			d = dictationFrom(request);
+			d.setCreator(creator);
+		} else {
+			d = dictationDAO.get(request.dictationId);
+			if (d.getCreator().getId() != creator.getId()) throw new IllegalAccessException(creator.getUserId() + " is not creator of dictation: " + d.getId());
+			amendDictation(request);
+		}
+
+		dictationDAO.persist(d);
+		logger.info("Dictation created: {}", d.toString());
+		return d;
+	}
+
+	private void amendDictation(EditDictationRequest request) {
+	}
+
+	private Dictation dictationFrom(EditDictationRequest request) {
 		Dictation d = new Dictation();
 		d.setTitle(request.title);
 		d.setDescription(request.description);

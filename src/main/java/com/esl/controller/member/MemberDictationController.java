@@ -4,6 +4,7 @@ import com.esl.dao.MemberDAO;
 import com.esl.dao.dictation.DictationDAO;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.rest.CreateDictationRequest;
+import com.esl.entity.rest.EditDictationRequest;
 import com.esl.model.Member;
 import com.esl.service.DictationService;
 import org.slf4j.Logger;
@@ -40,6 +41,22 @@ public class MemberDictationController {
 			return ResponseEntity.ok(dictationService.createAndSaveDictation(member,request));
 		} catch (Exception e) {
 			log.warn("fail in create dictation", e);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+	}
+
+	@RequestMapping(value = "/edit")
+	public ResponseEntity<Dictation> createOrAmendDictation(@RequestBody EditDictationRequest request) {
+		log.info("create or amend dictation");
+
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			Member member = memberDAO.getMemberByUserID(authentication.getName());
+			log.info("request by userId: {}", member.getUserId());
+
+			return ResponseEntity.ok(dictationService.createAndSaveDictation(member,request));
+		} catch (Exception e) {
+			log.warn("fail in create or amend dictation", e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
 	}
