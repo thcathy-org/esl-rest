@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sun.plugin.dom.exception.InvalidAccessException;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -47,10 +46,10 @@ public class DictationService {
 		if (dictation == null) throw new MissingResourceException("Cannot find dictation", "Dictation", String.valueOf(request.dictationId));
 
 		createAndSaveDictationHistory(dictation, null, request.mark);
-		return updateDictation(request, dictation);
+		return updateDictationAttempts(request, dictation);
 	}
 
-	private Dictation updateDictation(CreateDictationHistoryRequest request, Dictation dictation) {
+	private Dictation updateDictationAttempts(CreateDictationHistoryRequest request, Dictation dictation) {
 		dictation.setTotalAttempt(dictation.getTotalAttempt()+1);
 		dictation.setLastPracticeDate(new Date());
 
@@ -97,20 +96,31 @@ public class DictationService {
 		return d;
 	}
 
-	public Dictation createOrAmendDictation(Member creator, EditDictationRequest request) throws IllegalAccessException {
-		Dictation d;
-		if (request.isCreate()) {
+	public Dictation createOrAmendDictation(Member member, EditDictationRequest request) throws IllegalAccessException {
+		Dictation d = createOrGetDictation(request);
+		assertUpdater(member, d);
+
+		if (d.getCreator().getId() != member.getId())
+			throw new IllegalAccessException(member.getUserId() + " is not creator of dictation: " + d.getId());
+
 			d = dictationFrom(request);
-			d.setCreator(creator);
+			d.setCreator(member);
 		} else {
 			d = dictationDAO.get(request.dictationId);
-			if (d.getCreator().getId() != creator.getId()) throw new IllegalAccessException(creator.getUserId() + " is not creator of dictation: " + d.getId());
+
 			amendDictation(request);
 		}
 
 		dictationDAO.persist(d);
 		logger.info("Dictation created: {}", d.toString());
 		return d;
+	}
+
+	private Dictation createOrGetDictation(EditDictationRequest request) {
+		if (request.isCreate())
+			return new Dictation();
+		else
+			return dictationDAO.get(request.dictationId);
 	}
 
 	private void amendDictation(EditDictationRequest request) {
