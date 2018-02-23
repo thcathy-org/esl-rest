@@ -1,12 +1,7 @@
 package com.esl.controller.member;
 
-import com.esl.dao.MemberDAO;
-import com.esl.dao.dictation.DictationDAO;
-import com.esl.entity.dictation.Dictation;
-import com.esl.entity.rest.CreateDictationRequest;
-import com.esl.entity.rest.EditDictationRequest;
-import com.esl.model.Member;
-import com.esl.service.DictationService;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.esl.dao.MemberDAO;
+import com.esl.dao.dictation.DictationDAO;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.rest.EditDictationRequest;
+import com.esl.model.Member;
+import com.esl.service.DictationService;
 
 @RestController
 @RequestMapping(value = "/member/dictation")
@@ -29,22 +29,6 @@ public class MemberDictationController {
 	@Autowired DictationService dictationService;
 	@Autowired MemberDAO memberDAO;
 
-    @RequestMapping(value = "/create")
-    public ResponseEntity<Dictation> createDictation(@RequestBody CreateDictationRequest request) {
-		log.info("create a new dictation");
-
-		try {
-			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			Member member = memberDAO.getMemberByUserID(authentication.getName());
-			log.info("created by userId: {}", member.getUserId());
-
-			return ResponseEntity.ok(dictationService.createAndSaveDictation(member,request));
-		} catch (Exception e) {
-			log.warn("fail in create dictation", e);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-	}
-
 	@RequestMapping(value = "/edit")
 	public ResponseEntity<Dictation> createOrAmendDictation(@RequestBody EditDictationRequest request) {
 		log.info("create or amend dictation");
@@ -54,7 +38,7 @@ public class MemberDictationController {
 			Member member = memberDAO.getMemberByUserID(authentication.getName());
 			log.info("request by userId: {}", member.getUserId());
 
-			return ResponseEntity.ok(dictationService.createAndSaveDictation(member,request));
+			return ResponseEntity.ok(dictationService.createOrAmendDictation(member,request));
 		} catch (Exception e) {
 			log.warn("fail in create or amend dictation", e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);

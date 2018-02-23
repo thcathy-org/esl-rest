@@ -11,7 +11,7 @@ buildscript {
 }
 
 apply plugin: 'java'
-apply plugin: 'eclipse'
+apply plugin: 'idea'
 apply plugin: 'org.springframework.boot'
 
 group = 'com.esl'
@@ -21,7 +21,6 @@ sourceCompatibility = 1.8
 repositories {
 	mavenCentral()
 }
-
 
 dependencies {
 	compile 'org.springframework.boot:spring-boot-starter-actuator'
@@ -40,6 +39,5 @@ dependencies {
 	testCompile 'org.springframework.boot:spring-boot-starter-test'
 	testCompile 'org.springframework.security:spring-security-test'
 	testCompile 'org.springframework.boot:spring-boot-devtools'
-
-
+	testCompile 'com.h2database:h2'
 }
