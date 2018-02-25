@@ -1,7 +1,11 @@
 package com.esl.controller.member;
 
-import java.util.List;
-
+import com.esl.dao.MemberDAO;
+import com.esl.dao.dictation.DictationDAO;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.rest.EditDictationRequest;
+import com.esl.model.Member;
+import com.esl.service.DictationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.esl.dao.MemberDAO;
-import com.esl.dao.dictation.DictationDAO;
-import com.esl.entity.dictation.Dictation;
-import com.esl.entity.rest.EditDictationRequest;
-import com.esl.model.Member;
-import com.esl.service.DictationService;
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/member/dictation")
