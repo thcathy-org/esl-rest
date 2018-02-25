@@ -1,26 +1,31 @@
 package com.esl.service;
 
-import com.esl.dao.dictation.DictationHistoryDAO;
-import com.esl.dao.dictation.IDictationDAO;
-import com.esl.entity.dictation.Dictation;
-import com.esl.entity.dictation.DictationHistory;
-import com.esl.entity.dictation.Vocab;
-import com.esl.entity.rest.CreateDictationHistoryRequest;
-import com.esl.entity.rest.CreateDictationRequest;
-import com.esl.entity.rest.EditDictationRequest;
-import com.esl.entity.rest.VocabPracticeHistory;
-import com.esl.model.Member;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.Optional;
+import java.util.function.Function;
+
+import javax.annotation.Resource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.stream.Collectors;
+import com.esl.dao.dictation.DictationHistoryDAO;
+import com.esl.dao.dictation.IDictationDAO;
+import com.esl.dao.dictation.VocabDAO;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.dictation.DictationHistory;
+import com.esl.entity.dictation.Vocab;
+import com.esl.entity.rest.CreateDictationHistoryRequest;
+import com.esl.entity.rest.EditDictationRequest;
+import com.esl.entity.rest.VocabPracticeHistory;
+import com.esl.model.Member;
+
+import static java.util.stream.Collectors.toList;
 
 @Transactional
 @Service
@@ -28,6 +33,7 @@ public class DictationService {
 	private static Logger logger = LoggerFactory.getLogger(DictationService.class);
 
 	@Resource private IDictationDAO dictationDAO;
+	@Resource private VocabDAO vocabDAO;
 	@Resource private DictationHistoryDAO dictationHistoryDAO;
 
 	public DictationService() {}
@@ -46,10 +52,10 @@ public class DictationService {
 		if (dictation == null) throw new MissingResourceException("Cannot find dictation", "Dictation", String.valueOf(request.dictationId));
 
 		createAndSaveDictationHistory(dictation, null, request.mark);
-		return updateDictationAttempts(request, dictation);
+		return updateDictation(request, dictation);
 	}
 
-	private Dictation updateDictationAttempts(CreateDictationHistoryRequest request, Dictation dictation) {
+	private Dictation updateDictation(CreateDictationHistoryRequest request, Dictation dictation) {
 		dictation.setTotalAttempt(dictation.getTotalAttempt()+1);
 		dictation.setLastPracticeDate(new Date());
 
@@ -88,57 +94,51 @@ public class DictationService {
 		return history;
 	}
 
-	public Dictation createAndSaveDictation(Member creator, CreateDictationRequest request) {
-		Dictation d = dictationFrom(request);
-		d.setCreator(creator);
+	public Dictation createOrAmendDictation(Member member, EditDictationRequest request) {
+		Dictation d = findOrCreateDictation(member, request);
+		applyRequestToDictation(request, d, member);
 		dictationDAO.persist(d);
 		logger.info("Dictation created: {}", d.toString());
 		return d;
 	}
 
-	public Dictation createOrAmendDictation(Member member, EditDictationRequest request) throws IllegalAccessException {
-		Dictation d = createOrGetDictation(request);
-		assertUpdater(member, d);
-
-		if (d.getCreator().getId() != member.getId())
-			throw new IllegalAccessException(member.getUserId() + " is not creator of dictation: " + d.getId());
-
-			d = dictationFrom(request);
-			d.setCreator(member);
-		} else {
-			d = dictationDAO.get(request.dictationId);
-
-			amendDictation(request);
-		}
-
-		dictationDAO.persist(d);
-		logger.info("Dictation created: {}", d.toString());
-		return d;
-	}
-
-	private Dictation createOrGetDictation(EditDictationRequest request) {
-		if (request.isCreate())
+	private Dictation findOrCreateDictation(Member member, EditDictationRequest request) {
+		if (request.isCreate()) {
 			return new Dictation();
-		else
-			return dictationDAO.get(request.dictationId);
+		} else {
+			Dictation d = dictationDAO.get(request.dictationId);
+			if (d.getCreator().getId() != member.getId()) throw new UnsupportedOperationException(member.getUserId() + " is not creator of dictation: " + d.getId());
+			return d;
+		}
 	}
 
-	private void amendDictation(EditDictationRequest request) {
+	private Dictation applyRequestToDictation(EditDictationRequest request, Dictation dictation, Member member) {
+		dictation.setTitle(request.title);
+		dictation.setDescription(request.description);
+		dictation.setSuitableStudent(request.suitableStudent);
+		dictation.setCreator(member);
+		dictation.setLastModifyDate(new Date());
+
+		List<Vocab> newVocabList = request.vocabulary.stream().map(findExistVocabOrCreateNew(dictation)).collect(toList());
+		replaceVocabs(dictation, newVocabList);
+
+		return dictation;
 	}
 
-	private Dictation dictationFrom(EditDictationRequest request) {
-		Dictation d = new Dictation();
-		d.setTitle(request.title);
-		d.setDescription(request.description);
-		d.setSuitableStudent(request.suitableStudent);
+	private void replaceVocabs(Dictation dictation, List<Vocab> newVocabList) {
+		List<Vocab> oldVocabs = dictation.getVocabs();
+		oldVocabs.removeAll(newVocabList);
+		vocabDAO.deleteAll(oldVocabs);
+		dictation.setVocabs(newVocabList);
+	}
 
-		List<Vocab> vocabs = request.vocabulary.stream().map(word -> {
-			Vocab vocab = new Vocab(word);
-			vocab.setDictation(d);
+	private Function<String, Vocab> findExistVocabOrCreateNew(Dictation dictation) {
+		return word -> {
+			Optional<Vocab> optVocab = dictation.getVocabs().stream().filter(v -> word.equals(v.getWord())).findFirst();
+			Vocab vocab = optVocab.orElseGet(() -> new Vocab(word));
+			vocab.setDictation(dictation);
 			return vocab;
-		}).collect(Collectors.toList());
-		d.setVocabs(vocabs);
-
-		return d;
+		};
 	}
+
 }
