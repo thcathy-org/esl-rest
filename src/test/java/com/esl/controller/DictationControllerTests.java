@@ -30,6 +30,6 @@ public class DictationControllerTests {
 		this.mockMvc.perform(get("/dictation/get/1"))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json;charset=UTF-8"))
-				.andExpect(jsonPath("$.title", containsString("Testing 1")));
+				.andExpect(jsonPath("$.title", containsString("Testing")));
 	}
 }
