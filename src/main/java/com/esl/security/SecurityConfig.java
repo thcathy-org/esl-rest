@@ -21,7 +21,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Value(value = "${auth0.cert}")
 	private String certificatePath;
 
-	@Value(value = "${testing}")
+	@Value(value = "${testing:false}")
 	private boolean isTesting;
 
 	@Override
