@@ -1,29 +1,23 @@
 <configuration>
 
-  <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>log/esl.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <!-- daily rollover -->
-      <fileNamePattern>log/esl.%d{yyyy-MM-dd}.log</fileNamePattern>
-      <maxHistory>30</maxHistory>
-    </rollingPolicy>
-
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <withJansi>true</withJansi>
     <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+      <pattern>[%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg %n</pattern>
     </encoder>
   </appender>
 
   <appender name="async" class="ch.qos.logback.classic.AsyncAppender">
-    <appender-ref ref="file" />
+    <appender-ref ref="STDOUT" />
   </appender>
-  
-  <logger name="org.apache" level="INFO"/>
-  <logger name="org.springframework" level="INFO"/>
-  <logger name="org.hibernate" level="INFO"/>
-  <logger name="org.reflections" level="INFO"/>
-  <logger name="com.esl" level="INFO" />
 
-  <root level="INFO">
+  <logger name="org.apache" level="info"/>
+  <logger name="org.springframework" level="info"/>
+  <logger name="org.hibernate" level="info"/>
+  <logger name="org.reflections" level="info"/>
+  <logger name="com.esl" level="debug" />
+
+  <root level="debug">
     <appender-ref ref="async" />
   </root>
 </configuration>
