@@ -1,7 +1,9 @@
 package com.esl.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import com.esl.service.JWTService;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,27 +14,17 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
-import java.security.PublicKey;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
+import java.util.Optional;
 
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
-    private PublicKey key;
+    private static Logger log = LoggerFactory.getLogger(JWTService.class);
     private boolean isTesting;
+    private JWTService jwtService;
 
-    public JWTAuthorizationFilter(AuthenticationManager authManager, String certificatePath, boolean isTesting) {
+    public JWTAuthorizationFilter(AuthenticationManager authManager, JWTService jwtService, boolean isTesting) {
         super(authManager);
         this.isTesting = isTesting;
-
-        try {
-            CertificateFactory fact = CertificateFactory.getInstance("X.509");
-            InputStream is =  this.getClass().getResourceAsStream(certificatePath);
-            X509Certificate cer = (X509Certificate) fact.generateCertificate(is);
-            this.key = cer.getPublicKey();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -61,18 +53,11 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 
         try {
             String token = request.getHeader("Authorization");
-            if (token != null) {
-                // parse the token.
-                Claims claims = Jwts.parser().setSigningKey(key)
-                        .parseClaimsJws(token.replace("Bearer", "").replaceAll("\"", ""))
-                        .getBody();
-
-                String user = claims.get("email", String.class);
-
-                if (user != null) {
-                    return new UsernamePasswordAuthenticationToken(user, null, null);
+            if (StringUtils.isNotBlank(token)) {
+                Optional<String> email = jwtService.parseEmail(token);
+                if (email.isPresent()) {
+                    return new UsernamePasswordAuthenticationToken(email.get(), null, null);
                 }
-                return null;
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,5 +1,7 @@
 package com.esl.security;
 
+import com.esl.service.JWTService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,12 +19,10 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-
-	@Value(value = "${auth0.cert}")
-	private String certificatePath;
-
 	@Value(value = "${testing:false}")
 	private boolean isTesting;
+
+	@Autowired private JWTService jwtService;
 
 	@Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -34,7 +34,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.antMatchers(HttpMethod.POST, "/member/**").authenticated()
 				.anyRequest().permitAll()
 				.and()
-				.addFilter(new JWTAuthorizationFilter(authenticationManager(), certificatePath, isTesting))
+				.addFilter(new JWTAuthorizationFilter(authenticationManager(), jwtService, isTesting))
 				// this disables session creation on Spring Security
 				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				.and()
