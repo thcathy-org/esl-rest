@@ -34,8 +34,8 @@ public class MemberDictationController {
 
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			Member member = memberDAO.getMemberByUserID(authentication.getName());
-			log.info("request by userId: {}", member.getUserId());
+			log.info("email: {}", authentication.getName());
+			Member member = memberDAO.getMemberByEmail(authentication.getName()).get();
 
 			return ResponseEntity.ok(dictationService.createOrAmendDictation(member,request));
 		} catch (Exception e) {
@@ -50,8 +50,8 @@ public class MemberDictationController {
 
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			log.info("userId: {}", authentication.getName());
-			Member member = memberDAO.getMemberByUserID(authentication.getName());
+			log.info("email: {}", authentication.getName());
+			Member member = memberDAO.getMemberByEmail(authentication.getName()).get();
 
 			return ResponseEntity.ok(dictationDAO.listByMember(member));
 		} catch (Exception e) {
