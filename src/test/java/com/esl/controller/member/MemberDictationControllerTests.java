@@ -1,7 +1,11 @@
 package com.esl.controller.member;
 
-import java.util.Arrays;
-
+import com.esl.dao.dictation.DictationDAO;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.dictation.Vocab;
+import com.esl.entity.rest.EditDictationRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,23 +17,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import com.esl.dao.dictation.DictationDAO;
-import com.esl.entity.dictation.Dictation;
-import com.esl.entity.dictation.Vocab;
-import com.esl.entity.rest.EditDictationRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
 
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
 @RunWith(SpringRunner.class)
@@ -98,7 +92,7 @@ public class MemberDictationControllerTests {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request))
 				.header("UserId", "tester2"))
-				.andExpect(status().isBadRequest());
+				.andExpect(status().isUnauthorized());
 		assertThat(dictationDAO.get(1L).getTitle(), is("Testing 1"));
 	}
 
@@ -114,6 +108,6 @@ public class MemberDictationControllerTests {
 		return post(path)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request))
-				.header("UserId", "tester");
+				.header("email", "tester@esl.com");
 	}
 }
