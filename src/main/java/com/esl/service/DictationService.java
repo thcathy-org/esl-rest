@@ -135,4 +135,12 @@ public class DictationService {
 		};
 	}
 
+	public Dictation deleteDictation(String email, long id) {
+		Dictation d = dictationDAO.get(id);
+		if (d == null || !Objects.equals(d.getCreator().getEmailAddress(), email))
+			throw new UnsupportedOperationException("cannot delete dictation");
+
+		dictationDAO.remove(d);
+		return d;
+	}
 }

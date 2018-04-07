@@ -22,6 +22,7 @@ import java.util.Arrays;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -42,7 +43,7 @@ public class MemberDictationControllerTests {
 		request.title = "shouldFail";
 
 		this.mockMvc.perform(post("/member/dictation/edit"))
-			.andExpect(status().isUnauthorized());
+				.andExpect(status().isUnauthorized());
 
 		assertThat(dictationDAO.listNewCreated(1).get(0).getTitle(), not("shouldFail"));
 	}
@@ -91,9 +92,27 @@ public class MemberDictationControllerTests {
 		this.mockMvc.perform( post("/member/dictation/edit")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request))
-				.header("UserId", "tester2"))
-				.andExpect(status().isUnauthorized());
+				.header("email", "tester2@esl.com"))
+				.andExpect(status().isBadRequest());
 		assertThat(dictationDAO.get(1L).getTitle(), is("Testing 1"));
+	}
+
+	@Test
+	public void deleteDictationWithCorrectUser_shouldSuccess() throws Exception {
+		this.mockMvc.perform(
+				get("/member/dictation/delete/2").header("email", "tester@esl.com")
+		).andExpect(status().isOk());
+
+		assertThat(dictationDAO.get(2L), nullValue());
+	}
+
+	@Test
+	public void deleteDictationWithWrongUser_shouldFail() throws Exception {
+		this.mockMvc.perform(
+				get("/member/dictation/delete/1").header("email", "tester2@esl.com")
+		).andExpect(status().isBadRequest());
+
+		assertThat(dictationDAO.get(1L), notNullValue());
 	}
 
 	private EditDictationRequest createNewDictationRequest() {
