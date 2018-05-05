@@ -39,9 +39,12 @@ dependencies {
 	compile 'javax.cache:cache-api'
 	compile 'org.ehcache:ehcache:3.4.0'
 	compile 'io.jsonwebtoken:jjwt:0.9.0'
+	compile 'org.codehaus.groovy:groovy-all:2.4.13'
 	runtime 'mysql:mysql-connector-java'
 	testCompile 'org.springframework.boot:spring-boot-starter-test'
 	testCompile 'org.springframework.security:spring-security-test'
 	testCompile 'org.springframework.boot:spring-boot-devtools'
 	testCompile 'com.h2database:h2'
+	testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
+	testCompile 'org.spockframework:spock-spring:1.1-groovy-2.4'
 }
