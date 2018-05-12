@@ -10,6 +10,7 @@ public class EditDictationRequest {
     public String description;
     public boolean showImage;
     public List<String> vocabulary;
+    public String article;
     public Dictation.StudentLevel suitableStudent;
 
     public boolean isCreate() {

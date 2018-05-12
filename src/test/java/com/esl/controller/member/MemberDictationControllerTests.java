@@ -39,7 +39,7 @@ public class MemberDictationControllerTests {
 
 	@Test
 	public void postEditWithoutAuthentication_shouldFail() throws Exception {
-		EditDictationRequest request = createNewDictationRequest();
+		EditDictationRequest request = createNewDictationRequest(true);
 		request.title = "shouldFail";
 
 		this.mockMvc.perform(post("/member/dictation/edit"))
@@ -49,8 +49,8 @@ public class MemberDictationControllerTests {
 	}
 
 	@Test
-	public void createNewDictation() throws Exception {
-		EditDictationRequest request = createNewDictationRequest();
+	public void createNewWordDictation() throws Exception {
+		EditDictationRequest request = createNewDictationRequest(true);
 
 		this.mockMvc.perform(postWithUserId("/member/dictation/edit", request))
 				.andExpect(status().isOk())
@@ -59,7 +59,27 @@ public class MemberDictationControllerTests {
 				.andExpect(jsonPath("$.createdDate").exists())
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
-		assertThat(dictationDAO.listNewCreated(1).get(0).getTitle(), is("new dictation"));
+		Dictation dictation = dictationDAO.listNewCreated(1).get(0);
+		assertThat(dictation.getTitle(), is("new dictation"));
+		assertThat(dictation.getVocabs().isEmpty(), is(false));
+		assertThat(dictation.getArticle(), isEmptyOrNullString());
+	}
+
+	@Test
+	public void createNewSentenceDictation() throws Exception {
+		EditDictationRequest request = createNewDictationRequest(false);
+
+		this.mockMvc.perform(postWithUserId("/member/dictation/edit", request))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType("application/json;charset=UTF-8"))
+				.andExpect(jsonPath("$.title", is("new dictation")))
+				.andExpect(jsonPath("$.createdDate").exists())
+				.andExpect(jsonPath("$.id", greaterThan(0)));
+
+		Dictation dictation = dictationDAO.listNewCreated(1).get(0);
+		assertThat(dictation.getTitle(), is("new dictation"));
+		assertThat(dictation.getVocabs().isEmpty(), is(true));
+		assertThat(dictation.getArticle(), is("It is a sentence dictation"));
 	}
 
 	@Test
@@ -115,11 +135,14 @@ public class MemberDictationControllerTests {
 		assertThat(dictationDAO.get(1L), notNullValue());
 	}
 
-	private EditDictationRequest createNewDictationRequest() {
+	private EditDictationRequest createNewDictationRequest(boolean isWord) {
 		EditDictationRequest request = new EditDictationRequest();
 		request.title = "new dictation";
 		request.suitableStudent = Dictation.StudentLevel.JuniorPrimary;
-		request.vocabulary = Arrays.asList("apple", "bus", "car");
+		if (isWord)
+			request.vocabulary = Arrays.asList("apple", "bus", "car");
+		else
+			request.article = "It is a sentence dictation";
 		return request;
 	}
 

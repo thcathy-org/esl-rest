@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -113,8 +114,12 @@ public class DictationService {
 		dictation.setCreator(member);
 		dictation.setLastModifyDate(new Date());
 
-		List<Vocab> newVocabList = request.vocabulary.stream().map(findExistVocabOrCreateNew(dictation)).collect(toList());
-		replaceVocabs(dictation, newVocabList);
+		if (!CollectionUtils.isEmpty(request.vocabulary)) {
+			List<Vocab> newVocabList = request.vocabulary.stream().map(findExistVocabOrCreateNew(dictation)).collect(toList());
+			replaceVocabs(dictation, newVocabList);
+		} else {
+			dictation.setArticle(request.article);
+		}
 
 		return dictation;
 	}
