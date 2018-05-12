@@ -73,6 +73,7 @@ public class MemberDictationControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json;charset=UTF-8"))
 				.andExpect(jsonPath("$.title", is("new dictation")))
+				.andExpect(jsonPath("$.article", is("It is a sentence dictation")))
 				.andExpect(jsonPath("$.createdDate").exists())
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
@@ -83,7 +84,7 @@ public class MemberDictationControllerTests {
 	}
 
 	@Test
-	public void editDictation() throws Exception {
+	public void editWordDictation() throws Exception {
 		EditDictationRequest request = new EditDictationRequest();
 		request.dictationId = 1;
 		request.title = "Testing v2";
@@ -103,6 +104,24 @@ public class MemberDictationControllerTests {
 	}
 
 	@Test
+	public void editSentenceDictation() throws Exception {
+		EditDictationRequest request = new EditDictationRequest();
+		request.dictationId = 3;
+		request.title = "Sentence Dictation 1";
+		request.article = "Updated article";
+
+		this.mockMvc.perform(postWithUserId("/member/dictation/edit", request))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.title", is("Sentence Dictation 1")))
+				.andExpect(jsonPath("$.article", is("Updated article")))
+				.andExpect(jsonPath("$.lastModifyDate").exists())
+				.andExpect(jsonPath("$.id", greaterThan(0)));
+
+		Dictation d = dictationDAO.get(3L);
+		assertThat(d.getArticle(), is("Updated article"));
+	}
+
+	@Test
 	public void editDictationWithWrongUser_shouldFail() throws Exception {
 		EditDictationRequest request = new EditDictationRequest();
 		request.dictationId = 1;
@@ -114,7 +133,6 @@ public class MemberDictationControllerTests {
 				.content(objectMapper.writeValueAsString(request))
 				.header("email", "tester2@esl.com"))
 				.andExpect(status().isBadRequest());
-		assertThat(dictationDAO.get(1L).getTitle(), is("Testing 1"));
 	}
 
 	@Test

@@ -7,6 +7,8 @@ insert into dictation (ID, TOTAL_RECOMMENDED, TITLE, SUITABLE_MIN_AGE, SUITABLE_
 values (1, 0, 'Testing 1', -1, -1, 'testing dictation', 0, true, CURRENT_DATE, 'Any', 1, CURRENT_DATE, false, false, 2.5, 1, 1);
 insert into dictation (ID, TOTAL_RECOMMENDED, TITLE, SUITABLE_MIN_AGE, SUITABLE_MAX_AGE, DESCRIPTION, TOTAL_ATTEMPT, SHOW_IMAGE, LAST_MODIFY_DATE, SUITABLE_STUDENT, MEMBER_ID, CREATED_DATE, NOT_ALLOW_IPA, NOT_ALLOW_RAND_CHAR, RATING, TOTAL_RATED, IS_PUBLIC )
 values (2, 0, 'Dictation will be deleted', -1, -1, 'dictation will be deleted by test case', 0, true, CURRENT_DATE, 'Any', 1, CURRENT_DATE, false, false, 2.5, 1, 1);
+insert into dictation (ID, TOTAL_RECOMMENDED, TITLE, SUITABLE_MIN_AGE, SUITABLE_MAX_AGE, DESCRIPTION, TOTAL_ATTEMPT, SHOW_IMAGE, LAST_MODIFY_DATE, SUITABLE_STUDENT, MEMBER_ID, CREATED_DATE, NOT_ALLOW_IPA, NOT_ALLOW_RAND_CHAR, RATING, TOTAL_RATED, IS_PUBLIC, ARTICLE )
+values (3, 0, 'Sentence Dictation 1', -1, -1, 'testing dictation', 0, true, CURRENT_DATE, 'Any', 1, CURRENT_DATE, false, false, 2.5, 1, 1, 'It is a sentence dictation');
 
 insert into dictation_vocab (ID, WORD, TOTAL_CORRECT, TOTAL_WRONG, DICTATION_ID, CREATED_DATE)
 values (1, 'apple', 2, 1, 1, '2018-01-01');
