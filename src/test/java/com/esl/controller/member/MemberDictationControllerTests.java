@@ -1,11 +1,7 @@
 package com.esl.controller.member;
 
-import com.esl.dao.dictation.DictationDAO;
-import com.esl.entity.dictation.Dictation;
-import com.esl.entity.dictation.Vocab;
-import com.esl.entity.rest.EditDictationRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,16 +11,28 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import java.util.Arrays;
+import com.esl.dao.dictation.DictationDAO;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.dictation.Vocab;
+import com.esl.entity.rest.EditDictationRequest;
+import com.esl.utils.MockMvcUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
 @RunWith(SpringRunner.class)
@@ -52,7 +60,7 @@ public class MemberDictationControllerTests {
 	public void createNewWordDictation() throws Exception {
 		EditDictationRequest request = createNewDictationRequest(true);
 
-		this.mockMvc.perform(postWithUserId("/member/dictation/edit", request))
+		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json;charset=UTF-8"))
 				.andExpect(jsonPath("$.title", is("new dictation")))
@@ -69,7 +77,7 @@ public class MemberDictationControllerTests {
 	public void createNewSentenceDictation() throws Exception {
 		EditDictationRequest request = createNewDictationRequest(false);
 
-		this.mockMvc.perform(postWithUserId("/member/dictation/edit", request))
+		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json;charset=UTF-8"))
 				.andExpect(jsonPath("$.title", is("new dictation")))
@@ -90,7 +98,7 @@ public class MemberDictationControllerTests {
 		request.title = "Testing v2";
 		request.vocabulary = Arrays.asList("apple", "bus", "car");
 
-		this.mockMvc.perform(postWithUserId("/member/dictation/edit", request))
+		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.title", is("Testing v2")))
 				.andExpect(jsonPath("$.lastModifyDate").exists())
@@ -110,7 +118,7 @@ public class MemberDictationControllerTests {
 		request.title = "Sentence Dictation 1";
 		request.article = "Updated article";
 
-		this.mockMvc.perform(postWithUserId("/member/dictation/edit", request))
+		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.title", is("Sentence Dictation 1")))
 				.andExpect(jsonPath("$.article", is("Updated article")))
@@ -164,10 +172,4 @@ public class MemberDictationControllerTests {
 		return request;
 	}
 
-	private MockHttpServletRequestBuilder postWithUserId(String path, Object request) throws JsonProcessingException {
-		return post(path)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request))
-				.header("email", "tester@esl.com");
-	}
 }
