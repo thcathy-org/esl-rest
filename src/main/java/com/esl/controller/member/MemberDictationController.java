@@ -1,10 +1,10 @@
 package com.esl.controller.member;
 
+import com.esl.controller.MemberAware;
 import com.esl.dao.MemberDAO;
 import com.esl.dao.dictation.DictationDAO;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.rest.EditDictationRequest;
-import com.esl.model.Member;
 import com.esl.service.DictationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,12 +22,15 @@ import java.util.List;
 
 @RestController
 @RequestMapping(value = "/member/dictation")
-public class MemberDictationController {
+public class MemberDictationController implements MemberAware {
 	private static Logger log = LoggerFactory.getLogger(MemberDictationController.class);
 
 	@Autowired DictationDAO dictationDAO;
 	@Autowired DictationService dictationService;
 	@Autowired MemberDAO memberDAO;
+
+	@Override
+	public MemberDAO getMemberDAO() { return memberDAO; }
 
 	@RequestMapping(value = "/edit")
 	public ResponseEntity<Dictation> createOrAmendDictation(@RequestBody EditDictationRequest request) {
@@ -36,9 +39,8 @@ public class MemberDictationController {
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 			log.info("email: {}", authentication.getName());
-			Member member = memberDAO.getMemberByEmail(authentication.getName()).get();
 
-			return ResponseEntity.ok(dictationService.createOrAmendDictation(member,request));
+			return ResponseEntity.ok(dictationService.createOrAmendDictation(getSecurityContextMember().get(),request));
 		} catch (Exception e) {
 			log.warn("fail in create or amend dictation", e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -62,11 +64,7 @@ public class MemberDictationController {
 		log.info("get all dictations");
 
 		try {
-			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			log.info("email: {}", authentication.getName());
-			Member member = memberDAO.getMemberByEmail(authentication.getName()).get();
-
-			return ResponseEntity.ok(dictationDAO.listByMember(member));
+			return ResponseEntity.ok(dictationDAO.listByMember(getSecurityContextMember().get()));
 		} catch (Exception e) {
 			log.warn("fail in get all dictations", e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);

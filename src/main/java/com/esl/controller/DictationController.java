@@ -1,5 +1,6 @@
 package com.esl.controller;
 
+import com.esl.dao.MemberDAO;
 import com.esl.dao.dictation.DictationDAO;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.rest.CreateDictationHistoryRequest;
@@ -28,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping(value = "/dictation")
-public class DictationController {
+public class DictationController implements MemberAware {
     private static Logger log = LoggerFactory.getLogger(DictationController.class);
 
 	@Value("${Dictation.MaxDictationStatistics}")
@@ -37,6 +38,10 @@ public class DictationController {
 	@Autowired DictationStatService statService;
 	@Autowired DictationDAO dictationDAO;
 	@Autowired DictationService dictationService;
+	@Autowired MemberDAO memberDAO;
+
+	@Override
+	public MemberDAO getMemberDAO() { return memberDAO; }
 
 	@CacheResult(cacheName = "dictation")
     @RequestMapping(value = "/random-stat")
@@ -79,7 +84,7 @@ public class DictationController {
 		log.info("create history for dictation id: {}", request.dictationId);
 
 		try {
-			return ResponseEntity.ok(dictationService.addHistory(request));
+			return ResponseEntity.ok(dictationService.addHistory(getSecurityContextMember(), request));
 		} catch (Exception e) {
 			log.warn("fail in create dictation history", e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);

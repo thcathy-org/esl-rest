@@ -25,11 +25,12 @@ import static java.util.stream.Collectors.toList;
 @Transactional
 @Service
 public class DictationService {
-	private static Logger logger = LoggerFactory.getLogger(DictationService.class);
+	private static Logger log = LoggerFactory.getLogger(DictationService.class);
 
 	@Resource private IDictationDAO dictationDAO;
 	@Resource private VocabDAO vocabDAO;
 	@Resource private DictationHistoryDAO dictationHistoryDAO;
+	@Resource private MemberScoreService memberScoreService;
 
 	public DictationService() {}
 
@@ -42,9 +43,10 @@ public class DictationService {
 		return dictation;
 	}
 
-	public Dictation addHistory(CreateDictationHistoryRequest request) {
+	public Dictation addHistory(Optional<Member> member, CreateDictationHistoryRequest request) {
 		Dictation dictation = dictationDAO.get(request.dictationId);
 		if (dictation == null) throw new MissingResourceException("Cannot find dictation", "Dictation", String.valueOf(request.dictationId));
+		member.ifPresent(m -> memberScoreService.addScoreToMember(m, request.mark));
 
 		createAndSaveDictationHistory(dictation, null, request.mark);
 		return updateDictation(request, dictation);
@@ -93,7 +95,7 @@ public class DictationService {
 		Dictation d = findOrCreateDictation(member, request);
 		applyRequestToDictation(request, d, member);
 		dictationDAO.persist(d);
-		logger.info("Dictation created: {}", d.toString());
+		log.info("Dictation created: {}", d.toString());
 		return d;
 	}
 
