@@ -68,8 +68,7 @@ public class RankingService {
         if (offset == 6) {
             return topScore(MemberScore.allTimesMonth());
         } else {
-            //return topScore(MemberScore.lastMonthBy(offset));
-            return topScore(MemberScore.allTimesMonth());
+            return topScore(MemberScore.lastMonthBy(offset));
         }
     }
 

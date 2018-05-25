@@ -43,7 +43,7 @@ public class JWTService {
                             .getBody()
             );
         } catch (Exception e) {
-            log.warn("Fail to parse clamis", e);
+            log.warn("Fail to parse clamis: {}", e.getMessage());
             return Optional.empty();
         }
     }
