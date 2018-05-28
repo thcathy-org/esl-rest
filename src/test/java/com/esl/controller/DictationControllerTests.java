@@ -49,6 +49,7 @@ public class DictationControllerTests {
 
 	@Test
 	public void addScoreToMemberWhenCreateHistory() throws Exception {
+		int orgScore = memberScoreRepository.findByMemberAndScoreYearMonth(testService.getTester1(), MemberScore.thisMonth()).get().getScore();
 		CreateDictationHistoryRequest request = new CreateDictationHistoryRequest();
 		request.dictationId = 1;
 		request.mark = 1;
@@ -60,7 +61,7 @@ public class DictationControllerTests {
 				.andExpect(jsonPath("$.title", is("Testing 1")));
 
 		MemberScore s = memberScoreRepository.findByMemberAndScoreYearMonth(testService.getTester1(), MemberScore.thisMonth()).get();
-		assertThat(s.getScore(), is(1));
+		assertThat(s.getScore(), is(orgScore + 1));
 	}
 
 	@Test

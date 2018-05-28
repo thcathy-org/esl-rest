@@ -1,11 +1,7 @@
 package com.esl.controller.member;
 
-import com.esl.controller.MemberAware;
-import com.esl.dao.MemberDAO;
-import com.esl.dao.dictation.DictationDAO;
-import com.esl.entity.dictation.Dictation;
-import com.esl.entity.rest.EditDictationRequest;
-import com.esl.service.DictationService;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +14,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.esl.controller.MemberAware;
+import com.esl.dao.MemberDAO;
+import com.esl.dao.dictation.DictationDAO;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.rest.EditDictationRequest;
+import com.esl.service.DictationService;
 
 @RestController
 @RequestMapping(value = "/member/dictation")
 public class MemberDictationController implements MemberAware {
-	private static Logger log = LoggerFactory.getLogger(MemberDictationController.class);
+	private static Logger log = LoggerFactory.getLogger(MemberRankingController.class);
 
 	@Autowired DictationDAO dictationDAO;
 	@Autowired DictationService dictationService;

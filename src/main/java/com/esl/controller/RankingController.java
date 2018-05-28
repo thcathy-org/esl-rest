@@ -1,7 +1,13 @@
 package com.esl.controller;
 
-import com.esl.entity.practice.MemberScoreRanking;
-import com.esl.service.RankingService;
+import java.util.concurrent.TimeUnit;
+
+import javax.cache.CacheManager;
+import javax.cache.annotation.CacheResult;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.TouchedExpiryPolicy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +18,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.cache.CacheManager;
-import javax.cache.annotation.CacheResult;
-import javax.cache.configuration.MutableConfiguration;
-import javax.cache.expiry.Duration;
-import javax.cache.expiry.TouchedExpiryPolicy;
-import java.util.concurrent.TimeUnit;
+import com.esl.entity.practice.MemberScoreRanking;
+import com.esl.service.RankingService;
 
 @RestController
 @RequestMapping(value = "/ranking")
@@ -38,6 +40,8 @@ public class RankingController {
 			return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(null);
 		}
 	}
+
+
 
 	@Component
 	public static class CachingSetup implements JCacheManagerCustomizer
