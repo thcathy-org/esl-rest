@@ -58,7 +58,7 @@ public class DictationControllerTests {
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json;charset=UTF-8"))
-				.andExpect(jsonPath("$.title", is("Testing 1")));
+				.andExpect(jsonPath("$.id", is(1)));
 
 		MemberScore s = memberScoreRepository.findByMemberAndScoreYearMonth(testService.getTester1(), MemberScore.thisMonth()).get();
 		assertThat(s.getScore(), is(orgScore + 1));
@@ -78,6 +78,6 @@ public class DictationControllerTests {
 		)
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json;charset=UTF-8"))
-				.andExpect(jsonPath("$.title", is("Testing 1")));
+				.andExpect(jsonPath("$.id", is(1)));
 	}
 }
