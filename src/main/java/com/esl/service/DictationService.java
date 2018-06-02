@@ -12,11 +12,11 @@ import com.esl.entity.rest.VocabPracticeHistory;
 import com.esl.model.Member;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.Resource;
 import java.util.*;
 import java.util.function.Function;
 
@@ -27,15 +27,15 @@ import static java.util.stream.Collectors.toList;
 public class DictationService {
 	private static Logger log = LoggerFactory.getLogger(DictationService.class);
 
-	@Resource private IDictationDAO dictationDAO;
-	@Resource private VocabDAO vocabDAO;
-	@Resource private DictationHistoryDAO dictationHistoryDAO;
-	@Resource private MemberScoreService memberScoreService;
+	@Autowired private IDictationDAO dictationDAO;
+	@Autowired private VocabDAO vocabDAO;
+	@Autowired private DictationHistoryDAO dictationHistoryDAO;
+	@Autowired private MemberScoreService memberScoreService;
 
 	public DictationService() {}
 
 	public Dictation recommendDictation(long id) {
-		Dictation dictation = dictationDAO.get(id);
+		var dictation = dictationDAO.get(id);
 		if (dictation == null) throw new MissingResourceException("Cannot find dictation", "Dictation", String.valueOf(id));
 
 		dictation.setTotalRecommended(dictation.getTotalRecommended() + 1);
@@ -44,7 +44,7 @@ public class DictationService {
 	}
 
 	public Dictation addHistory(Optional<Member> member, CreateDictationHistoryRequest request) {
-		Dictation dictation = dictationDAO.get(request.dictationId);
+		var dictation = dictationDAO.get(request.dictationId);
 		if (dictation == null) throw new MissingResourceException("Cannot find dictation", "Dictation", String.valueOf(request.dictationId));
 		member.ifPresent(m -> memberScoreService.addScoreToMember(m, request.mark));
 
@@ -78,7 +78,7 @@ public class DictationService {
 	public DictationHistory createAndSaveDictationHistory(Dictation dictation, Member member, int mark) {
 		if (dictation == null) return null;
 
-		DictationHistory history = new DictationHistory();
+		var history = new DictationHistory();
 		history.setDictation(dictation);
 		history.setMark(mark);
 		if (member != null) {
@@ -127,7 +127,7 @@ public class DictationService {
 	}
 
 	private void replaceVocabs(Dictation dictation, List<Vocab> newVocabList) {
-		List<Vocab> oldVocabs = dictation.getVocabs();
+		var oldVocabs = dictation.getVocabs();
 		oldVocabs.removeAll(newVocabList);
 		vocabDAO.deleteAll(oldVocabs);
 		dictation.setVocabs(newVocabList);
@@ -135,7 +135,7 @@ public class DictationService {
 
 	private Function<String, Vocab> findExistVocabOrCreateNew(Dictation dictation) {
 		return word -> {
-			Optional<Vocab> optVocab = dictation.getVocabs().stream().filter(v -> word.equals(v.getWord())).findFirst();
+			var optVocab = dictation.getVocabs().stream().filter(v -> word.equals(v.getWord())).findFirst();
 			Vocab vocab = optVocab.orElseGet(() -> new Vocab(word));
 			vocab.setDictation(dictation);
 			return vocab;
@@ -143,7 +143,7 @@ public class DictationService {
 	}
 
 	public Dictation deleteDictation(String email, long id) {
-		Dictation d = dictationDAO.get(id);
+		var d = dictationDAO.get(id);
 		if (d == null || !Objects.equals(d.getCreator().getEmailAddress(), email))
 			throw new UnsupportedOperationException("cannot delete dictation");
 
