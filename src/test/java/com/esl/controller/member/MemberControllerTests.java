@@ -1,10 +1,13 @@
 package com.esl.controller.member;
 
-import com.esl.dao.MemberDAO;
-import com.esl.model.Member;
-import com.esl.service.JWTService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.impl.DefaultClaims;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,15 +18,19 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.UUID;
+import com.esl.dao.MemberDAO;
+import com.esl.entity.rest.UpdateMemberRequest;
+import com.esl.model.Member;
+import com.esl.service.JWTService;
+import com.esl.utils.MockMvcUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
@@ -35,6 +42,7 @@ public class MemberControllerTests {
 
 	@Autowired private MockMvc mockMvc;
 	@Autowired private MemberDAO memberDAO;
+	@Autowired ObjectMapper objectMapper;
 
 	@MockBean
 	private JWTService jwtService;
@@ -52,6 +60,38 @@ public class MemberControllerTests {
 		Member member = memberDAO.getMemberByEmail("newtester@a.com").get();
 		assertThat(member.getName().getFirstName(), is("new"));
 		assertThat(member.getName().getLastName(), is("tester"));
+	}
+
+	@Test
+	public void updateNotExistMember_shouldReturnFail() throws Exception {
+		this.mockMvc.perform(MockMvcUtils.postWithEmail("/member/profile/update", objectMapper.writeValueAsString(new UpdateMemberRequest()), "not@exist.com"))
+				.andExpect(status().is5xxServerError());
+	}
+
+	@Test
+	public void updateMember_shouldStoreUpdateInDB() throws Exception {
+		var request = new UpdateMemberRequest();
+		request.address = "testing address";
+		request.firstName = "first name";
+		request.lastName = "last name";
+		request.phoneNumber = "43420024";
+		request.school = "a school";
+		request.birthday = new Date(1528100000000L);
+		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/profile/update", objectMapper.writeValueAsString(request)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.address", is(request.address)))
+				.andExpect(jsonPath("$.name.firstName", is(request.firstName)))
+				.andExpect(jsonPath("$.name.lastName", is(request.lastName)))
+				.andExpect(jsonPath("$.phoneNumber", is(request.phoneNumber)))
+				.andExpect(jsonPath("$.birthday", is(1528100000000L)))
+				.andExpect(jsonPath("$.school", is(request.school)));
+
+		var m = memberDAO.getMemberByEmail("tester@esl.com").get();
+		assertThat(m.getAddress(), is(request.address));
+		assertThat(m.getName().getFullName(), is( request.firstName+ ' ' + request.lastName));
+		assertThat(m.getPhoneNumber(), is(request.phoneNumber));
+		assertThat(m.getSchool(), is(request.school));
+		assertThat(m.getBirthday().getTime(), is(1528100000000L));
 	}
 
 	private Optional<Claims> newUserClaims() {

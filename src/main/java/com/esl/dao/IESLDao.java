@@ -7,7 +7,7 @@ import java.util.List;
 public interface IESLDao<T> {
 	public Object attachSession(Object o);
 	public void flush();
-	public void persist(Object entity);
+	public T persist(T entity);
 	public void persistAll(Collection<? extends Object> entities);
 	public void refresh(Object entity);
 	public T merge(T entity);

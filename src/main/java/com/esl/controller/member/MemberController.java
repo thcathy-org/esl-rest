@@ -11,20 +11,27 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.esl.controller.MemberAware;
 import com.esl.dao.MemberDAO;
+import com.esl.entity.rest.UpdateMemberRequest;
 import com.esl.model.Member;
 import com.esl.service.JWTService;
 
 @RestController
 @RequestMapping(value = "/member/profile")
-public class MemberController {
+public class MemberController implements MemberAware {
     private static Logger log = LoggerFactory.getLogger(MemberController.class);
 
-	@Autowired MemberDAO memberDAO;
 	@Autowired JWTService jwtService;
+	@Autowired MemberDAO memberDAO;
+
+	@Override
+	public MemberDAO getMemberDAO() { return memberDAO; }
 
 	@RequestMapping(value = "/get")
 	public ResponseEntity<Member> getOrCreate(HttpServletRequest request) {
@@ -42,6 +49,24 @@ public class MemberController {
 			log.warn("fail to get or create member", e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 		}
+	}
+
+	@PostMapping(value = "/update")
+	public ResponseEntity<Member> update(@RequestBody UpdateMemberRequest request) {
+		Member member = getSecurityContextMember()
+				.map(m -> applyRequest(m, request))
+				.map(memberDAO::persist)
+				.get();
+		return ResponseEntity.ok(member);
+	}
+
+	private Member applyRequest(Member m, UpdateMemberRequest request) {
+		m.setName(request.lastName, request.firstName);
+		m.setAddress(request.address);
+		m.setPhoneNumber(request.phoneNumber);
+		m.setSchool(request.school);
+		m.setBirthday(request.birthday);
+		return m;
 	}
 
 	private Member createMember(Claims claims) {

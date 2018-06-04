@@ -42,11 +42,12 @@ public abstract class ESLDao<T> implements IESLDao<T> {
 		em.flush();
 	}
 
-	public void persist(Object entity) {
+	public T persist(T entity) {
 		if (entity instanceof IAuditable) {
 			((IAuditable)entity).setLastUpdatedDate(new Date());
 		}
 		em.persist(entity);
+		return entity;
 	}
 
 	public void persistAll(Collection<? extends Object> entities) {
