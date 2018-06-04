@@ -1,6 +1,7 @@
 package com.esl.controller;
 
-import com.esl.service.ArticleDictationService;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.esl.service.ArticleDictationService;
 
 @RestController
 @RequestMapping(value = "/dictation/article")
@@ -22,8 +23,6 @@ public class ArticleDictationController {
 
 	@PostMapping(value = "/divide")
 	public ResponseEntity<List<String>> divideArticle(@RequestBody String article) {
-		log.info("divide article to sentences: {}", article);
-
 		try {
 			return ResponseEntity.ok(articleDictationService.divideArticleToSentences(article));
 		} catch (Exception e) {

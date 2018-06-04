@@ -156,9 +156,15 @@ public class MemberDictationControllerTests {
 	public void deleteDictationWithWrongUser_shouldFail() throws Exception {
 		this.mockMvc.perform(
 				get("/member/dictation/delete/1").header("email", "tester2@esl.com")
-		).andExpect(status().isBadRequest());
+		).andExpect(status().is5xxServerError());
 
 		assertThat(dictationDAO.get(1L), notNullValue());
+	}
+
+	@Test
+	public void deleteNotExistsDictation_shouldFail() throws Exception {
+		this.mockMvc.perform(get("/member/dictation/delete/99999999").header("email", "tester2@esl.com"))
+				.andExpect(status().is5xxServerError());
 	}
 
 	private EditDictationRequest createNewDictationRequest(boolean isWord) {

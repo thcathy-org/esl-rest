@@ -1,8 +1,13 @@
 package com.esl.controller;
 
-import com.esl.model.PhoneticQuestion;
-import com.esl.service.VocabService;
-import com.esl.util.ValidationUtil;
+import java.util.concurrent.TimeUnit;
+
+import javax.cache.CacheManager;
+import javax.cache.annotation.CacheResult;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.TouchedExpiryPolicy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +20,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.cache.CacheManager;
-import javax.cache.annotation.CacheResult;
-import javax.cache.configuration.MutableConfiguration;
-import javax.cache.expiry.Duration;
-import javax.cache.expiry.TouchedExpiryPolicy;
-import java.util.concurrent.TimeUnit;
+import com.esl.model.PhoneticQuestion;
+import com.esl.service.VocabService;
+import com.esl.util.ValidationUtil;
 
 @RestController
 @RequestMapping(value = "/vocab")
@@ -35,8 +37,6 @@ public class VocabPracticeController {
     public ResponseEntity<PhoneticQuestion> getQuestion(
     		@PathVariable String word,
 			@RequestParam(value="image", defaultValue = "1") boolean showImage) {
-		log.debug("get question of word: {}, with image {}", word, showImage);
-
 		try {
 			if (ValidationUtil.isValidWord(word))
 				return ResponseEntity.ok(vocabService.createQuestion(word, showImage));

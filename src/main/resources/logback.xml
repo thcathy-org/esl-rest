@@ -16,6 +16,7 @@
   <logger name="org.hibernate" level="info"/>
   <logger name="org.reflections" level="info"/>
   <logger name="com.esl" level="debug" />
+  <logger name="org.springframework.web.filter.CommonsRequestLoggingFilter" level="debug" />
 
   <root level="debug">
     <appender-ref ref="async" />

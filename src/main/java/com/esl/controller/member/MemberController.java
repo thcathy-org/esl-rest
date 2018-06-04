@@ -1,9 +1,11 @@
 package com.esl.controller.member;
 
-import com.esl.dao.MemberDAO;
-import com.esl.model.Member;
-import com.esl.service.JWTService;
 import io.jsonwebtoken.Claims;
+
+import java.util.Date;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.Date;
+import com.esl.dao.MemberDAO;
+import com.esl.model.Member;
+import com.esl.service.JWTService;
 
 @RestController
 @RequestMapping(value = "/member/profile")
@@ -25,8 +28,6 @@ public class MemberController {
 
 	@RequestMapping(value = "/get")
 	public ResponseEntity<Member> getOrCreate(HttpServletRequest request) {
-		log.info("get or create member");
-
 		try {
 			String token = request.getHeader("Authorization");
 			Claims claims = jwtService.parseClaims(token).get();

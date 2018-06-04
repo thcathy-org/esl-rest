@@ -48,6 +48,13 @@ public class DictationControllerTests {
 	}
 
 	@Test
+	public void getNotExistDictation() throws Exception {
+		this.mockMvc.perform(get("/dictation/get/9999999"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.message", containsString("Dictation not found")));
+	}
+
+	@Test
 	public void addScoreToMemberWhenCreateHistory() throws Exception {
 		int orgScore = memberScoreRepository.findByMemberAndScoreYearMonth(testService.getTester1(), MemberScore.thisMonth()).get().getScore();
 		CreateDictationHistoryRequest request = new CreateDictationHistoryRequest();

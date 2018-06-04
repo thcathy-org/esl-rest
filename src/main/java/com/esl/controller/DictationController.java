@@ -1,12 +1,13 @@
 package com.esl.controller;
 
-import com.esl.dao.MemberDAO;
-import com.esl.dao.dictation.DictationDAO;
-import com.esl.entity.dictation.Dictation;
-import com.esl.entity.rest.CreateDictationHistoryRequest;
-import com.esl.model.dictation.DictationStatistics;
-import com.esl.service.DictationService;
-import com.esl.service.DictationStatService;
+import java.util.concurrent.TimeUnit;
+
+import javax.cache.CacheManager;
+import javax.cache.annotation.CacheResult;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.TouchedExpiryPolicy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +21,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.cache.CacheManager;
-import javax.cache.annotation.CacheResult;
-import javax.cache.configuration.MutableConfiguration;
-import javax.cache.expiry.Duration;
-import javax.cache.expiry.TouchedExpiryPolicy;
-import java.util.concurrent.TimeUnit;
+import com.esl.dao.MemberDAO;
+import com.esl.dao.dictation.DictationDAO;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.rest.CreateDictationHistoryRequest;
+import com.esl.model.dictation.DictationStatistics;
+import com.esl.service.DictationService;
+import com.esl.service.DictationStatService;
 
 @RestController
 @RequestMapping(value = "/dictation")
@@ -46,31 +48,20 @@ public class DictationController implements MemberAware {
 	@CacheResult(cacheName = "dictation")
     @RequestMapping(value = "/random-stat")
     public ResponseEntity<DictationStatistics> randomStatistics() {
-		log.info("request random stat");
-
-		try {
-			return ResponseEntity.ok(statService.randomDictationStatistics(maxDictationStatistics));
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(null);
-		}
+		return ResponseEntity.ok(statService.randomDictationStatistics(maxDictationStatistics));
 	}
 
 	@RequestMapping(value = "/get/{id}")
 	public ResponseEntity<Dictation> getDictationById(@PathVariable long id) {
-		log.info("get dictation id: {}", id);
-
-		try {
+		Dictation d = dictationDAO.get(id);
+		if (d != null)
 			return ResponseEntity.ok(dictationDAO.get(id));
-		} catch (Exception e) {
-			log.warn("fail in getting dictation", e);
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
-		}
+		else
+			throw new IllegalArgumentException("Dictation not found");
 	}
 
 	@RequestMapping(value = "/recommend/{id}")
 	public ResponseEntity<Dictation> recommendDictation(@PathVariable long id) {
-		log.info("get dictation id: {}", id);
-
 		try {
 			return ResponseEntity.ok(dictationService.recommendDictation(id));
 		} catch (Exception e) {
@@ -81,8 +72,6 @@ public class DictationController implements MemberAware {
 
 	@RequestMapping(value = "/history/create")
 	public ResponseEntity<Dictation> createHistory(@RequestBody CreateDictationHistoryRequest request) {
-		log.info("create history for dictation id: {}", request.dictationId);
-
 		try {
 			return ResponseEntity.ok(dictationService.addHistory(getSecurityContextMember(), request));
 		} catch (Exception e) {

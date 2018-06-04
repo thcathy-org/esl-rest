@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,14 +30,8 @@ public class RankingController {
 
 	@CacheResult(cacheName = "ranking")
     @RequestMapping(value = "/random-top-score")
-    public ResponseEntity<MemberScoreRanking> randomTopScore() {
-		log.debug("request random top score");
-
-		try {
-			return ResponseEntity.ok(rankingService.randomTopScore().get(10, TimeUnit.SECONDS));
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(null);
-		}
+    public ResponseEntity<MemberScoreRanking> randomTopScore() throws Exception {
+		return ResponseEntity.ok(rankingService.randomTopScore().get(10, TimeUnit.SECONDS));
 	}
 
 

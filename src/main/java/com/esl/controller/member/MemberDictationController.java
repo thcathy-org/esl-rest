@@ -35,12 +35,8 @@ public class MemberDictationController implements MemberAware {
 
 	@RequestMapping(value = "/edit")
 	public ResponseEntity<Dictation> createOrAmendDictation(@RequestBody EditDictationRequest request) {
-		log.info("create or amend dictation");
-
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			log.info("email: {}", authentication.getName());
-
 			return ResponseEntity.ok(dictationService.createOrAmendDictation(getSecurityContextMember().get(),request));
 		} catch (Exception e) {
 			log.warn("fail in create or amend dictation", e);
@@ -50,27 +46,12 @@ public class MemberDictationController implements MemberAware {
 
 	@RequestMapping(value = "/delete/{id}")
 	public ResponseEntity<Dictation> deleteDictation(@PathVariable long id) {
-		log.info("delete dictation {}", id);
-
-		try {
-			return ResponseEntity.ok(dictationService.deleteDictation(SecurityContextHolder.getContext().getAuthentication().getName(), id));
-		} catch (Exception e) {
-			log.warn("fail in delete dictation", e);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
+		return ResponseEntity.ok(dictationService.deleteDictation(SecurityContextHolder.getContext().getAuthentication().getName(), id));
 	}
 
 	@RequestMapping(value = "/getall")
 	public ResponseEntity<List<Dictation>> getMyDictations() {
-		log.info("get all dictations");
-
-		try {
-			return ResponseEntity.ok(dictationDAO.listByMember(getSecurityContextMember().get()));
-		} catch (Exception e) {
-			log.warn("fail in get all dictations", e);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
+		return ResponseEntity.ok(dictationDAO.listByMember(getSecurityContextMember().get()));
 	}
 
 }
