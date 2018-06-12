@@ -24,9 +24,23 @@ class SearchDictationServiceSpec extends Specification {
         where:
         query | expectDictationIds
         "tam chi on" | [4]
-        "Tester" | [1, 2, 3]
+        "Tester" | [1, 3]
         "tam.chi.on@gmail.com" | [4]
-        "esl.com" | [1, 2, 3]
+        "esl.com" | [1, 3]
+    }
+
+    @Unroll
+    def "Search dictation by keyword: query=#query"(String query, long[] expectDictationIds) {
+        when: "search dictation"
+        def request = new SearchDictationRequest().setKeyword(query)
+        def result = service.searchDictation(request, Integer.MAX_VALUE)
+
+        then:
+        result.collect {it.id}.containsAll(expectDictationIds)
+
+        where:
+        query | expectDictationIds
+        "tam dictation" | [4]
     }
 
 }
