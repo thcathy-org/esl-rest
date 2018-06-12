@@ -1,14 +1,15 @@
 package com.esl.service;
 
-import com.esl.dao.dictation.IDictationDAO;
-import com.esl.model.dictation.DictationStatistics;
+import java.util.Random;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
-import java.util.Random;
+import com.esl.dao.dictation.IDictationDAO;
+import com.esl.model.dictation.DictationStatistics;
 
 @Transactional
 @Service("dictationStatService")
@@ -16,7 +17,7 @@ public class DictationStatService {
 	private static Logger logger = LoggerFactory.getLogger(DictationStatService.class);
 
 	// supporting class
-	@Resource private IDictationDAO dictationDAO;
+	@Autowired private IDictationDAO dictationDAO;
 
 	public DictationStatService() {}
 
