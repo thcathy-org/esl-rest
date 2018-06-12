@@ -24,6 +24,9 @@ class SearchDictationServiceSpec extends Specification {
         where:
         query | expectDictationIds
         "tam chi on" | [4]
+        "Tester" | [1, 2, 3]
+        "tam.chi.on@gmail.com" | [4]
+        "esl.com" | [1, 2, 3]
     }
 
 }

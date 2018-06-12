@@ -245,8 +245,12 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 			clause.append(" AND (d.suitableMinAge = -1 OR (d.suitableMinAge <= :" + DictationSearchCriteria.MaxAge + " AND d.suitableMaxAge >= :" + DictationSearchCriteria.MinAge + "))");
 		}
 		// Creator name
-		if (searchCriteria.containsKey(CreatorName))
-			clause.append(" AND LOWER(CONCAT(d.creator.name.firstName,' ',d.creator.name.lastName)) like :" + DictationSearchCriteria.CreatorName);
+		if (searchCriteria.containsKey(CreatorName)) {
+			for (String s : ((String)searchCriteria.get(CreatorName)).split(" ")) {
+				clause.append(" AND LOWER(CONCAT(d.creator.name.firstName,d.creator.name.lastName,d.creator.emailAddress)) like '%" + s.toLowerCase() + "%'");
+			}
+		}
+
 
 		// Title, description, tags
 		if (searchCriteria.containsKey(Title) || searchCriteria.containsKey(Description) || searchCriteria.containsKey(DictationSearchCriteria.Tag)) {
@@ -264,26 +268,6 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 				String[] descs = ((String)searchCriteria.get(Description)).split(" ");
 				for (int i=0; i < descs.length; i++) clause.append(" AND " + concatSB.toString() + " like :" + Description + i);
 			}
-			if (searchCriteria.containsKey(Tag)) {
-				String[] tags = ((String)searchCriteria.get(Tag)).split(" ");
-				for (int i=0; i < tags.length; i++) clause.append(" AND " + concatSB.toString() + " like :" + Tag + i);
-			}
-		}
-
-		// accessible
-		if (searchCriteria.containsKey(Accessible)) {
-			if (searchCriteria.get(Accessible) == null) {
-				clause.append(" AND d.isPublicAccess = TRUE");
-			} else {
-				clause.append(" AND (d.isPublicAccess = TRUE OR d.creator = :" + Accessible + "0");
-				//if (((Member)searchCriteria.get(Accessible)).getGroups().size() > 0) clause.append(" OR g in (:" + Accessible + "1)");
-				clause.append(")");
-			}
-		}
-
-		// Not Require password
-		if (searchCriteria.containsKey(NotRequirePassword)) {
-			clause.append(" AND (d.password IS NULL OR d.password = '')");
 		}
 
 		// Date Rante
@@ -296,7 +280,6 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 	private void putSearchDictationParams(Query query, Map<DictationSearchCriteria, Object> searchCriteria) {
 		if (searchCriteria.containsKey(MinAge)) query.setParameter(MinAge.toString(), searchCriteria.get(MinAge));
 		if (searchCriteria.containsKey(MaxAge)) query.setParameter(MaxAge.toString(), searchCriteria.get(MaxAge));
-		if (searchCriteria.containsKey(CreatorName)) query.setParameter(CreatorName.toString(), "%" + ((String)searchCriteria.get(CreatorName)).toLowerCase() + "%");
 		if (searchCriteria.containsKey(Title)) {
 			String[] titles = ((String)searchCriteria.get(Title)).split(" ");
 			for (int i=0; i < titles.length; i++) query.setParameter(Title.toString() + i, "%" + titles[i].toLowerCase() + "%");
