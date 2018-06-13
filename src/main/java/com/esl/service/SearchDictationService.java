@@ -20,6 +20,7 @@ import static com.esl.entity.dictation.DictationSearchCriteria.CreatorName;
 import static com.esl.entity.dictation.DictationSearchCriteria.Description;
 import static com.esl.entity.dictation.DictationSearchCriteria.MaxDate;
 import static com.esl.entity.dictation.DictationSearchCriteria.MinDate;
+import static com.esl.entity.dictation.DictationSearchCriteria.SuitableStudent;
 import static com.esl.entity.dictation.DictationSearchCriteria.Title;
 
 @Service
@@ -33,7 +34,7 @@ public class SearchDictationService {
 	public List<Dictation> searchDictation(SearchDictationRequest request, int maxResult) {
 		log.info("search dictation: ", ReflectionToStringBuilder.toString(request));
 
-		Map<DictationSearchCriteria, Object> searchCriteria = new HashMap<DictationSearchCriteria, Object>();
+		Map<DictationSearchCriteria, Object> searchCriteria = new HashMap<>();
 		if (StringUtils.isNotBlank(request.keyword)) {
 			if (request.searchTitle) searchCriteria.put(Title, request.keyword);
 			if (request.searchDescription) searchCriteria.put(Description, request.keyword);
@@ -41,8 +42,7 @@ public class SearchDictationService {
 		if (request.minDate != null) searchCriteria.put(MinDate, request.minDate);
 		if (request.maxDate != null) searchCriteria.put(MaxDate, request.maxDate);
 		if (StringUtils.isNotBlank(request.creator)) searchCriteria.put(CreatorName, request.creator);
-
-		// TODO: add student level
+		if (request.suitableStudent != null) searchCriteria.put(SuitableStudent, request.suitableStudent);
 
 		List<Dictation> result = dictationDAO.searchDictation(searchCriteria, maxResult);
 

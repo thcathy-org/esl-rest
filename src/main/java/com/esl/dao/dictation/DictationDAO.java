@@ -251,13 +251,11 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 			}
 		}
 
-
 		// Title, description, tags
-		if (searchCriteria.containsKey(Title) || searchCriteria.containsKey(Description) || searchCriteria.containsKey(DictationSearchCriteria.Tag)) {
+		if (searchCriteria.containsKey(Title) || searchCriteria.containsKey(Description)) {
 			StringBuilder concatSB = new StringBuilder("LOWER(CONCAT(''");
 			if (searchCriteria.containsKey(Title)) concatSB.append(",d.title,' '");
 			if (searchCriteria.containsKey(Description)) concatSB.append(",d.description,' '");
-			if (searchCriteria.containsKey(Tag)) concatSB.append(",d.tags,' '");
 			concatSB.append("))");
 
 			if (searchCriteria.containsKey(Title)) {
@@ -274,6 +272,11 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 		if (searchCriteria.containsKey(MinDate)) clause.append(" AND d.lastModifyDate >= :" + MinDate);
 		if (searchCriteria.containsKey(MaxDate)) clause.append(" AND d.lastModifyDate <= :" + MaxDate);
 
+		// Student Level
+		if (searchCriteria.containsKey(SuitableStudent)) {
+			clause.append(" AND (d.suitableStudent = 'Any' OR d.suitableStudent = '").append(searchCriteria.get(SuitableStudent)).append("')");
+		}
+
 		return clause.toString();
 	}
 
@@ -287,15 +290,6 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 		if (searchCriteria.containsKey(Description)) {
 			String[] descs = ((String)searchCriteria.get(Description)).split(" ");
 			for (int i=0; i < descs.length; i++) query.setParameter(Description.toString() + i, "%" + descs[i].toLowerCase() + "%");
-		}
-		if (searchCriteria.containsKey(Tag)) {
-			String[] tags = ((String)searchCriteria.get(Tag)).split(" ");
-			for (int i=0; i < tags.length; i++) query.setParameter(Tag.toString() + i, "%" + tags[i].toLowerCase() + "%");
-		}
-		if (searchCriteria.containsKey(Accessible) && searchCriteria.get(Accessible) != null) {
-			Member m = (Member) searchCriteria.get(Accessible);
-			query.setParameter(Accessible + "0", m);
-	//		if (((Member)searchCriteria.get(Accessible)).getGroups().size() > 0) query.setParameterList(Accessible + "1", m.getGroups());
 		}
 		if (searchCriteria.containsKey(MinDate)) query.setParameter(MinDate.toString(), searchCriteria.get(MinDate));
 		if (searchCriteria.containsKey(MaxDate)) query.setParameter(MaxDate.toString(), searchCriteria.get(MaxDate));

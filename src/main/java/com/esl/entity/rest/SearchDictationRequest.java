@@ -12,7 +12,7 @@ public class SearchDictationRequest implements Serializable {
 	public Date minDate;
 	public Date maxDate;
 	public String creator;
-	public Dictation.StudentLevel studentLevel;
+	public Dictation.StudentLevel suitableStudent;
 
 	public SearchDictationRequest setKeyword(String keyword) {
 		this.keyword = keyword;
@@ -44,8 +44,8 @@ public class SearchDictationRequest implements Serializable {
 		return this;
 	}
 
-	public SearchDictationRequest setStudentLevel(Dictation.StudentLevel studentLevel) {
-		this.studentLevel = studentLevel;
-		return this;
-	}
+    public SearchDictationRequest setSuitableStudent(Dictation.StudentLevel suitableStudent) {
+        this.suitableStudent = suitableStudent;
+        return this;
+    }
 }
