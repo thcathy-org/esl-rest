@@ -6,4 +6,5 @@ public class CreateDictationHistoryRequest {
     public long dictationId;
     public int mark;
     public List<VocabPracticeHistory> histories;
+    public String historyJSON;
 }
