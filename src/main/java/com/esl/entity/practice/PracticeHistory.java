@@ -1,24 +1,12 @@
 package com.esl.entity.practice;
 
-import java.io.Serializable;
-import java.util.Date;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import com.esl.enumeration.ESLPracticeType;
 import com.esl.model.Member;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import javax.persistence.*;
+import java.io.Serializable;
+import java.util.Date;
 
 @Entity
 @Table(name="PRACTICE_HISTORY")
@@ -51,6 +39,9 @@ public class PracticeHistory implements Serializable {
 	@Column(name = "ESL_PRACTICE_TYPE")
 	private ESLPracticeType eslPracticeType;
 
+	@Column(name = "DICTATION_ID")
+	private long dictationId;
+
 	// ********************** Constructors ********************** //
 	public PracticeHistory() {}
 
@@ -60,7 +51,10 @@ public class PracticeHistory implements Serializable {
 	public void setId(long id) {this.id = id;}
 
 	public Member getMember() {return member;}
-	public void setMember(Member member) {this.member = member;}
+	public PracticeHistory setMember(Member member) {
+		this.member = member;
+		return this;
+	}
 
 	public Date getCreatedDate() {return createdDate;}
 	public PracticeHistory setCreatedDate(Date createdDate) {
@@ -89,6 +83,18 @@ public class PracticeHistory implements Serializable {
 	public String getHistoryJSON() {return historyJSON;	}
 	public PracticeHistory setHistoryJSON(String historyJSON) {
 		this.historyJSON = historyJSON;
+		return this;
+	}
+
+	public ESLPracticeType getEslPracticeType() {return eslPracticeType;}
+	public PracticeHistory setEslPracticeType(ESLPracticeType eslPracticeType) {
+		this.eslPracticeType = eslPracticeType;
+		return this;
+	}
+
+	public long getDictationId() {return dictationId;}
+	public PracticeHistory setDictationId(long dictationId) {
+		this.dictationId = dictationId;
 		return this;
 	}
 

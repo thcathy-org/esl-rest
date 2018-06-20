@@ -6,6 +6,7 @@ import com.esl.dao.dictation.VocabDAO;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.dictation.DictationHistory;
 import com.esl.entity.dictation.Vocab;
+import com.esl.entity.practice.PracticeHistory;
 import com.esl.entity.rest.CreateDictationHistoryRequest;
 import com.esl.entity.rest.EditDictationRequest;
 import com.esl.entity.rest.VocabPracticeHistory;
@@ -31,6 +32,7 @@ public class DictationService {
 	@Autowired private VocabDAO vocabDAO;
 	@Autowired private DictationHistoryDAO dictationHistoryDAO;
 	@Autowired private MemberScoreService memberScoreService;
+	@Autowired private PracticeHistoryService practiceHistoryService;
 
 	public DictationService() {}
 
@@ -48,11 +50,22 @@ public class DictationService {
 		if (dictation == null) throw new MissingResourceException("Cannot find dictation", "Dictation", String.valueOf(request.dictationId));
 		member.ifPresent(m -> {
 			memberScoreService.addScoreToMember(m, request.mark);
-			createPracticeHistory();
+			createPracticeHistory(m, request);
 		});
 
 		createAndSaveDictationHistory(dictation, null, request.mark);
 		return updateDictation(request, dictation);
+	}
+
+	private PracticeHistory createPracticeHistory(Member member, CreateDictationHistoryRequest request) {
+		var history = new PracticeHistory()
+				.setFullMark(request.fullMark)
+				.setMark(request.mark)
+				.setPercentage(request.percentage)
+				.setMember(member)
+				.setDictationId(request.dictationId)
+				.setHistoryJSON(request.historyJSON);
+		return practiceHistoryService.saveNewHistory(history);
 	}
 
 	private Dictation updateDictation(CreateDictationHistoryRequest request, Dictation dictation) {

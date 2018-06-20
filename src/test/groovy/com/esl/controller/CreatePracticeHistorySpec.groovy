@@ -32,6 +32,8 @@ class CreatePracticeHistorySpec extends Specification {
         CreateDictationHistoryRequest request = new CreateDictationHistoryRequest()
         request.dictationId = 1
         request.mark = 1
+        request.fullMark = 2
+        request.percentage = 30.2d
         request.histories = Collections.EMPTY_LIST
         request.historyJSON = "{json object}"
         this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
@@ -42,7 +44,36 @@ class CreatePracticeHistorySpec extends Specification {
 
         then:
         result.size() >= 1
-        result[0].historyJSON = "{json object}"
+        result[0].historyJSON == "{json object}"
+        result[0].fullMark == 2
+        result[0].percentage == 30.2d
+        result[0].dictationId == 1
+    }
+
+    @Unroll
+    def "Always maintain 10 dictation history at max"() {
+        when: "create 11 dictation history"
+        CreateDictationHistoryRequest request = new CreateDictationHistoryRequest()
+        request.dictationId = 1
+        request.histories = Collections.EMPTY_LIST
+        this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(jsonPath('$.id', is(1)))
+        (2..11).each {
+            request = new CreateDictationHistoryRequest()
+            request.dictationId = 2
+            request.histories = Collections.EMPTY_LIST
+            this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType("application/json;charset=UTF-8"))
+                    .andExpect(jsonPath('$.id', is(2)))
+        }
+        def result = practiceHistoryRepository.findByMember(testService.tester1, new Sort("createdDate")).get()
+
+        then: "only 10 is storing last 10 history"
+        result.size() == 10
+        result.collect {it.dictationId}.contains(1) == false
     }
 
 }
