@@ -3,6 +3,7 @@ package com.esl.controller
 import com.esl.TestService
 import com.esl.dao.repository.PracticeHistoryRepository
 import com.esl.entity.rest.CreateDictationHistoryRequest
+import com.esl.enumeration.ESLPracticeType
 import com.esl.utils.MockMvcUtils
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
@@ -48,6 +49,7 @@ class CreatePracticeHistorySpec extends Specification {
         result[0].fullMark == 2
         result[0].percentage == 30.2d
         result[0].dictationId == 1
+        result[0].eslPracticeType == ESLPracticeType.SentenceDictation
     }
 
     @Unroll
