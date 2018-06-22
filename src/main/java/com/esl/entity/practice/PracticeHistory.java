@@ -1,12 +1,24 @@
 package com.esl.entity.practice;
 
-import com.esl.enumeration.ESLPracticeType;
-import com.esl.model.Member;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
-import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import com.esl.enumeration.ESLPracticeType;
+import com.esl.model.Member;
 
 @Entity
 @Table(name="PRACTICE_HISTORY")
@@ -24,11 +36,11 @@ public class PracticeHistory implements Serializable {
 	@JoinColumn(name="MEMBER_ID")
 	private Member member;
 
-	@Column(name = "FULL_MARK")
-	private int fullMark;
+	@Column(name = "WRONG")
+	private int wrong;
 
-	@Column(name = "MARK")
-	private int mark;
+	@Column(name = "CORRECT")
+	private int correct;
 
 	@Column(name = "PERCENTAGE")
 	private double percentage;
@@ -62,15 +74,15 @@ public class PracticeHistory implements Serializable {
 		return this;
 	}
 
-	public int getFullMark() {return fullMark;}
-	public PracticeHistory setFullMark(int fullMark) {
-		this.fullMark = fullMark;
+	public int getWrong() {	return wrong;}
+	public PracticeHistory setWrong(int wrong) {
+		this.wrong = wrong;
 		return this;
 	}
 
-	public int getMark() {	return mark;}
-	public PracticeHistory setMark(int mark) {
-		this.mark = mark;
+	public int getCorrect() {return correct;}
+	public PracticeHistory setCorrect(int correct) {
+		this.correct = correct;
 		return this;
 	}
 
@@ -106,8 +118,8 @@ public class PracticeHistory implements Serializable {
 				.append("id", id)
 				.append("createdDate", createdDate)
 				.append("member", member)
-				.append("fullMark", fullMark)
-				.append("mark", mark)
+				.append("correct", correct)
+				.append("wrong", wrong)
 				.append("percentage", percentage)
 				.append("eslPracticeType", eslPracticeType)
 				.toString();

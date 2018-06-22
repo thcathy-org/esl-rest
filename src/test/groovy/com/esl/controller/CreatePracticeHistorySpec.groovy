@@ -33,8 +33,8 @@ class CreatePracticeHistorySpec extends Specification {
         CreateDictationHistoryRequest request = new CreateDictationHistoryRequest()
         request.dictationId = 1
         request.mark = 1
-        request.fullMark = 2
-        request.percentage = 30.2d
+        request.correct = 1
+        request.wrong = 2
         request.histories = Collections.EMPTY_LIST
         request.historyJSON = "{json object}"
         this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
@@ -46,8 +46,8 @@ class CreatePracticeHistorySpec extends Specification {
         then:
         result.size() >= 1
         result[0].historyJSON == "{json object}"
-        result[0].fullMark == 2
-        result[0].percentage == 30.2d
+        result[0].correct == 1
+        result[0].wrong == 2
         result[0].dictationId == 1
         result[0].eslPracticeType == ESLPracticeType.SentenceDictation
     }

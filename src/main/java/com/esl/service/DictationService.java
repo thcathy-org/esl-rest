@@ -67,9 +67,8 @@ public class DictationService {
 
 	private PracticeHistory createPracticeHistory(Member member, CreateDictationHistoryRequest request) {
 		var history = new PracticeHistory()
-				.setFullMark(request.fullMark)
-				.setMark(request.mark)
-				.setPercentage(request.percentage)
+				.setCorrect(request.correct)
+				.setWrong(request.wrong)
 				.setMember(member)
 				.setDictationId(request.dictationId)
 				.setEslPracticeType(CollectionUtils.isEmpty(request.histories) ? SentenceDictation : VocabDictation)
