@@ -1,20 +1,5 @@
 package com.esl.service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
-
 import com.esl.dao.dictation.DictationHistoryDAO;
 import com.esl.dao.dictation.IDictationDAO;
 import com.esl.dao.dictation.VocabDAO;
@@ -26,6 +11,15 @@ import com.esl.entity.rest.CreateDictationHistoryRequest;
 import com.esl.entity.rest.EditDictationRequest;
 import com.esl.entity.rest.VocabPracticeHistory;
 import com.esl.model.Member;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+
+import java.util.*;
+import java.util.function.Function;
 
 import static com.esl.enumeration.ESLPracticeType.SentenceDictation;
 import static com.esl.enumeration.ESLPracticeType.VocabDictation;
@@ -67,6 +61,7 @@ public class DictationService {
 
 	private PracticeHistory createPracticeHistory(Member member, CreateDictationHistoryRequest request) {
 		var history = new PracticeHistory()
+				.setCreatedDate(new Date())
 				.setCorrect(request.correct)
 				.setWrong(request.wrong)
 				.setMember(member)
@@ -80,10 +75,12 @@ public class DictationService {
 		dictation.setTotalAttempt(dictation.getTotalAttempt()+1);
 		dictation.setLastPracticeDate(new Date());
 
-		Map<Long, Vocab> wordVocabMap = dictation.vocabToMap();
-		request.histories.stream().forEach(
-				h -> updateVocab(h, wordVocabMap.get(h.question.getId()))
-		);
+		if (!CollectionUtils.isEmpty(request.histories)) {
+			Map<Long, Vocab> wordVocabMap = dictation.vocabToMap();
+			request.histories.stream().forEach(
+					h -> updateVocab(h, wordVocabMap.get(h.question.getId()))
+			);
+		}
 		dictationDAO.persist(dictation);
 		return dictation;
 	}
