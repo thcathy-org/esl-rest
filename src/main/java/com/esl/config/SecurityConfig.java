@@ -1,6 +1,7 @@
-package com.esl.security;
+package com.esl.config;
 
-import com.esl.service.JWTService;
+import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -14,7 +15,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import com.esl.security.JWTAuthorizationFilter;
+import com.esl.service.JWTService;
 
 @Configuration
 @EnableWebSecurity

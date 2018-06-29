@@ -50,12 +50,9 @@ public abstract class ESLDao<T> implements IESLDao<T> {
 		return entity;
 	}
 
-	public void persistAll(Collection<? extends Object> entities) {
-		for (Object entity : entities) {
-			if (entity instanceof IAuditable) {
-				((IAuditable)entity).setLastUpdatedDate(new Date());
-			}
-			em.persist(entity);
+	public void persistAll(Collection<? extends T> entities) {
+		for (T entity : entities) {
+			persist(entity);
 		}
 	}
 

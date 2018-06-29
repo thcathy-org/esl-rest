@@ -8,7 +8,7 @@ public interface IESLDao<T> {
 	public Object attachSession(Object o);
 	public void flush();
 	public T persist(T entity);
-	public void persistAll(Collection<? extends Object> entities);
+	public void persistAll(Collection<? extends T> entities);
 	public void refresh(Object entity);
 	public T merge(T entity);
 	public void delete(Object entity);
