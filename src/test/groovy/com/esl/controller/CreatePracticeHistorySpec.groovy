@@ -50,6 +50,7 @@ class CreatePracticeHistorySpec extends Specification {
         result[0].wrong == 2
         result[0].dictationId == 1
         result[0].eslPracticeType == ESLPracticeType.SentenceDictation
+        result[0].createdDate.time <= new Date().time
     }
 
     @Unroll
