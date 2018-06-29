@@ -27,7 +27,7 @@ public class CacheConfig {
                     .setStoreByValue(false)
                     .setStatisticsEnabled(true));
             cacheManager.createCache("vocab", new MutableConfiguration<>()
-                    .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.MINUTES, 1)))
+                    .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 1)))
                     .setStoreByValue(false)
                     .setStatisticsEnabled(true));
             cacheManager.createCache("ranking", new MutableConfiguration<>()
