@@ -1,11 +1,11 @@
 package com.esl.controller.member;
 
+import com.esl.controller.MemberAware;
+import com.esl.dao.MemberDAO;
+import com.esl.entity.rest.UpdateMemberRequest;
+import com.esl.model.Member;
+import com.esl.service.JWTService;
 import io.jsonwebtoken.Claims;
-
-import java.util.Date;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,11 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.esl.controller.MemberAware;
-import com.esl.dao.MemberDAO;
-import com.esl.entity.rest.UpdateMemberRequest;
-import com.esl.model.Member;
-import com.esl.service.JWTService;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
 
 @RestController
 @RequestMapping(value = "/member/profile")
@@ -61,6 +58,7 @@ public class MemberController implements MemberAware {
 	}
 
 	private Member applyRequest(Member m, UpdateMemberRequest request) {
+		m = memberDAO.merge(m);
 		m.setName(request.lastName, request.firstName);
 		m.setAddress(request.address);
 		m.setPhoneNumber(request.phoneNumber);
