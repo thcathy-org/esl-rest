@@ -65,7 +65,7 @@ class CreatePracticeHistorySpec extends Specification {
                 .andExpect(jsonPath('$.id', is(1)))
         (2..11).each {
             request = new CreateDictationHistoryRequest()
-            request.dictationId = 2
+            request.dictationId = 1
             request.histories = Collections.EMPTY_LIST
             this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
