@@ -25,13 +25,13 @@ jobs:
       - run:
           name: Save test results 
           command: |
-            mkdir -p ~/test-report/
-            find . -type f -regex ".*/build/reports/tests/test/**/*.*" -exec cp {} ~/test-report/ \;
+            mkdir -p ~/junit/
+            find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/junit/ \;
           when: always
       - store_test_results:
-          path: ~/test-report
+          path: ~/junit
       - store_artifacts:
-          path: ~/test-report
+          path: ~/junit
       - run:
           name: Build Artifacts
           command: ./gradlew assemble
