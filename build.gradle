@@ -28,6 +28,13 @@ repositories {
 	mavenCentral()
 }
 
+test {
+	reports {
+		junitXml.enabled = false
+		html.enabled = true
+	}
+}
+
 dependencies {
 	compile 'org.springframework.boot:spring-boot-starter-actuator'
 	compile 'org.springframework.boot:spring-boot-starter-cache'
