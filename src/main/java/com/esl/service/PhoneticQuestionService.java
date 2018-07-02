@@ -84,7 +84,7 @@ public class PhoneticQuestionService {
         }
 
         List<String> images = Arrays.stream(items)
-                .map(i -> i.url)
+                .map(i -> i.thumbnailUrl)
                 .limit(5)
                 .collect(Collectors.toList());
 
