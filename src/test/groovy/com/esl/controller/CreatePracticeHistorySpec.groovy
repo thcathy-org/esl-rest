@@ -65,12 +65,12 @@ class CreatePracticeHistorySpec extends Specification {
                 .andExpect(jsonPath('$.id', is(1)))
         (2..11).each {
             request = new CreateDictationHistoryRequest()
-            request.dictationId = 1
+            request.dictationId = 3
             request.histories = Collections.EMPTY_LIST
             this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("application/json;charset=UTF-8"))
-                    .andExpect(jsonPath('$.id', is(2)))
+                    .andExpect(jsonPath('$.id', is(3)))
         }
         def result = practiceHistoryRepository.findByMember(testService.tester1, new Sort("createdDate")).get()
 
