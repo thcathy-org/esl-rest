@@ -1,5 +1,6 @@
 package com.esl.service;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,9 @@ public class SearchDictationService {
 	public List<Dictation> searchDictation(SearchDictationRequest request, int maxResult) {
 		log.info("search dictation: ", ReflectionToStringBuilder.toString(request));
 
+		if (StringUtils.isNumeric(request.keyword))
+			return getDictationByIdToList(Long.valueOf(request.keyword));
+
 		Map<DictationSearchCriteria, Object> searchCriteria = new HashMap<>();
 		if (StringUtils.isNotBlank(request.keyword)) {
 			if (request.searchTitle) searchCriteria.put(Title, request.keyword);
@@ -49,4 +53,15 @@ public class SearchDictationService {
 		log.info("dictation found: {}", result.size());
 		return result;
 	}
+
+	private List<Dictation> getDictationByIdToList(Long id) {
+		Dictation dictation = dictationDAO.get(id);
+		if (dictation != null) {
+			return Collections.singletonList(dictation);
+		} else {
+			return Collections.emptyList();
+		}
+	}
+
+
 }

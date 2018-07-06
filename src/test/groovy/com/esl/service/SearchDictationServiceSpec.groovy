@@ -102,6 +102,27 @@ class SearchDictationServiceSpec extends Specification {
         SeniorSecondary | [1, 2, 3, 4]
     }
 
+    @Unroll
+    def "Search dictation by id will return that dictation only"(String dictationId, boolean found) {
+        when: "search dictation by Id"
+        def request = new SearchDictationRequest().setKeyword(dictationId)
+        def result = service.searchDictation(request, Integer.MAX_VALUE)
+
+        then:
+        if (found) {
+            assert result.size() == 1
+            assert result[0].id == dictationId.toLong()
+        } else {
+            assert result.size() == 0
+        }
+
+        where:
+        dictationId | found
+        "1" | true
+        "3" | true
+        "9999999" | false
+    }
+
     def dateFrom(String date) {
         return new Date().parse("yyyy-MM-dd", date)
     }
