@@ -1,30 +1,17 @@
 package com.esl.entity.dictation;
 
+import com.esl.enumeration.VocabDifficulty;
+import com.esl.model.Member;
+import com.esl.model.group.MemberGroup;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.persistence.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-
-import org.apache.commons.lang3.StringUtils;
-
-import com.esl.model.Member;
-import com.esl.model.group.MemberGroup;
 
 @Entity
 @Table(name = "dictation")
@@ -57,18 +44,18 @@ public class Dictation extends UserCreatedPractice {
 	}
 
 	public enum StudentLevel {
-		Any, Kindergarten, JuniorPrimary, SeniorPrimary, JuniorSecondary, SeniorSecondary;
+		Any, Kindergarten, JuniorPrimary, SeniorPrimary, JuniorSecondary, SeniorSecondary
 	}
 
 	public enum DictationType {
-		Vocab, Article;
+		Vocab, Article
 	}
 
 	public static final int SHORT_TITLE_LENGHT = 30;
 	public static final String SEPARATOR = ",";
 
 	@Column(name = "TITLE")
-	private String title;
+	private String title = "";
 
 	@Column(name = "SUITABLE_MIN_AGE")
 	private int suitableMinAge;
@@ -133,6 +120,12 @@ public class Dictation extends UserCreatedPractice {
 	@Transient
 	private List<MemberGroup> accessibleGroups;
 
+	@Transient
+	private VocabDifficulty vocabDifficulty;
+
+	@Transient
+	private boolean generated = false;
+
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "CREATED_DATE")
 	private Date createdDate;
@@ -156,6 +149,14 @@ public class Dictation extends UserCreatedPractice {
 	public Dictation(String title) {
 		this();
 		this.title = title;
+	}
+
+	static public Dictation vocabPractice(List<Vocab> vocabs, VocabDifficulty difficulty) {
+		Dictation practice = new Dictation();
+		practice.setVocabs(vocabs);
+		practice.setVocabDifficulty(difficulty);
+		practice.setGenerated(true);
+		return practice;
 	}
 
 	// ********************** Accessor Methods ********************** //
@@ -286,6 +287,18 @@ public class Dictation extends UserCreatedPractice {
 
 	public Date getCreatedDate() { return createdDate; }
 	public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
+
+	public VocabDifficulty getVocabDifficulty() {return vocabDifficulty;}
+	public Dictation setVocabDifficulty(VocabDifficulty vocabDifficulty) {
+		this.vocabDifficulty = vocabDifficulty;
+		return this;
+	}
+
+	public boolean isGenerated() {return generated;}
+	public Dictation setGenerated(boolean generated) {
+		this.generated = generated;
+		return this;
+	}
 
 	// ********************** Common Methods ********************** //
 	@Override
