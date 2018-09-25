@@ -268,13 +268,25 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 			}
 		}
 
-		// Date Rante
+		// Date range
 		if (searchCriteria.containsKey(MinDate)) clause.append(" AND d.lastModifyDate >= :" + MinDate);
 		if (searchCriteria.containsKey(MaxDate)) clause.append(" AND d.lastModifyDate <= :" + MaxDate);
 
 		// Student Level
 		if (searchCriteria.containsKey(SuitableStudent)) {
 			clause.append(" AND (d.suitableStudent = 'Any' OR d.suitableStudent = '").append(searchCriteria.get(SuitableStudent)).append("')");
+		}
+
+		// Type
+		if (searchCriteria.containsKey(Type)) {
+			switch ((Dictation.DictationType) searchCriteria.get(Type)) {
+				case Vocab:
+					clause.append(" AND (d.article is null OR d.article = '')");
+					break;
+				case Article:
+					clause.append(" AND d.article is not null AND d.article != ''");
+					break;
+			}
 		}
 
 		return clause.toString();

@@ -1,10 +1,9 @@
 package com.esl.service;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.esl.dao.dictation.DictationDAO;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.dictation.DictationSearchCriteria;
+import com.esl.entity.rest.SearchDictationRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.slf4j.Logger;
@@ -12,17 +11,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.esl.dao.dictation.DictationDAO;
-import com.esl.entity.dictation.Dictation;
-import com.esl.entity.dictation.DictationSearchCriteria;
-import com.esl.entity.rest.SearchDictationRequest;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static com.esl.entity.dictation.DictationSearchCriteria.CreatorName;
-import static com.esl.entity.dictation.DictationSearchCriteria.Description;
-import static com.esl.entity.dictation.DictationSearchCriteria.MaxDate;
-import static com.esl.entity.dictation.DictationSearchCriteria.MinDate;
-import static com.esl.entity.dictation.DictationSearchCriteria.SuitableStudent;
-import static com.esl.entity.dictation.DictationSearchCriteria.Title;
+import static com.esl.entity.dictation.DictationSearchCriteria.*;
 
 @Service
 public class SearchDictationService {
@@ -47,6 +41,9 @@ public class SearchDictationService {
 		if (request.maxDate != null) searchCriteria.put(MaxDate, request.maxDate);
 		if (StringUtils.isNotBlank(request.creator)) searchCriteria.put(CreatorName, request.creator);
 		if (request.suitableStudent != null) searchCriteria.put(SuitableStudent, request.suitableStudent);
+		try {
+			if (Dictation.DictationType.valueOf(request.type) != null) searchCriteria.put(Type, Dictation.DictationType.valueOf(request.type));
+		} catch (IllegalArgumentException | NullPointerException e) {} // ignore
 
 		List<Dictation> result = dictationDAO.searchDictation(searchCriteria, maxResult);
 

@@ -1,9 +1,9 @@
 package com.esl.entity.rest;
 
+import com.esl.entity.dictation.Dictation;
+
 import java.io.Serializable;
 import java.util.Date;
-
-import com.esl.entity.dictation.Dictation;
 
 public class SearchDictationRequest implements Serializable {
 	public String keyword;
@@ -13,6 +13,7 @@ public class SearchDictationRequest implements Serializable {
 	public Date maxDate;
 	public String creator;
 	public Dictation.StudentLevel suitableStudent;
+	public String type;
 
 	public SearchDictationRequest setKeyword(String keyword) {
 		this.keyword = keyword;
@@ -48,4 +49,9 @@ public class SearchDictationRequest implements Serializable {
         this.suitableStudent = suitableStudent;
         return this;
     }
+
+    public SearchDictationRequest setType(String type) {
+		this.type = type;
+		return this;
+	}
 }

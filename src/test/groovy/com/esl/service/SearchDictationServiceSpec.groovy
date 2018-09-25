@@ -123,6 +123,24 @@ class SearchDictationServiceSpec extends Specification {
         "9999999" | false
     }
 
+    @Unroll
+    def "Search dictation by type: #type"(String type, long[] expectDictationIds) {
+        when: "search dictation"
+        def request = new SearchDictationRequest().setType(type)
+        def result = service.searchDictation(request, Integer.MAX_VALUE)
+
+        then:
+        result.size() == expectDictationIds.size()
+        result.collect {it.id}.containsAll(expectDictationIds)
+
+        where:
+        type      | expectDictationIds
+        ""        | [1, 2, 3, 4, 5, 6, 7, 8]
+        null      | [1, 2, 3, 4, 5, 6, 7, 8]
+        "Vocab"   | [1, 2]
+        "Article" | [3, 4, 5, 6, 7, 8]
+    }
+
     def dateFrom(String date) {
         return new Date().parse("yyyy-MM-dd", date)
     }
