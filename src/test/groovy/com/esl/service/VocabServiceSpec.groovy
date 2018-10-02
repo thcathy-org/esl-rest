@@ -21,6 +21,7 @@ class VocabServiceSpec extends Specification {
         practice.getVocabs().size() == 3
         practice.isGenerated()
         practice.vocabDifficulty == difficulty
+        practice.id != null && practice.id < 0
 
         where:
         difficulty << VocabDifficulty.values()

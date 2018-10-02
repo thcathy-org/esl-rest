@@ -153,6 +153,7 @@ public class Dictation extends UserCreatedPractice {
 
 	static public Dictation vocabPractice(List<Vocab> vocabs, VocabDifficulty difficulty) {
 		Dictation practice = new Dictation();
+		practice.setId((long) -1);
 		practice.setVocabs(vocabs);
 		practice.setVocabDifficulty(difficulty);
 		practice.setGenerated(true);
