@@ -1,5 +1,6 @@
 package com.esl.controller;
 
+import com.esl.dao.MemberDAO;
 import com.esl.entity.dictation.Dictation;
 import com.esl.enumeration.VocabDifficulty;
 import com.esl.model.PhoneticQuestion;
@@ -24,6 +25,8 @@ public class VocabPracticeController {
 
     @Autowired
 	VocabService vocabService;
+    @Autowired
+	MemberDAO memberDAO;
 
 	@CacheResult(cacheName = "vocab")
     @RequestMapping(value = "/get/question/{word}")
@@ -48,5 +51,4 @@ public class VocabPracticeController {
 
 		return ResponseEntity.ok(vocabService.generatePractice(difficulty));
 	}
-
 }

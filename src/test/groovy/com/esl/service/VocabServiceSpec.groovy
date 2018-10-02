@@ -1,5 +1,6 @@
 package com.esl.service
 
+import com.esl.TestService
 import com.esl.enumeration.VocabDifficulty
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -11,6 +12,7 @@ import spock.lang.Unroll
 @TestPropertySource(locations = "classpath:application-test.properties")
 class VocabServiceSpec extends Specification {
     @Autowired VocabService service
+    @Autowired TestService testService
 
     @Unroll
     def "generate practice in difficulty: #difficulty"(VocabDifficulty difficulty) {
