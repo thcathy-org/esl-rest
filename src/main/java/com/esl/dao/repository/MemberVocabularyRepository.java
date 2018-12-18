@@ -17,5 +17,5 @@ public interface MemberVocabularyRepository extends PagingAndSortingRepository<M
     Optional<MemberVocabulary> findByIdMemberAndIdWord(Member member, String word);
 
     @Async
-    CompletableFuture<List<MemberScore>> findByIdMember(Member member);
+    CompletableFuture<List<MemberVocabulary>> findByIdMember(Member member);
 }

@@ -28,7 +28,7 @@ public class VocabPracticeController {
     @Autowired
 	MemberDAO memberDAO;
 
-	@CacheResult(cacheName = "vocab")
+	//@CacheResult(cacheName = "vocab")
     @RequestMapping(value = "/get/question/{word}")
     public ResponseEntity<PhoneticQuestion> getQuestion(
     		@PathVariable String word,
@@ -39,6 +39,7 @@ public class VocabPracticeController {
 			else
 				return ResponseEntity.badRequest().body(null);
 		} catch (Exception e) {
+			log.error("Exception: ", e);
 			return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(null);
 		}
 	}
