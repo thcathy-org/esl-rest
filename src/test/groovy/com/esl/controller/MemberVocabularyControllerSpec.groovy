@@ -34,7 +34,7 @@ class MemberVocabularyControllerSpec extends Specification {
 
         where:
         email             | expectedSize
-        "tester@esl.com"  | 1
+        "hoi.nam@esl.com"  | 1
         "tester2@esl.com" | 0
 
     }
