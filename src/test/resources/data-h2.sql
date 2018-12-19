@@ -48,3 +48,4 @@ insert into phonetic_question (PHONETICQUESTION_ID, WORD, IPA, PRONOUNCED_LINK, 
 insert into phonetic_question (PHONETICQUESTION_ID, WORD, IPA, PRONOUNCED_LINK, CREATED_DATE, PIC_FILE_NAME, PRONOUNCED_LINK_BACKUP, FREQUENCY, RANK) VALUES (50, 'lion', 'ˋlaiən', 'http://dictionary.cambridge.org/media/english/uk_pron/u/ukl/uklin/uklink_010.mp3', '2008-02-07 10:46:20', 'CRTN1177.jpg', 'https://s.yimg.com/tn/dict/dreye/live/f/lion.mp3', 12.85, 4018);
 
 insert into member_vocabulary (MEMBER_ID, WORD, CORRECT, WRONG) VALUES (1, 'test-apple', 3, 0);
+insert into member_vocabulary (MEMBER_ID, WORD, CORRECT, WRONG) VALUES (4, 'test-apple', 0, 0);
