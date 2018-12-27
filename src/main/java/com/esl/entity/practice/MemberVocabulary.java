@@ -93,7 +93,7 @@ public class MemberVocabulary implements Serializable, IAuditable {
 	@Embeddable
 	static public class MemberVocabularyId implements Serializable {
 
-		@ManyToOne(fetch = FetchType.LAZY)
+		@ManyToOne(fetch = FetchType.EAGER)
 		@JoinColumn(name="MEMBER_ID")
 		private Member member;
 
