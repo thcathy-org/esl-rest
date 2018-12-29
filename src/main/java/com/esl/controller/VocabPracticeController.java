@@ -28,7 +28,7 @@ public class VocabPracticeController {
     @Autowired
 	MemberDAO memberDAO;
 
-	//@CacheResult(cacheName = "vocab")
+	@CacheResult(cacheName = "vocab")
     @RequestMapping(value = "/get/question/{word}")
     public ResponseEntity<PhoneticQuestion> getQuestion(
     		@PathVariable String word,
