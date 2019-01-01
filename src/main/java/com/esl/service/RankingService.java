@@ -64,8 +64,8 @@ public class RankingService {
 
     @Async
     public CompletableFuture<MemberScoreRanking> randomTopScore() {
-        int offset = new Random().nextInt(7);
-        if (offset == 6) {
+        int offset = new Random().nextInt(4);
+        if (offset == 0) {
             return topScore(MemberScore.allTimesMonth());
         } else {
             return topScore(MemberScore.lastMonthBy(offset));
