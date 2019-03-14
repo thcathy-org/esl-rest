@@ -1,7 +1,11 @@
 package com.esl.controller.member;
 
-import java.util.Arrays;
-
+import com.esl.dao.dictation.DictationDAO;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.dictation.Vocab;
+import com.esl.entity.rest.EditDictationRequest;
+import com.esl.utils.MockMvcUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,27 +16,14 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.esl.dao.dictation.DictationDAO;
-import com.esl.entity.dictation.Dictation;
-import com.esl.entity.dictation.Vocab;
-import com.esl.entity.rest.EditDictationRequest;
-import com.esl.utils.MockMvcUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
 
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
 @RunWith(SpringRunner.class)
@@ -97,6 +88,7 @@ public class MemberDictationControllerTests {
 		request.dictationId = 1;
 		request.title = "Testing v2";
 		request.vocabulary = Arrays.asList("apple", "bus", "car");
+		request.showImage = false;
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
@@ -106,6 +98,7 @@ public class MemberDictationControllerTests {
 
 		Dictation d = dictationDAO.get(1L);
 		assertThat(d.getTitle(), is("Testing v2"));
+		assertThat(d.isShowImage(), is(false));
 		assertThat(d.getVocabs().stream().map(Vocab::getWord).collect(toList()),
 				containsInAnyOrder("car","bus","apple"));
 		assertThat(d.getVocabs().stream().filter(v -> v.getWord().equals("apple")).findFirst().get().getTotalCorrect(), is(2));

@@ -134,6 +134,7 @@ public class DictationService {
 		dictation.setTitle(request.title);
 		dictation.setDescription(request.description);
 		dictation.setSuitableStudent(request.suitableStudent);
+		dictation.setShowImage(request.showImage);
 		dictation.setCreator(member);
 		dictation.setLastModifyDate(new Date());
 
