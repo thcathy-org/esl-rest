@@ -37,5 +37,11 @@ class DictationServiceSpec extends Specification {
         amendedDictation.vocabs.any {it.word == "cat"}
         !amendedDictation.vocabs.any {it.word == "banana"}
         amendedDictation.id == dictation.id
+
+        when: "cleanup dictation"
+        service.deleteDictation(dictation.creator.emailAddress, dictation.id)
+
+        then:
+        1 == 1
     }
 }
