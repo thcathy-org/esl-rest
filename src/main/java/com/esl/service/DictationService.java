@@ -125,7 +125,10 @@ public class DictationService {
 			return new Dictation();
 		} else {
 			Dictation d = dictationDAO.get(request.dictationId);
-			if (d.getCreator().getId() != member.getId()) throw new UnsupportedOperationException(member.getUserId() + " is not creator of dictation: " + d.getId());
+			if (d.getCreator().getId() != member.getId()) {
+				throw new UnsupportedOperationException(member.getUserId() + " is not creator of dictation: " + d.getId());
+			}
+
 			return d;
 		}
 	}
@@ -139,7 +142,11 @@ public class DictationService {
 		dictation.setLastModifyDate(new Date());
 
 		if (!CollectionUtils.isEmpty(request.vocabulary)) {
-			List<Vocab> newVocabList = request.vocabulary.stream().map(findExistVocabOrCreateNew(dictation)).collect(toList());
+			List<Vocab> newVocabList = request.vocabulary.stream()
+															.map(String::trim)
+															.distinct()
+															.map(findExistVocabOrCreateNew(dictation))
+															.collect(toList());
 			replaceVocabs(dictation, newVocabList);
 		} else {
 			dictation.setArticle(request.article);
