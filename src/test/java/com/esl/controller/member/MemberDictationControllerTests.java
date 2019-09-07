@@ -55,7 +55,6 @@ public class MemberDictationControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json;charset=UTF-8"))
 				.andExpect(jsonPath("$.title", is("new dictation")))
-				.andExpect(jsonPath("$.sentenceLength", is("Long")))
 				.andExpect(jsonPath("$.createdDate").exists())
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
@@ -75,6 +74,7 @@ public class MemberDictationControllerTests {
 				.andExpect(jsonPath("$.title", is("new dictation")))
 				.andExpect(jsonPath("$.article", is("It is a sentence dictation")))
 				.andExpect(jsonPath("$.createdDate").exists())
+				.andExpect(jsonPath("$.sentenceLength", is("Long")))
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
 		Dictation dictation = dictationDAO.listNewCreated(1).get(0);
@@ -90,6 +90,7 @@ public class MemberDictationControllerTests {
 		request.title = "Testing v2";
 		request.vocabulary = Arrays.asList("apple", "bus", "car");
 		request.showImage = false;
+		request.sentenceLength = "Normal";
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
@@ -165,11 +166,13 @@ public class MemberDictationControllerTests {
 		EditDictationRequest request = new EditDictationRequest();
 		request.title = "new dictation";
 		request.suitableStudent = Dictation.StudentLevel.JuniorPrimary;
-		request.sentenceLength = "Long";
-		if (isWord)
+		if (isWord) {
 			request.vocabulary = Arrays.asList("apple", "bus", "car");
-		else
+		} else {
 			request.article = "It is a sentence dictation";
+			request.sentenceLength = "Long";
+		}
+
 		return request;
 	}
 
