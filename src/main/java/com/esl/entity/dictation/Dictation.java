@@ -108,6 +108,9 @@ public class Dictation extends UserCreatedPractice {
 	@Enumerated(EnumType.STRING)
 	private StudentLevel suitableStudent;
 
+	@Column(name = "SENTENCE_LEN")
+	private String sentenceLength;
+
 	@ManyToOne()
 	@JoinColumn(name="MEMBER_ID")
 	private Member creator;
@@ -140,8 +143,8 @@ public class Dictation extends UserCreatedPractice {
 		totalAttempt = 0;
 		createdDate = new Date();
 		lastModifyDate = new Date();
-		vocabs = new ArrayList<Vocab>();
-		accessibleGroups = new ArrayList<MemberGroup>();
+		vocabs = new ArrayList<>();
+		accessibleGroups = new ArrayList<>();
 		article = "";
 		showImage = true;
 	}
@@ -262,6 +265,12 @@ public class Dictation extends UserCreatedPractice {
 
 	public StudentLevel getSuitableStudent() {return suitableStudent;	}
 	public void setSuitableStudent(StudentLevel suitableStudent) {	this.suitableStudent = suitableStudent;	}
+
+	public String getSentenceLength() { return sentenceLength; }
+	public Dictation setSentenceLength(String sentenceLength) {
+		this.sentenceLength = sentenceLength;
+		return this;
+	}
 
 	public List<Vocab> getVocabs() {return vocabs;}
 	public void setVocabs(List<Vocab> vocabs) {	this.vocabs = vocabs;}

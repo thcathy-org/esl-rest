@@ -3,9 +3,7 @@ package com.esl.controller;
 import com.esl.TestService;
 import com.esl.dao.repository.MemberScoreRepository;
 import com.esl.entity.practice.MemberScore;
-import com.esl.entity.practice.MemberScoreRanking;
 import com.esl.entity.rest.CreateDictationHistoryRequest;
-import com.esl.service.RankingService;
 import com.esl.utils.MockMvcUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
@@ -19,10 +17,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
-import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -44,7 +42,9 @@ public class DictationControllerTests {
 		this.mockMvc.perform(get("/dictation/get/1"))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json;charset=UTF-8"))
-				.andExpect(jsonPath("$.title", containsString("Testing")));
+				.andExpect(jsonPath("$.title", containsString("Testing")))
+				.andExpect(jsonPath("$.sentenceLength", containsString("Normal")));
+
 	}
 
 	@Test
