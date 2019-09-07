@@ -55,6 +55,7 @@ public class MemberDictationControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json;charset=UTF-8"))
 				.andExpect(jsonPath("$.title", is("new dictation")))
+				.andExpect(jsonPath("$.sentenceLength", is("Long")))
 				.andExpect(jsonPath("$.createdDate").exists())
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
@@ -164,6 +165,7 @@ public class MemberDictationControllerTests {
 		EditDictationRequest request = new EditDictationRequest();
 		request.title = "new dictation";
 		request.suitableStudent = Dictation.StudentLevel.JuniorPrimary;
+		request.sentenceLength = "Long";
 		if (isWord)
 			request.vocabulary = Arrays.asList("apple", "bus", "car");
 		else

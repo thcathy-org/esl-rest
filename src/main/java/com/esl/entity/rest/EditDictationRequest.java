@@ -12,6 +12,7 @@ public class EditDictationRequest {
     public List<String> vocabulary;
     public String article;
     public Dictation.StudentLevel suitableStudent;
+    public String sentenceLength;
 
     public boolean isCreate() {
         return dictationId < 0;
