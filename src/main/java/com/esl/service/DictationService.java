@@ -125,7 +125,8 @@ public class DictationService {
 			return new Dictation();
 		} else {
 			Dictation d = dictationDAO.get(request.dictationId);
-			if (d.getCreator().getId().longValue() != member.getId().longValue()) {
+			if (d.getCreator().getId().equals(member.getId())) {
+				log.warn("creator Id {} not equal to request user Id {}", d.getCreator().getId(), member.getId());
 				throw new UnsupportedOperationException(member.getUserId() + " is not creator of dictation: " + d.getId());
 			}
 
