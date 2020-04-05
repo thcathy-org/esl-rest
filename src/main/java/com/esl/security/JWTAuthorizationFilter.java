@@ -1,6 +1,7 @@
 package com.esl.security;
 
 import com.esl.service.JWTService;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,8 +60,10 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
                     return new UsernamePasswordAuthenticationToken(email.get(), null, null);
                 }
             }
+        } catch (ExpiredJwtException e) {
+            log.info(e.toString());
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error in processing JWT:", e);
         }
         return null;
     }
