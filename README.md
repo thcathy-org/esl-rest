@@ -1,4 +1,4 @@
-# esl-rest [![CircleCI](https://circleci.com/gh/thcathy/esl-rest.svg?style=svg)](https://circleci.com/gh/thcathy/esl-rest)
+# esl-rest [![Build Status](https://travis-ci.com/thcathy/esl-rest.svg?branch=master)](https://travis-ci.com/thcathy/esl-rest)
 
 spring boot restful server to support [funfunspell](https://www.funfunspell.com) website / iOS / Android, a free English vocabulary learning application
 
