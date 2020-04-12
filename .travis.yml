@@ -11,8 +11,8 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
-before_script:
-  - export JAVA_HOME=$HOME/openjdk11
+before_install:
+  - export JAVA_HOME=$HOME/openjdk10
 
 matrix:
   include:
