@@ -17,8 +17,6 @@ apply plugin: 'groovy'
 
 group = 'com.esl'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = 10
-targetCompatibility = 10
 
 jar {
 	archiveName = 'esl-rest.jar'

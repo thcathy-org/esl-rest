@@ -1,0 +1,35 @@
+language: java
+os: linux
+jdk: openjdk10
+services:
+  - docker
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+
+matrix:
+  include:
+   - os: linux
+     arch: amd64
+     env:
+       - DOCKER_FILE=./docker/Dockerfile
+       - IMAGE_NAME=esl-rest
+       - SPRING_PROFILES_ACTIVE=test
+   - os: linux
+     arch: arm64
+     env:
+       - DOCKER_FILE=./docker/Dockerfile-arm64
+       - IMAGE_NAME=esl-rest-arm64
+       - SPRING_PROFILES_ACTIVE=test
+
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: bash docker/docker_build_push.sh
+  on:
+    branch: master
