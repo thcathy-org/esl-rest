@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutorService;
 
 @Service
 public class WebParserRestService {
-    private final String host;
+    final String host;
 
     @Autowired
     ExecutorService executorService;
@@ -26,7 +26,7 @@ public class WebParserRestService {
     public WebParserRestService(@Value("${APISERVER_HOST}") String apiHost) {
         if (StringUtils.isBlank(apiHost)) throw new IllegalArgumentException("Cannot create WebParserRestService without API server's host");
 
-        if (!apiHost.contains("http://")) apiHost = "http://" + apiHost;
+        if (!apiHost.startsWith("http://") && !apiHost.startsWith("https://")) apiHost = "http://" + apiHost;
         if (!apiHost.endsWith("/")) apiHost = apiHost + "/";
         this.host = apiHost;
     }
