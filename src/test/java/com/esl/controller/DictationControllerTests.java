@@ -41,7 +41,7 @@ public class DictationControllerTests {
 	public void getADictation() throws Exception {
 		this.mockMvc.perform(get("/dictation/get/1"))
 				.andExpect(status().isOk())
-				.andExpect(content().contentType("application/json;charset=UTF-8"))
+				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.title", containsString("Testing")))
 				.andExpect(jsonPath("$.sentenceLength", containsString("Normal")));
 
@@ -64,7 +64,7 @@ public class DictationControllerTests {
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
-				.andExpect(content().contentType("application/json;charset=UTF-8"))
+				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.id", is(1)));
 
 		MemberScore s = memberScoreRepository.findByMemberAndScoreYearMonth(testService.getTester1(), MemberScore.thisMonth()).get();
@@ -84,7 +84,7 @@ public class DictationControllerTests {
 						.content(objectMapper.writeValueAsString(request))
 		)
 				.andExpect(status().isOk())
-				.andExpect(content().contentType("application/json;charset=UTF-8"))
+				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.id", is(1)));
 	}
 }

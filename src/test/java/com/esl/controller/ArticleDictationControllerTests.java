@@ -38,7 +38,7 @@ public class ArticleDictationControllerTests {
 							.content(TestUtil.convertObjectToJsonBytes(article))
 		)
 				.andExpect(status().isOk())
-				.andExpect(content().contentType("application/json;charset=UTF-8"))
+				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$", hasSize(4)));
 	}
 }

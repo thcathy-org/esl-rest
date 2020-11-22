@@ -39,9 +39,9 @@ class CreatePracticeHistorySpec extends Specification {
         request.historyJSON = "{json object}"
         this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(content().contentType("application/json"))
                 .andExpect(jsonPath('$.id', is(1)))
-        def result = practiceHistoryRepository.findByMember(testService.tester1, new Sort("createdDate")).get()
+        def result = practiceHistoryRepository.findByMember(testService.tester1, Sort.by("createdDate")).get()
 
         then:
         result.size() >= 1
@@ -61,7 +61,7 @@ class CreatePracticeHistorySpec extends Specification {
         request.histories = Collections.EMPTY_LIST
         this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(content().contentType("application/json"))
                 .andExpect(jsonPath('$.id', is(1)))
         (2..11).each {
             request = new CreateDictationHistoryRequest()
@@ -69,10 +69,10 @@ class CreatePracticeHistorySpec extends Specification {
             request.histories = Collections.EMPTY_LIST
             this.mockMvc.perform(MockMvcUtils.postWithUserId("/dictation/history/create", objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
-                    .andExpect(content().contentType("application/json;charset=UTF-8"))
+                    .andExpect(content().contentType("application/json"))
                     .andExpect(jsonPath('$.id', is(3)))
         }
-        def result = practiceHistoryRepository.findByMember(testService.tester1, new Sort("createdDate")).get()
+        def result = practiceHistoryRepository.findByMember(testService.tester1, Sort.by("createdDate")).get()
 
         then: "only 10 is storing last 10 history"
         result.size() == 10

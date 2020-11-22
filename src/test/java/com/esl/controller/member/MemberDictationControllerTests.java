@@ -53,7 +53,7 @@ public class MemberDictationControllerTests {
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
-				.andExpect(content().contentType("application/json;charset=UTF-8"))
+				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.title", is("new dictation")))
 				.andExpect(jsonPath("$.createdDate").exists())
 				.andExpect(jsonPath("$.id", greaterThan(0)));
@@ -70,7 +70,7 @@ public class MemberDictationControllerTests {
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
-				.andExpect(content().contentType("application/json;charset=UTF-8"))
+				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.title", is("new dictation")))
 				.andExpect(jsonPath("$.article", is("It is a sentence dictation")))
 				.andExpect(jsonPath("$.createdDate").exists())
