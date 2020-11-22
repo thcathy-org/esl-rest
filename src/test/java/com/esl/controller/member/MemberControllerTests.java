@@ -1,13 +1,13 @@
 package com.esl.controller.member;
 
+import com.esl.dao.MemberDAO;
+import com.esl.entity.rest.UpdateMemberRequest;
+import com.esl.model.Member;
+import com.esl.service.JWTService;
+import com.esl.utils.MockMvcUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.impl.DefaultClaims;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.UUID;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +18,10 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.esl.dao.MemberDAO;
-import com.esl.entity.rest.UpdateMemberRequest;
-import com.esl.model.Member;
-import com.esl.service.JWTService;
-import com.esl.utils.MockMvcUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -83,7 +81,7 @@ public class MemberControllerTests {
 				.andExpect(jsonPath("$.name.firstName", is(request.firstName)))
 				.andExpect(jsonPath("$.name.lastName", is(request.lastName)))
 				.andExpect(jsonPath("$.phoneNumber", is(request.phoneNumber)))
-				.andExpect(jsonPath("$.birthday", is(1528100000000L)))
+				.andExpect(jsonPath("$.birthday", is("2018-06-04T08:13:20.000+00:00")))
 				.andExpect(jsonPath("$.school", is(request.school)));
 
 		var m = memberDAO.getMemberByEmail("tester@esl.com").get();
