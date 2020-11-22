@@ -65,7 +65,7 @@ public class PhoneticQuestionService {
 
         CompletableFuture<WebItem[]> imagesResult;
         if (showImage)
-            imagesResult = webService.searchGoogleImage(word + " clipart");
+            imagesResult = webService.searchGoogleImage(word + " clipart", 1);
         else
             imagesResult = CompletableFuture.completedFuture(new WebItem[0]);
 
@@ -106,35 +106,30 @@ public class PhoneticQuestionService {
         }
     }
 
-    private PhoneticQuestion getAndStoreImagesFromWeb(PhoneticQuestion question) {
-        log.debug("getAndStoreImagesFromWeb for {}", question.getWord());
+    public List<WebItem> getImagesFromWeb(String word, int start) {
+        log.debug("getImagesFromWeb for {}", word);
 
         try {
-            WebItem[] items = webService.searchGoogleImage(question.getWord() + " clipart").join();
-            List<String> images = Arrays.stream(items)
-                    .map(i -> i.url)
-                    .filter(url -> !url.endsWith("svg"))
-                    .map(this::retrieveImageToString)
-                    .filter(Optional::isPresent)
-                    .limit(10)
-                    .map(Optional::get)
-                    .map(imageStr -> persistImage(imageStr, question.getWord()))
+            WebItem[] items = webService.searchGoogleImage(word, start).join();
+            return Arrays.stream(items)
+                    .filter(i -> !i.thumbnailUrl.endsWith("svg"))
+                    .map(i -> {
+                        retrieveImageToString(i.thumbnailUrl).ifPresent(s -> i.url = s);
+                        return i.url.startsWith("data") ? i : null;
+                    })
                     .collect(Collectors.toList());
-
-            question.setPicsFullPaths(images.toArray(new String[1]));
         } catch (Exception e) {
-            log.error("Cannot get images from web for {}", question.getWord(), e);
+            log.error("Cannot get images from web for {}", word, e);
         }
-        return question;
+        return Collections.EMPTY_LIST;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private String persistImage(String imageAsStr, String word) {
+    String persistImage(String imageAsStr, String word) {
         vocabImageDao.persist(new VocabImage(word, imageAsStr));
         vocabImageDao.flush();
         return imageAsStr;
     }
-
 
     public Optional<String> retrieveImageToString(String url) {
         log.debug("retrieveImageToString from url: {}", url);
@@ -150,7 +145,7 @@ public class PhoneticQuestionService {
     }
 
     @Transactional(readOnly = true)
-    private boolean getVocabImagesFromDB(PhoneticQuestion question) {
+    boolean getVocabImagesFromDB(PhoneticQuestion question) {
         List<VocabImage> images = vocabImageDao.listByWord(question.getWord());
         if (images.size() < 1) return false;
 

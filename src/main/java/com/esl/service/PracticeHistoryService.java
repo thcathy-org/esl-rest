@@ -23,7 +23,7 @@ public class PracticeHistoryService {
 	public PracticeHistoryService() {}
 
 	public PracticeHistory saveNewHistory(PracticeHistory history) {
-		var oldHistories = practiceHistoryRepository.findByMember(history.getMember(), new Sort("createdDate")).join();
+		var oldHistories = practiceHistoryRepository.findByMember(history.getMember(), Sort.by("createdDate")).join();
 		if (oldHistories.size() >= maxHistoryPerMember)
 			practiceHistoryRepository.delete(oldHistories.get(0));
 		return practiceHistoryRepository.save(history);

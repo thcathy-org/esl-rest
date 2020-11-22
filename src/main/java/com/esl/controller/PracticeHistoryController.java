@@ -26,6 +26,6 @@ public class PracticeHistoryController implements MemberAware {
     @RequestMapping(value = "/get-all")
     public List<PracticeHistory> getAll() {
 		Member member = getSecurityContextMember().get();
-		return practiceHistoryRepository.findByMember(member, new Sort(Sort.Direction.DESC, "createdDate")).join();
+		return practiceHistoryRepository.findByMember(member, Sort.by(Sort.Direction.DESC, "createdDate")).join();
 	}
 }

@@ -58,7 +58,7 @@ public class RankingService {
 
     @Async
     public CompletableFuture<MemberScoreRanking> topScore(int scoreYearMoth) {
-        Pageable firstFive = new PageRequest(0, 5);
+        Pageable firstFive = PageRequest.of(0, 5);
         return CompletableFuture.completedFuture(new MemberScoreRanking(null, memberScoreRepository.findTopScore(scoreYearMoth, firstFive).join(), true, 1));
     }
 

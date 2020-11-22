@@ -1,25 +1,16 @@
-buildscript {
-	ext {
-		springBootVersion = '1.5.9.RELEASE'
-	}
-	repositories {
-		mavenCentral()
-	}
-	dependencies {
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-	}
+plugins {
+	id 'org.springframework.boot' version '2.3.3.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+	id 'java'
+	id 'idea'
+	id 'groovy'
 }
-
-apply plugin: 'java'
-apply plugin: 'idea'
-apply plugin: 'org.springframework.boot'
-apply plugin: 'groovy'
 
 group = 'com.esl'
 version = '0.0.1-SNAPSHOT'
 
 jar {
-	archiveName = 'esl-rest.jar'
+	archiveFileName = 'esl-rest.jar'
 }
 
 repositories {
@@ -27,25 +18,28 @@ repositories {
 }
 
 dependencies {
-	compile 'org.springframework.boot:spring-boot-starter-actuator'
-	compile 'org.springframework.boot:spring-boot-starter-cache'
-	compile 'org.springframework.boot:spring-boot-starter-data-jpa'
-	compile 'org.springframework.boot:spring-boot-starter-security'
-	compile 'org.springframework.boot:spring-boot-starter-web'
-	compile 'org.apache.commons:commons-lang3:3.7'
-	compile 'commons-io:commons-io:2.6'
-	compile 'commons-codec:commons-codec:1.11'
-	compile 'org.jsoup:jsoup:1.11.2'
-	compile 'javax.cache:cache-api'
-	compile 'org.ehcache:ehcache:3.4.0'
-	compile 'io.jsonwebtoken:jjwt:0.9.0'
-	compile 'org.codehaus.groovy:groovy-all:2.4.13'
-	compile 'javax.xml.bind:jaxb-api:2.3.0'
-	compile 'mysql:mysql-connector-java:8.0.13'
-	testCompile 'org.springframework.boot:spring-boot-starter-test'
-	testCompile 'org.springframework.security:spring-security-test'
-	testCompile 'org.springframework.boot:spring-boot-devtools'
-	testCompile 'com.h2database:h2'
-	testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
-	testCompile 'org.spockframework:spock-spring:1.1-groovy-2.4'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.apache.commons:commons-lang3:3.7'
+	implementation 'commons-io:commons-io:2.6'
+	implementation 'commons-codec:commons-codec:1.11'
+	implementation 'org.jsoup:jsoup:1.11.2'
+	implementation 'javax.cache:cache-api'
+	implementation 'org.ehcache:ehcache:3.4.0'
+	implementation 'io.jsonwebtoken:jjwt:0.9.0'
+	implementation 'org.codehaus.groovy:groovy-all:2.4.13'
+	implementation 'javax.xml.bind:jaxb-api:2.3.0'
+	implementation 'mysql:mysql-connector-java:8.0.13'
+	implementation 'net.sf.extjwnl:extjwnl:2.0.1'
+	implementation 'net.sf.extjwnl:extjwnl-data-wn31:1.2'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-devtools'
+	testImplementation 'com.h2database:h2'
+	testImplementation 'org.spockframework:spock-core:1.1-groovy-2.4'
+	testImplementation 'org.spockframework:spock-spring:1.1-groovy-2.4'
 }

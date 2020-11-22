@@ -31,9 +31,10 @@ public class WebParserRestService {
         this.host = apiHost;
     }
 
-    public CompletableFuture<WebItem[]> searchGoogleImage(String query) {
+    public CompletableFuture<WebItem[]> searchGoogleImage(String query, int start) {
+        String url = host + "rest/search/image/" + query + "?imgSize=all&start=" + start;
         return CompletableFuture.supplyAsync(() ->
-                restTemplate.getForObject(host + "rest/search/image/" + query, WebItem[].class), executorService);
+                restTemplate.getForObject(url, WebItem[].class), executorService);
     }
 
     public CompletableFuture<Optional<DictionaryResult>> queryDictionary(String query) {

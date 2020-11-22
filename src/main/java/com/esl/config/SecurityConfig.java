@@ -1,7 +1,7 @@
 package com.esl.config;
 
-import java.util.Arrays;
-
+import com.esl.security.JWTAuthorizationFilter;
+import com.esl.service.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -15,8 +15,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.esl.security.JWTAuthorizationFilter;
-import com.esl.service.JWTService;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -34,14 +33,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.csrf().disable().authorizeRequests()
 				.antMatchers(HttpMethod.GET, "/member/**").authenticated()
 				.antMatchers(HttpMethod.POST, "/member/**").authenticated()
+				.antMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")
+				.antMatchers(HttpMethod.POST, "/admin/**").hasRole("ADMIN")
 				.anyRequest().permitAll()
+				.and()
+				.httpBasic()
 				.and()
 				.addFilter(new JWTAuthorizationFilter(authenticationManager(), jwtService, isTesting))
 				// this disables session creation on Spring Security
 				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				.and()
-				.exceptionHandling()
-				.authenticationEntryPoint(new org.springframework.boot.autoconfigure.security.Http401AuthenticationEntryPoint("headerValue"));;
+				.exceptionHandling();
+				//.authenticationEntryPoint(new org.springframework.boot.autoconfigure.security.Http401AuthenticationEntryPoint("headerValue"));
     }
 
 	@Bean
