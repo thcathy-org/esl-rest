@@ -1,20 +1,15 @@
 <configuration>
 
-  <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>log/esl.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <!-- daily rollover -->
-      <fileNamePattern>log/esl-rest.%d{yyyy-MM-dd}.log</fileNamePattern>
-      <maxHistory>30</maxHistory>
-    </rollingPolicy>
-
-    <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-    </encoder>
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <layout class="ch.qos.logback.classic.PatternLayout">
+      <Pattern>
+        %d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n
+      </Pattern>
+    </layout>
   </appender>
 
   <appender name="async" class="ch.qos.logback.classic.AsyncAppender">
-    <appender-ref ref="file" />
+    <appender-ref ref="console" />
   </appender>
 
   <logger name="org.apache" level="info"/>
@@ -25,7 +20,7 @@
   <logger name="org.springframework.web.filter.CommonsRequestLoggingFilter" level="debug" />
   <logger name="com.zaxxer.hikari" level="warn"/>
 
-  <root level="debug">
+  <root level="info">
     <appender-ref ref="async" />
   </root>
 </configuration>
