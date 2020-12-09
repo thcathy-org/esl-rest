@@ -1,31 +1,19 @@
 package com.esl.entity.practice;
 
-import java.io.Serializable;
-import java.util.Date;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import com.esl.enumeration.ESLPracticeType;
 import com.esl.model.Member;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import javax.persistence.*;
+import java.io.Serializable;
+import java.util.Date;
 
 @Entity
 @Table(name="PRACTICE_HISTORY")
 public class PracticeHistory implements Serializable {
 	@Id
 	@Column(name = "ID")
-	@GeneratedValue(strategy= GenerationType.AUTO)
+	@GeneratedValue(strategy= GenerationType.IDENTITY)
 	private long id;
 
 	@Column(name = "CREATED_DATE")
