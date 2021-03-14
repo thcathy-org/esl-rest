@@ -150,8 +150,10 @@ public class DictationService {
 															.map(findExistVocabOrCreateNew(dictation))
 															.collect(toList());
 			replaceVocabs(dictation, newVocabList);
+			dictation.setArticle("");
 		} else {
 			dictation.setArticle(request.article);
+			dictation.setVocabs(Collections.emptyList());
 		}
 
 		return dictation;
