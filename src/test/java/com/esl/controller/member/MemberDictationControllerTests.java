@@ -50,18 +50,21 @@ public class MemberDictationControllerTests {
 	@Test
 	public void createNewWordDictation() throws Exception {
 		EditDictationRequest request = createNewDictationRequest(true);
+		request.wordContainSpace = true;
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.title", is("new dictation")))
 				.andExpect(jsonPath("$.createdDate").exists())
+				.andExpect(jsonPath("$.wordContainSpace", is(true)))
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
 		Dictation dictation = dictationDAO.listNewCreated(1).get(0);
 		assertThat(dictation.getTitle(), is("new dictation"));
 		assertThat(dictation.getVocabs().isEmpty(), is(false));
 		assertThat(dictation.getArticle(), isEmptyOrNullString());
+		assertThat(dictation.isWordContainSpace(), is(true));
 	}
 
 	@Test

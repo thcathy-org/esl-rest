@@ -13,6 +13,7 @@ public class EditDictationRequest {
     public String article;
     public Dictation.StudentLevel suitableStudent;
     public String sentenceLength;
+    public boolean wordContainSpace;
 
     public boolean isCreate() {
         return dictationId < 0;

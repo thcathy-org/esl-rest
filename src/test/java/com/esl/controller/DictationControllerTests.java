@@ -6,6 +6,7 @@ import com.esl.entity.practice.MemberScore;
 import com.esl.entity.rest.CreateDictationHistoryRequest;
 import com.esl.utils.MockMvcUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,8 +44,8 @@ public class DictationControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.title", containsString("Testing")))
-				.andExpect(jsonPath("$.sentenceLength", containsString("Normal")));
-
+				.andExpect(jsonPath("$.sentenceLength", containsString("Normal")))
+				.andExpect(jsonPath("$.wordContainSpace", Matchers.is(false)));
 	}
 
 	@Test

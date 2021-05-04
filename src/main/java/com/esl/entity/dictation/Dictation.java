@@ -111,6 +111,9 @@ public class Dictation extends UserCreatedPractice {
 	@Column(name = "SENTENCE_LEN")
 	private String sentenceLength;
 
+	@Column(name = "WORD_CONTAIN_SPACE")
+	private boolean wordContainSpace;
+
 	@ManyToOne()
 	@JoinColumn(name="MEMBER_ID")
 	private Member creator;
@@ -147,6 +150,7 @@ public class Dictation extends UserCreatedPractice {
 		accessibleGroups = new ArrayList<>();
 		article = "";
 		showImage = true;
+		wordContainSpace = false;
 	}
 
 	public Dictation(String title) {
@@ -307,6 +311,12 @@ public class Dictation extends UserCreatedPractice {
 	public boolean isGenerated() {return generated;}
 	public Dictation setGenerated(boolean generated) {
 		this.generated = generated;
+		return this;
+	}
+
+	public boolean isWordContainSpace() {return wordContainSpace;}
+	public Dictation setWordContainSpace(boolean wordContainSpace) {
+		this.wordContainSpace = wordContainSpace;
 		return this;
 	}
 
