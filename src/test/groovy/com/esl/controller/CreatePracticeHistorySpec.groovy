@@ -12,7 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.Sort
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
-import spock.lang.IgnoreRest
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -29,7 +28,6 @@ class CreatePracticeHistorySpec extends Specification {
     @Autowired PracticeHistoryRepository practiceHistoryRepository
 
     @Unroll
-    @IgnoreRest
     def "Create dictation history will create a new practice history"() {
         when:
         CreateDictationHistoryRequest request = new CreateDictationHistoryRequest()
