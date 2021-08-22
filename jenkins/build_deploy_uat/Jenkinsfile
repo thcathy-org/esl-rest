@@ -46,7 +46,7 @@ pipeline {
         docker_image_tag = "${version}-${env.BUILD_NUMBER}"
       }
       steps {
-        sh "docker build -t thcathy/esl-rest:latest -t thcathy/esl-rest:${docker_image_tag} -f Dockerfile ."
+        sh "docker build -t thcathy/esl-rest:latest -t thcathy/esl-rest:${docker_image_tag} -f docker/Dockerfile ."
         sh "docker login -u $DOCKER_LOGIN_USR -p $DOCKER_LOGIN_PSW"
         sh "docker push thcathy/esl-rest:latest"
         sh "docker push thcathy/esl-rest:${docker_image_tag}"
