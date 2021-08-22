@@ -1,0 +1,60 @@
+version: '3.7'
+
+services:
+  esl-mysql:
+    image: mysql/mysql-server:8.0
+    deploy:
+      mode: global
+    volumes:
+      - esl-mysql-data:/var/lib/mysql
+    env_file:
+      - ./esl.env
+    networks:
+      - overlay
+    ports:
+      - 13306:3306
+    logging:
+      driver: "json-file"
+      options:
+        max-file: 2
+        max-size: 10m
+
+  esl-rest:
+    image: thcathy/esl-rest:{{ docker_image_tag }}
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.esl-rest.rule=Host(`homeserver.funfunspell.com`) && PathPrefix(`/esl-rest`)"
+        - "traefik.http.routers.esl-rest.middlewares=esl-rest-prefix@docker"
+        - "traefik.http.routers.esl-rest.tls.certresolver=myresolver"
+        - "traefik.http.routers.esl-rest.entrypoints=websecure"
+        - "traefik.http.services.esl-rest.loadbalancer.server.port=8080"
+        - "traefik.http.middlewares.esl-rest-prefix.stripprefix.prefixes=/esl-rest"
+        - "traefik.docker.network=traefik_traefik-public"
+      update_config:
+        delay: 10s
+        failure_action: rollback
+        order: start-first
+    env_file:
+      - ./esl.env
+    environment:
+      MYSQL_HOST: esl-mysql:3306
+      APISERVER_HOST: https://homeserver.funfunspell.com/web-parser-rest
+    networks:
+      - overlay
+      - {{ traefik_network }}
+    logging:
+      driver: "json-file"
+      options:
+        max-file: 2
+        max-size: 10m
+
+volumes:
+  esl-mysql-data:
+
+networks:
+  overlay:
+  {{ traefik_network }}:
+    external: true
