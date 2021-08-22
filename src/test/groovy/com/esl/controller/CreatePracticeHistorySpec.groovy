@@ -43,7 +43,7 @@ class CreatePracticeHistorySpec extends Specification {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/json"))
                 .andExpect(jsonPath('$.id', is(1)))
-        def result = practiceHistoryRepository.findByMember(testService.tester1, Sort.by("createdDate")).get()
+        def result = practiceHistoryRepository.findByMember(testService.tester1, Sort.by("createdDate").descending()).get()
 
         then:
         result.size() >= 1
