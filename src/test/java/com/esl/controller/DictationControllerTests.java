@@ -40,12 +40,14 @@ public class DictationControllerTests {
 
 	@Test
 	public void getADictation() throws Exception {
-		this.mockMvc.perform(get("/dictation/get/1"))
+		var result = this.mockMvc.perform(get("/dictation/get/1"))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.title", containsString("Testing")))
 				.andExpect(jsonPath("$.sentenceLength", containsString("Normal")))
-				.andExpect(jsonPath("$.wordContainSpace", Matchers.is(false)));
+				.andExpect(jsonPath("$.wordContainSpace", Matchers.is(false)))
+				.andReturn();
+		System.out.println(result.getResponse().getContentAsString());
 	}
 
 	@Test
