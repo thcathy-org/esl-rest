@@ -13,4 +13,4 @@
 - name: check rest response
   fail:
     msg: "{{ result }}"
-  when: result.json.word is match("apple")
+  when: result.json.word is not match("apple")
