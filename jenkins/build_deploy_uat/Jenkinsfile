@@ -76,7 +76,7 @@ pipeline {
         ansiblePlaybook(
           inventory: 'ansible/inventory_uat',
           limit: 'uat',
-          extras: "-e docker_image_tag=${docker_image_tag} -e jasypt_encryptor_password=${jasypt_encryptor_password}",
+          extras: "-e docker_image_tag=${docker_image_tag}",
           playbook: 'ansible/deploy.yml',
           credentialsId: 'Jenkins-master',
           vaultCredentialsId: "${ansible_vault_id}",
