@@ -35,6 +35,9 @@ pipeline {
             sh './gradlew clean dependencies check assemble'
         }
       }
+      post {
+        always { junit 'build/test-results/test/*.xml' }
+      }
     }
 
     stage("docker build") {
@@ -51,12 +54,6 @@ pipeline {
         sh "docker push thcathy/esl-rest:latest"
         sh "docker push thcathy/esl-rest:${docker_image_tag}"
       }
-    }
-  }
-
-  post {
-    always {
-      junit 'build/test-results/test/*.xml'
     }
   }
 
