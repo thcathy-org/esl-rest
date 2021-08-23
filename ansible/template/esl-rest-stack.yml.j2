@@ -7,8 +7,10 @@ services:
       mode: global
     volumes:
       - esl-mysql-data:/var/lib/mysql
-    env_file:
-      - ./esl.env
+    environment:
+      MYSQL_USER: {{ mysql_user }}
+      MYSQL_PASSWORD: {{ mysql_password }}
+      MYSQL_DATABASE: {{ mysql_database }}
     networks:
       - overlay
     ports:
@@ -26,22 +28,23 @@ services:
       replicas: 1
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.esl-rest.rule=Host(`homeserver.funfunspell.com`) && PathPrefix(`/esl-rest`)"
-        - "traefik.http.routers.esl-rest.middlewares=esl-rest-prefix@docker"
-        - "traefik.http.routers.esl-rest.tls.certresolver=myresolver"
-        - "traefik.http.routers.esl-rest.entrypoints=websecure"
-        - "traefik.http.services.esl-rest.loadbalancer.server.port=8080"
-        - "traefik.http.middlewares.esl-rest-prefix.stripprefix.prefixes=/esl-rest"
-        - "traefik.docker.network=traefik_traefik-public"
+        - "traefik.http.routers.{{ app_name }}.rule=PathPrefix(`/{{ app_name }}`)"
+        - "traefik.http.routers.{{ app_name }}.middlewares={{ app_name }}-prefix@docker"
+        - "traefik.http.routers.{{ app_name }}.tls.certresolver=myresolver"
+        - "traefik.http.routers.{{ app_name }}.entrypoints=websecure"
+        - "traefik.http.services.{{ app_name }}.loadbalancer.server.port=8080"
+        - "traefik.http.middlewares.{{ app_name }}-prefix.stripprefix.prefixes=/{{ app_name }}"
+        - "traefik.docker.network={{ traefik_network }}"
       update_config:
         delay: 10s
         failure_action: rollback
         order: start-first
-    env_file:
-      - ./esl.env
     environment:
       MYSQL_HOST: esl-mysql:3306
-      APISERVER_HOST: https://homeserver.funfunspell.com/web-parser-rest
+      APISERVER_HOST: {{ apiserver_host }}
+      MYSQL_USER: {{ mysql_user }}
+      MYSQL_PASSWORD: {{ mysql_password }}
+      MYSQL_DATABASE: {{ mysql_database }}
     networks:
       - overlay
       - {{ traefik_network }}
