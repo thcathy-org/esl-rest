@@ -36,6 +36,7 @@ dependencies {
 	implementation 'mysql:mysql-connector-java:8.0.13'
 	implementation 'net.sf.extjwnl:extjwnl:2.0.1'
 	implementation 'net.sf.extjwnl:extjwnl-data-wn31:1.2'
+	implementation 'com.github.ben-manes.caffeine:caffeine:3.0.4'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-devtools'
