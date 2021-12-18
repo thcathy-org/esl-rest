@@ -8,6 +8,8 @@ import org.springframework.test.context.TestPropertySource
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static com.esl.entity.dictation.Dictation.Source.Generate
+
 @SpringBootTest
 @TestPropertySource(locations = "classpath:application-test.properties")
 class VocabServiceSpec extends Specification {
@@ -24,6 +26,7 @@ class VocabServiceSpec extends Specification {
         practice.isGenerated()
         practice.vocabDifficulty == difficulty
         practice.id != null && practice.id < 0
+        practice.getSource() == Generate
 
         where:
         difficulty << VocabDifficulty.values()

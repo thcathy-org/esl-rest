@@ -1,5 +1,6 @@
 package com.esl.controller
 
+
 import com.esl.enumeration.VocabDifficulty
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -9,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static com.esl.entity.dictation.Dictation.Source.Generate
 import static org.hamcrest.Matchers.hasSize
 import static org.hamcrest.Matchers.is
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -30,6 +32,7 @@ class VocabPracticeControllerSpec extends Specification {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$.vocabs', hasSize(3)))
                 .andExpect(jsonPath('$.generated', is(true)))
+                .andExpect(jsonPath('$.source', is(Generate.name())))
 
         then:
         1 == 1

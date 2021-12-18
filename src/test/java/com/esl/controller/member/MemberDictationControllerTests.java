@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
 
+import static com.esl.entity.dictation.Dictation.Source.FillIn;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -58,6 +59,7 @@ public class MemberDictationControllerTests {
 				.andExpect(jsonPath("$.title", is("new dictation")))
 				.andExpect(jsonPath("$.createdDate").exists())
 				.andExpect(jsonPath("$.wordContainSpace", is(true)))
+				.andExpect(jsonPath("$.source", is(FillIn.name())))
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
 		Dictation dictation = dictationDAO.listNewCreated(1).get(0);
@@ -65,6 +67,7 @@ public class MemberDictationControllerTests {
 		assertThat(dictation.getVocabs().isEmpty(), is(false));
 		assertThat(dictation.getArticle(), isEmptyOrNullString());
 		assertThat(dictation.isWordContainSpace(), is(true));
+		assertThat(dictation.getSource(), is(FillIn));
 	}
 
 	@Test
@@ -78,12 +81,14 @@ public class MemberDictationControllerTests {
 				.andExpect(jsonPath("$.article", is("It is a sentence dictation")))
 				.andExpect(jsonPath("$.createdDate").exists())
 				.andExpect(jsonPath("$.sentenceLength", is("Long")))
+				.andExpect(jsonPath("$.source", is(FillIn.name())))
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
 		Dictation dictation = dictationDAO.listNewCreated(1).get(0);
 		assertThat(dictation.getTitle(), is("new dictation"));
 		assertThat(dictation.getVocabs().isEmpty(), is(true));
 		assertThat(dictation.getArticle(), is("It is a sentence dictation"));
+		assertThat(dictation.getSource(), is(FillIn));
 	}
 
 	@Test
@@ -94,11 +99,13 @@ public class MemberDictationControllerTests {
 		request.vocabulary = Arrays.asList("apple", "bus", "car");
 		request.showImage = false;
 		request.sentenceLength = "Normal";
+		request.source = FillIn;
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.title", is("Testing v2")))
 				.andExpect(jsonPath("$.lastModifyDate").exists())
+				.andExpect(jsonPath("$.source", is(FillIn.name())))
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
 		Dictation d = dictationDAO.get(1L);
@@ -107,6 +114,7 @@ public class MemberDictationControllerTests {
 		assertThat(d.getVocabs().stream().map(Vocab::getWord).collect(toList()),
 				containsInAnyOrder("car","bus","apple"));
 		assertThat(d.getVocabs().stream().filter(v -> v.getWord().equals("apple")).findFirst().get().getTotalCorrect(), is(2));
+		assertThat(d.getSource(), is(FillIn));
 	}
 
 	@Test

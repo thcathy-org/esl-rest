@@ -51,6 +51,10 @@ public class Dictation extends UserCreatedPractice {
 		Vocab, Article
 	}
 
+	public enum Source {
+		Generate, FillIn, Select
+	}
+
 	public static final int SHORT_TITLE_LENGHT = 30;
 	public static final String SEPARATOR = ",";
 
@@ -114,6 +118,10 @@ public class Dictation extends UserCreatedPractice {
 	@Column(name = "WORD_CONTAIN_SPACE")
 	private boolean wordContainSpace;
 
+	@Column(name="SOURCE")
+	@Enumerated(EnumType.STRING)
+	private Source source;
+
 	@ManyToOne()
 	@JoinColumn(name="MEMBER_ID")
 	private Member creator;
@@ -151,6 +159,7 @@ public class Dictation extends UserCreatedPractice {
 		article = "";
 		showImage = true;
 		wordContainSpace = false;
+		source = Source.FillIn;
 	}
 
 	public Dictation(String title) {
@@ -164,6 +173,7 @@ public class Dictation extends UserCreatedPractice {
 		practice.setVocabs(vocabs);
 		practice.setVocabDifficulty(difficulty);
 		practice.setGenerated(true);
+		practice.setSource(Source.Generate);
 		return practice;
 	}
 
@@ -317,6 +327,12 @@ public class Dictation extends UserCreatedPractice {
 	public boolean isWordContainSpace() {return wordContainSpace;}
 	public Dictation setWordContainSpace(boolean wordContainSpace) {
 		this.wordContainSpace = wordContainSpace;
+		return this;
+	}
+
+	public Source getSource() { return source;}
+	public Dictation setSource(Source source) {
+		this.source = source;
 		return this;
 	}
 

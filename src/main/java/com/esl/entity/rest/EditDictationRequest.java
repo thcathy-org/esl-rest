@@ -14,6 +14,7 @@ public class EditDictationRequest {
     public Dictation.StudentLevel suitableStudent;
     public String sentenceLength;
     public boolean wordContainSpace;
+    public Dictation.Source source;
 
     public boolean isCreate() {
         return dictationId < 0;

@@ -116,7 +116,7 @@ public class DictationService {
 		Dictation d = findOrCreateDictation(member, request);
 		applyRequestToDictation(request, d, member);
 		dictationDAO.persist(d);
-		log.info("Dictation created: {}", d.toString());
+		log.info("Dictation created: {}", d);
 		return d;
 	}
 
@@ -155,6 +155,10 @@ public class DictationService {
 		} else {
 			dictation.setArticle(request.article);
 			dictation.setVocabs(Collections.emptyList());
+		}
+
+		if (request.isCreate()) {
+			dictation.setSource(request.source);
 		}
 
 		return dictation;

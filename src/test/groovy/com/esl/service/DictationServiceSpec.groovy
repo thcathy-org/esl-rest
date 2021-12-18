@@ -1,12 +1,15 @@
 package com.esl.service
 
 import com.esl.TestService
+import com.esl.entity.dictation.Dictation
 import com.esl.entity.rest.EditDictationRequest
 import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.TestPropertySource
 import spock.lang.Specification
+
+import static com.esl.entity.dictation.Dictation.Source.Select
 
 @SpringBootTest
 @TestPropertySource(locations = "classpath:application-test.properties")
@@ -86,5 +89,33 @@ class DictationServiceSpec extends Specification {
 
         then:
         1 == 1
+    }
+
+    def "create selected vocabulary dictation"() {
+        when: "create selected vocabulary dictation"
+        def creationRequest = new EditDictationRequest()
+        creationRequest.title = "Dictation service spec"
+        creationRequest.vocabulary = ["apple"]
+        creationRequest.source = Select
+        def dictation = service.createOrAmendDictation(testService.getTester1(), creationRequest)
+
+        then: "dictation source is Select"
+        dictation.getSource() == Select
+
+        when: "amend request send"
+        def amendRequest = amendRequestFrom dictation
+        amendRequest.source = null
+        def amendedDictation = service.createOrAmendDictation(testService.getTester1(), amendRequest)
+
+        then: "source never change"
+        amendedDictation.source == Select
+    }
+
+    EditDictationRequest amendRequestFrom(Dictation from) {
+        def request = new EditDictationRequest()
+        request.title = from.title
+        request.vocabulary = from.vocabs.collect { it -> it.word }
+        request.dictationId = from.id
+        return request
     }
 }
