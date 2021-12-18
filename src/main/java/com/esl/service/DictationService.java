@@ -157,7 +157,7 @@ public class DictationService {
 			dictation.setVocabs(Collections.emptyList());
 		}
 
-		if (request.isCreate()) {
+		if (request.isCreate() && request.source != null) {
 			dictation.setSource(request.source);
 		}
 
