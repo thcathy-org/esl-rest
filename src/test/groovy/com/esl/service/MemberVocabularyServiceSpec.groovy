@@ -1,6 +1,8 @@
 package com.esl.service
 
 import com.esl.TestService
+import com.esl.entity.rest.SaveMemberVocabularyHistoryRequest
+import com.esl.entity.rest.VocabPracticeHistory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.TestPropertySource
@@ -26,6 +28,22 @@ class MemberVocabularyServiceSpec extends Specification {
         word         | isCorrect | expectedCorrect | expectedWrong
         "test-apple" | true      | 4               | 0
         "banana"     | false     | 0               | 1
+    }
+
+    @Unroll
+    def "saveHistory"() {
+        when: "save history"
+        def request = new SaveMemberVocabularyHistoryRequest()
+        def vocabHistory1 = new VocabPracticeHistory()
+        vocabHistory1.question = testService.getPhoneticQuestionAeroplane();
+        vocabHistory1.correct = true
+        request.histories = [vocabHistory1] as List<VocabPracticeHistory>
+        def result = memberVocabularyService.saveHistory(testService.getTester1(), request)
+
+        then: "verify result"
+        result.size() == 1
+        result.get(0).correct == 1
+        result.get(0).id.word == vocabHistory1.question.word
     }
 
 }
