@@ -33,7 +33,7 @@ public class MemberScoreService {
         log.info("Updated member score: {}", score);
     }
 
-    private MemberScore findOrCreateMemberScore(Member member, int yearMonth) {
+    public MemberScore findOrCreateMemberScore(Member member, int yearMonth) {
         Optional<MemberScore> score = memberScoreRepository.findByMemberAndScoreYearMonth(member, yearMonth);
         return score.orElseGet(() -> {
             MemberScore newScore = new MemberScore(member, yearMonth);

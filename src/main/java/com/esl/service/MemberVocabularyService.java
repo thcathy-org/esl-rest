@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -41,15 +42,17 @@ public class MemberVocabularyService {
         return memberVocabulary;
     }
 
+    @Transactional
     public List<MemberVocabulary> saveHistory(Member member, SaveMemberVocabularyHistoryRequest request) {
         var dictation = Optional.ofNullable(dictationDAO.get(request.dictationId));
         dictation.ifPresent(d -> {
+            d = dictationDAO.merge(d);
             d.setLastPracticeDate(new Date());
             d.setTotalAttempt(d.getTotalAttempt()+1);
             dictationDAO.persist(d);
         });
 
-        memberScoreService.addScoreToMember(member, request.correct);
+        memberScoreService.addScoreToMember(member, request.totalCorrect());
 
         return request.histories.stream()
             .map(h -> updateResult(member, h.question.getWord(), h.correct))
