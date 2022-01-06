@@ -4,7 +4,7 @@ import com.esl.controller.MemberAware;
 import com.esl.dao.MemberDAO;
 import com.esl.dao.repository.MemberVocabularyRepository;
 import com.esl.entity.practice.MemberVocabulary;
-import com.esl.entity.rest.VocabPracticeHistory;
+import com.esl.entity.rest.SaveMemberVocabularyHistoryRequest;
 import com.esl.service.MemberVocabularyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +26,8 @@ public class MemberVocabularyController implements MemberAware {
 	@Override public MemberDAO getMemberDAO() { return memberDAO; }
 
 	@PostMapping(value = "/practice/history/save")
-	public ResponseEntity<List<MemberVocabulary>> saveHistory(@RequestBody List<VocabPracticeHistory> histories) {
-		return ResponseEntity.ok(memberVocabularyService.saveHistory(getSecurityContextMember().get(),histories));
+	public ResponseEntity<List<MemberVocabulary>> saveHistory(@RequestBody SaveMemberVocabularyHistoryRequest request) {
+		return ResponseEntity.ok(memberVocabularyService.saveHistory(getSecurityContextMember().get(), request));
 	}
 
 	@GetMapping(value = "/practice/history/getall")
