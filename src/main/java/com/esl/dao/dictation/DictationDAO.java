@@ -114,7 +114,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 
 		// construct query string
 		StringBuilder querySB = new StringBuilder();
-		querySB.append("SELECT DISTINCT d FROM Dictation d WHERE 1=1");
+		querySB.append("SELECT DISTINCT d FROM Dictation d WHERE SOURCE='FillIn' ");
 		querySB.append(getSearchDictationWhereClause(searchCriteria));
 		querySB.append(" ORDER BY d.lastModifyDate DESC, d.rating DESC, d.totalRated DESC");
 		logger.info(logPrefix + "queryStr[" + querySB.toString() + "]");
