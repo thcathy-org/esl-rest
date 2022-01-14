@@ -28,6 +28,7 @@ class DictationServiceSpec extends Specification {
         then: "dictation do not contain duplicate vocabulary"
         dictation.vocabs.size() == 2
         dictation.id > -1
+        dictation.source == Dictation.Source.FillIn
 
         when: "update dictation with duplicate vocabulary"
         def amendRequest = new EditDictationRequest()

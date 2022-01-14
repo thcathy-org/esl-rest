@@ -318,7 +318,10 @@ public class Dictation extends UserCreatedPractice {
 		return this;
 	}
 
+	@Deprecated
 	public boolean isGenerated() {return generated;}
+
+	@Deprecated
 	public Dictation setGenerated(boolean generated) {
 		this.generated = generated;
 		return this;
