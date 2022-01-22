@@ -51,19 +51,19 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 
 	public List<Dictation> listMostPracticed(int maxResult) {
 		logger.info("listMostPracticeDictation: START");
-		String queryStr = "FROM Dictation d WHERE d.isPublicAccess = TRUE ORDER BY d.totalAttempt DESC, d.rating DESC";
+		String queryStr = "FROM Dictation d WHERE d.isPublicAccess = TRUE and d.source != 'Select' ORDER BY d.totalAttempt DESC, d.rating DESC";
 		return em.createQuery(queryStr).setMaxResults(maxResult).getResultList();
 	}
 
 	public List<Dictation> listLatestPracticed(int maxResult) {
 		logger.info("listLatestPracticed: START");
-		String queryStr = "FROM Dictation d WHERE d.isPublicAccess = TRUE ORDER BY d.lastPracticeDate DESC";
+		String queryStr = "FROM Dictation d WHERE d.isPublicAccess = TRUE AND d.source != 'Select' ORDER BY d.lastPracticeDate DESC";
 		return em.createQuery(queryStr).setMaxResults(maxResult).getResultList();
 	}
 
 	public List<Dictation> listNewCreated(int maxResult) {
 		logger.info("listNewCreated: START");
-		String queryStr = "FROM Dictation d WHERE d.isPublicAccess = TRUE ORDER BY d.createdDate DESC";
+		String queryStr = "FROM Dictation d WHERE d.isPublicAccess = TRUE and d.source != 'Select' ORDER BY d.createdDate DESC";
 		return em.createQuery(queryStr).setMaxResults(maxResult).getResultList();
 	}
 	
@@ -71,7 +71,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 	@Override
 	public List<Dictation> listMostRecommended(int minRecommended, int maxResult) {
 		logger.info("listMostRecommended: START");
-		String queryStr = "FROM Dictation d WHERE d.totalRecommended >= :minRecommended AND d.isPublicAccess = TRUE ORDER BY d.totalRecommended DESC, d.createdDate DESC";
+		String queryStr = "FROM Dictation d WHERE d.totalRecommended >= :minRecommended AND d.isPublicAccess = TRUE AND d.source != 'Select' ORDER BY d.totalRecommended DESC, d.createdDate DESC";
 		Query query = em.createQuery(queryStr).setParameter("minRecommended", minRecommended);
 		return query.setMaxResults(maxResult).getResultList();
 	}
