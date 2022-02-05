@@ -172,7 +172,6 @@ public class Dictation extends UserCreatedPractice {
 		practice.setId((long) -1);
 		practice.setVocabs(vocabs);
 		practice.setVocabDifficulty(difficulty);
-		practice.setGenerated(true);
 		practice.setSource(Source.Generate);
 		return practice;
 	}
@@ -315,15 +314,6 @@ public class Dictation extends UserCreatedPractice {
 	public VocabDifficulty getVocabDifficulty() {return vocabDifficulty;}
 	public Dictation setVocabDifficulty(VocabDifficulty vocabDifficulty) {
 		this.vocabDifficulty = vocabDifficulty;
-		return this;
-	}
-
-	@Deprecated
-	public boolean isGenerated() {return generated;}
-
-	@Deprecated
-	public Dictation setGenerated(boolean generated) {
-		this.generated = generated;
 		return this;
 	}
 
