@@ -31,7 +31,6 @@ class VocabPracticeControllerSpec extends Specification {
         )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$.vocabs', hasSize(3)))
-                .andExpect(jsonPath('$.generated', is(true)))
                 .andExpect(jsonPath('$.source', is(Generate.name())))
 
         then:
