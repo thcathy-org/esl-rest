@@ -49,12 +49,14 @@ public class PhoneticQuestionService {
 
     public Optional<PhoneticQuestion> getQuestionFromDBWithImage(String word, boolean showImage) {
         Optional<PhoneticQuestion> question = Optional.ofNullable(phoneticQuestionDAO.getPhoneticQuestionByWord(word));
-        question.ifPresent(q -> {
-            if (showImage)
-                enrichVocabImage(q);
-            else
-                q.setPicsFullPaths(new String[] {NAImage});
-        });
+        // TODO: remove un-used code
+//        question.ifPresent(q -> {
+//            if (showImage)
+//                enrichVocabImage(q);
+//            else
+//                q.setPicsFullPaths(new String[] {NAImage});
+//        });
+        question.ifPresent(q -> q.setPicsFullPaths(new String[] {}));
         return question;
     }
 
