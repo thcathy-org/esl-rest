@@ -1,0 +1,3 @@
+[preprod]
+oc-uat.funfunspell.com ansible_user=ubuntu
+

@@ -1,0 +1,32 @@
+pipeline {
+  agent {
+    docker { image 'cimg/openjdk:11.0' }
+  }
+  parameters {
+    imageTag(name: 'DOCKER_IMAGE', image: 'thcathy/esl-rest', filter: '^((?!null).)*$')
+  }
+  environment {
+    APISERVER_HOST = credentials('apiserver_host_preprod')
+  }
+
+  stages {
+   stage("deploy and verify PREPROD") {
+      agent {
+        docker {
+          image 'ansible/ansible-runner'
+        }
+      }
+      steps {
+        ansiblePlaybook(
+          inventory: 'ansible/inventory_preprod',
+          limit: 'preprod',
+          extras: "-e docker_image_tag=${DOCKER_IMAGE_TAG} -e apiserver_host=${APISERVER_HOST}",
+          playbook: 'ansible/deploy.yml',
+          credentialsId: 'Jenkins-master',
+          vaultCredentialsId: 'ansible_vault_id',
+        )
+      }
+    }
+  }
+
+}
