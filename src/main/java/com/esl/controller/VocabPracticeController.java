@@ -29,10 +29,11 @@ public class VocabPracticeController {
     @RequestMapping(value = "/get/question/{word}")
     public ResponseEntity<PhoneticQuestion> getQuestion(
     		@PathVariable String word,
-			@RequestParam(value="image", defaultValue = "1") boolean showImage) {
+			@RequestParam(value="image", defaultValue = "1") boolean showImage,
+			@RequestParam(defaultValue = "1") boolean includeBase64Image) {
 		try {
 			if (ValidationUtil.isValidWord(word))
-				return ResponseEntity.ok(cachedVocabService.createQuestion(word, showImage));
+				return ResponseEntity.ok(cachedVocabService.createQuestion(word, showImage, includeBase64Image));
 			else
 				return ResponseEntity.badRequest().body(null);
 		} catch (Exception e) {

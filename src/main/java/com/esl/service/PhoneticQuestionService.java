@@ -47,18 +47,18 @@ public class PhoneticQuestionService {
         return totalQuestion;
     }
 
-    public Optional<PhoneticQuestion> getQuestionFromDBWithImage(String word, boolean showImage) {
+    public Optional<PhoneticQuestion> getQuestionFromDBWithImage(String word, boolean showImage, boolean includeBase64Image) {
         Optional<PhoneticQuestion> question = Optional.ofNullable(phoneticQuestionDAO.getPhoneticQuestionByWord(word));
         question.ifPresent(q -> {
-            if (showImage)
+            if (showImage && includeBase64Image)
                 enrichVocabImage(q);
             else
-                q.setPicsFullPaths(new String[] {});
+                q.setPicsFullPaths(new String[] {includeBase64Image ? NAImage : ""});
         });
         return question;
     }
 
-    public PhoneticQuestion buildQuestionByWebAPI(String word, boolean showImage) {
+    public PhoneticQuestion buildQuestionByWebAPI(String word, boolean showImage, boolean includeBase64Image) {
         log.info("buildQuestionByWebAPI for word: {}, showImage={}", word, showImage);
         PhoneticQuestion question = new PhoneticQuestion();
         question.setWord(word);
@@ -72,14 +72,14 @@ public class PhoneticQuestionService {
         CompletableFuture<Optional<DictionaryResult>> dictionaryResult = webService.queryDictionary(word);
 
         fillQuestionByDictionaryResult(question, dictionaryResult.join());
-        setPicsFullPaths(question, imagesResult.join());
+        setPicsFullPaths(question, imagesResult.join(), includeBase64Image);
 
         return question;
     }
 
-    private void setPicsFullPaths(PhoneticQuestion question, WebItem[] items) {
+    private void setPicsFullPaths(PhoneticQuestion question, WebItem[] items, boolean includeBase64Image) {
         if (items.length < 1) {
-            question.setPicsFullPaths(new String[] {NAImage});
+            question.setPicsFullPaths(new String[] {includeBase64Image ? NAImage : ""});
             return;
         }
 

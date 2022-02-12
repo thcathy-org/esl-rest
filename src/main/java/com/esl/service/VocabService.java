@@ -24,11 +24,11 @@ public class VocabService {
     @Autowired PhoneticQuestionService phoneticQuestionService;
     @Autowired PhoneticQuestionDAO phoneticQuestionDAO;
 
-    public PhoneticQuestion createQuestion(String word, boolean showImage) {
+    public PhoneticQuestion createQuestion(String word, boolean showImage, boolean includeBase64Image) {
         log.info("create practice showImage[{}] for vocab: {}", showImage, word);
 
-        return phoneticQuestionService.getQuestionFromDBWithImage(word, showImage)
-                .orElseGet(() -> phoneticQuestionService.buildQuestionByWebAPI(word, showImage));
+        return phoneticQuestionService.getQuestionFromDBWithImage(word, showImage, includeBase64Image)
+                .orElseGet(() -> phoneticQuestionService.buildQuestionByWebAPI(word, showImage, includeBase64Image));
     }
 
     public Dictation generatePractice(VocabDifficulty difficulty) {
