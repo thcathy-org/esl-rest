@@ -3,7 +3,7 @@ pipeline {
     docker { image 'cimg/openjdk:11.0' }
   }
   parameters {
-    imageTag(name: 'DOCKER_IMAGE', image: 'thcathy/esl-rest', filter: '.*(2\.0\.0).*')
+    imageTag(name: 'DOCKER_IMAGE', image: 'thcathy/esl-rest', filter: '.*(2.0).*')
   }
   environment {
     APISERVER_HOST = credentials('apiserver_host_preprod')
