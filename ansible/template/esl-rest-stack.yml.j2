@@ -16,10 +16,7 @@ services:
     ports:
       - 13306:3306
     logging:
-      driver: "json-file"
-      options:
-        max-file: 2
-        max-size: 10m
+      driver: "local"
 
   esl-rest:
     image: thcathy/esl-rest:{{ docker_image_tag }}
@@ -45,17 +42,15 @@ services:
       MYSQL_USER: {{ mysql_user }}
       MYSQL_PASSWORD: {{ mysql_password }}
       MYSQL_DATABASE: {{ mysql_database }}
+    volumes:
+      - logs:/logs
     networks:
       - overlay
       - {{ traefik_network }}
-    logging:
-      driver: "json-file"
-      options:
-        max-file: 2
-        max-size: 10m
 
 volumes:
   esl-mysql-data:
+  logs:
 
 networks:
   overlay:
