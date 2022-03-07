@@ -2,7 +2,6 @@ package com.esl.service;
 
 import com.esl.dao.IVocabImageDAO;
 import com.esl.dao.PhoneticQuestionDAO;
-import com.esl.dao.repository.PhoneticQuestionRepository;
 import com.esl.entity.VocabImage;
 import com.esl.entity.rest.DictionaryResult;
 import com.esl.entity.rest.WebItem;
@@ -13,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
@@ -29,8 +27,6 @@ import java.util.stream.Collectors;
 public class PhoneticQuestionService {
     private static Logger log = LoggerFactory.getLogger(PhoneticQuestionService.class);
 
-    private long totalQuestion;
-
     @Value("${NAImage.data}")
     public String NAImage;
 
@@ -38,14 +34,6 @@ public class PhoneticQuestionService {
     @Resource private PhoneticQuestionDAO phoneticQuestionDAO;
     @Resource private WebParserRestService webService;
     @Resource private RestTemplate restTemplate;
-    @Resource private PhoneticQuestionRepository phoneticQuestionRepository;
-
-    public long getTotalQuestion() {
-        if (totalQuestion == 0) {
-            totalQuestion = phoneticQuestionRepository.count();
-        }
-        return totalQuestion;
-    }
 
     public Optional<PhoneticQuestion> getQuestionFromDBWithImage(String word, boolean showImage, boolean includeBase64Image) {
         Optional<PhoneticQuestion> question = Optional.ofNullable(phoneticQuestionDAO.getPhoneticQuestionByWord(word));
@@ -124,13 +112,6 @@ public class PhoneticQuestionService {
         return Collections.EMPTY_LIST;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    String persistImage(String imageAsStr, String word) {
-        vocabImageDao.persist(new VocabImage(word, imageAsStr));
-        vocabImageDao.flush();
-        return imageAsStr;
-    }
-
     public Optional<String> retrieveImageToString(String url) {
         log.debug("retrieveImageToString from url: {}", url);
         try {
@@ -145,25 +126,9 @@ public class PhoneticQuestionService {
     }
 
     @Transactional(readOnly = true)
-    boolean getVocabImagesFromDB(PhoneticQuestion question) {
-        List<VocabImage> images = vocabImageDao.listByWord(question.getWord());
-        if (images.size() < 1) return false;
-
-        String[] imagesArr = images.stream()
-                                .map(VocabImage::getBase64Image)
-                                .collect(Collectors.toList())
-                                .toArray(new String[0]);
-        log.debug("get {} images for {} ", images.size(), question.getWord());
-        return true;
-    }
-
-    @Transactional(readOnly = true)
-    public void enrichVocabImage(List<PhoneticQuestion> questions) {
-        questions.forEach(this::enrichVocabImage);
-    }
-
-    @Transactional(readOnly = true)
     public void enrichVocabImage(PhoneticQuestion question) {
+        log.info("enrichVocabImage: {}", question.getWord());
+
         List<String> images = vocabImageDao.listByWord(question.getWord()).stream()
                 .map(VocabImage::getBase64Image)
                 .collect(Collectors.toList());
