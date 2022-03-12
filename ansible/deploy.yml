@@ -21,5 +21,13 @@
       register: stack_deploy
     - debug: msg="{{ stack_deploy }}"
 
+    - name: check new docker container running
+      shell: docker stack ps -f name={{ app_name }}_esl-rest -f desired-state=Running --format "{{ '{{' }} .Image {{ '}}' }}" {{ app_name }}
+      register: image_tag_output
+      until: image_tag_output.stdout is search(docker_image_tag + "$")
+      retries: 10
+      delay: 30
+    - debug: msg="{{ image_tag_output }}"
+
     - name: Include task list in play
       include_tasks: tasks/verify_server.yml
