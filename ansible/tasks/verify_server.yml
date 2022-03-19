@@ -1,7 +1,7 @@
 ---
 - name: check server is respsonding
   uri:
-    url: "https://{{ inventory_hostname }}/{{ app_name }}/vocab/get/question/apple"
+    url: "{{ server_url }}/vocab/get/question/apple"
     return_content: yes
     status_code: 200
     body_format: json
