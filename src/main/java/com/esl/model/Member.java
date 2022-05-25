@@ -5,7 +5,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.*;
 import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.*;
 
@@ -32,10 +31,6 @@ public class Member implements Serializable {
 
 	@Column(name = "PHONE_NUMBER")
 	private String phoneNumber;
-	
-	@Size(min=6, max=20, message="{incorrectSize}")
-	@Column(name = "PIN")
-	private String PIN;
 
 	@Column(name = "SCHOOL")
 	private String school;
@@ -85,13 +80,12 @@ public class Member implements Serializable {
 	// ********************** Constructors ********************** //
 	public Member() {}
 
-	public Member(String userId, Name name, Date birthday, String address, String phoneNumber, String PIN, String school, Date activatedDate, boolean acceptedTerm, String emailAddress) {
+	public Member(String userId, Name name, Date birthday, String address, String phoneNumber, String school, Date activatedDate, boolean acceptedTerm, String emailAddress) {
 		this.userId = userId;
 		this.name = name;
 		this.birthday = birthday;
 		this.address = address;
 		this.phoneNumber = phoneNumber;
-		this.PIN = PIN;
 		this.school = school;
 		this.activatedDate = activatedDate;
 		this.emailAddress = emailAddress;
@@ -141,9 +135,6 @@ public class Member implements Serializable {
 
 	public String getPhoneNumber() { return phoneNumber; }
 	public void setPhoneNumber(String phoneNumber) { this.phoneNumber = StringUtils.trimToEmpty(phoneNumber); }
-
-	public String getPIN() { return PIN; }
-	public void setPIN(String PIN) { this.PIN = PIN; }
 
 	public String getSchool() { return school; }
 	public void setSchool(String school) { this.school = StringUtils.trimToEmpty(school); }
@@ -236,7 +227,6 @@ public class Member implements Serializable {
 		this.birthday = member.birthday;
 		this.address = member.address;
 		this.phoneNumber = member.phoneNumber;
-		this.PIN = member.PIN;
 		this.school = member.school;
 		this.activatedDate = member.activatedDate;
 		this.acceptedTerm = member.acceptedTerm;
