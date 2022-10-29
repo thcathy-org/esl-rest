@@ -21,6 +21,7 @@ concurrency:
 
 jobs:
   deploy:
+    name: deploy to [${{ github.event.inputs.target_env }}]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
