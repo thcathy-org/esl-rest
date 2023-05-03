@@ -8,6 +8,7 @@ import java.util.Date;
 
 import static javax.persistence.GenerationType.IDENTITY;
 
+@Deprecated
 @Entity
 @Table(name = "vocab_image")
 public class VocabImage implements Serializable {

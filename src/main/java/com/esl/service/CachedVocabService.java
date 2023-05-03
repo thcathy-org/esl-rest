@@ -28,11 +28,11 @@ public class CachedVocabService {
                 .build();
     }
 
-    public PhoneticQuestion createQuestion(String word, boolean showImage, boolean includeBase64Image) {
-        return cache.get(key(word, showImage, includeBase64Image), (k) -> vocabService.createQuestion(word, showImage, includeBase64Image));
+    public PhoneticQuestion createQuestion(String word, boolean showImage) {
+        return cache.get(key(word, showImage), (k) -> vocabService.createQuestion(word, showImage));
     }
 
-    String key(String word, boolean showImage, boolean includeBase64Image) {
-        return String.format("%s:%s:%s", word, showImage, includeBase64Image);
+    String key(String word, boolean showImage) {
+        return String.format("%s:%s", word, showImage);
     }
 }
