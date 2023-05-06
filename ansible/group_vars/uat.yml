@@ -1,4 +1,4 @@
 ---
 deploy_folder: ~/ffs
-traefik_router_rule: Host(`esl-rest.funfunspell.com`) || Host(`esl-rest2.funfunspell.com`)
-server_url: https://esl-rest.funfunspell.com
+traefik_router_rule: Host(`oc-prod.funfunspell.com`)
+server_url: https://oc-prod.funfunspell.com
