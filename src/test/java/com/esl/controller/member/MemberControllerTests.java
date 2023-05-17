@@ -1,9 +1,18 @@
 package com.esl.controller.member;
 
+import com.esl.TestService;
 import com.esl.dao.MemberDAO;
+import com.esl.dao.dictation.DictationDAO;
+import com.esl.dao.dictation.DictationHistoryDAO;
+import com.esl.dao.dictation.VocabDAO;
+import com.esl.dao.repository.MemberVocabularyRepository;
+import com.esl.entity.dictation.Dictation;
+import com.esl.entity.rest.CreateDictationHistoryRequest;
 import com.esl.entity.rest.UpdateMemberRequest;
 import com.esl.model.Member;
+import com.esl.service.DictationService;
 import com.esl.service.JWTService;
+import com.esl.service.MemberVocabularyService;
 import com.esl.utils.MockMvcUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
@@ -23,10 +32,13 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.esl.security.JWTAuthorizationFilter.TESTING_HEADER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,9 +50,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(locations = "classpath:application-test.properties")
 public class MemberControllerTests {
 
-	@Autowired private MockMvc mockMvc;
-	@Autowired private MemberDAO memberDAO;
+	@Autowired MockMvc mockMvc;
+	@Autowired MemberDAO memberDAO;
+	@Autowired DictationDAO dictationDAO;
+	@Autowired VocabDAO vocabDAO;
+	@Autowired DictationHistoryDAO dictationHistoryDAO;
+	@Autowired DictationService dictationService;
+	@Autowired
+	MemberVocabularyService memberVocabularyService;
+	@Autowired
+	MemberVocabularyRepository memberVocabularyRepository;
 	@Autowired ObjectMapper objectMapper;
+	@Autowired TestService testService;
 
 	@MockBean
 	private JWTService jwtService;
@@ -51,7 +72,7 @@ public class MemberControllerTests {
 
 		this.mockMvc.perform(
 				get("/member/profile/get")
-						.header("email", "newtester@a.com")
+						.header(TESTING_HEADER, "newtester@a.com")
 		)
 			.andExpect(status().isOk());
 
@@ -90,6 +111,26 @@ public class MemberControllerTests {
 		assertThat(m.getPhoneNumber(), is(request.phoneNumber));
 		assertThat(m.getSchool(), is(request.school));
 		assertThat(m.getBirthday().getTime(), is(1528100000000L));
+	}
+
+	@Test
+	public void deleteMember_shouldClearAllDataInDatabase() throws Exception {
+		var memberEmail = "delete@test.com";
+		var member = testService.withMember(memberEmail);
+		var dictation = testService.withDictation(member, Dictation.Source.Select);
+		var createDictationHistoryRequest = new CreateDictationHistoryRequest();
+		createDictationHistoryRequest.dictationId = dictation.getId();
+		dictationService.addHistory(Optional.of(member), createDictationHistoryRequest);
+
+		var memberVocab = memberVocabularyService.saveNewMemberVocabulary(member, "aeroplane");
+
+		this.mockMvc.perform(delete("/member/profile/delete").header(TESTING_HEADER, memberEmail));
+
+		assertThat(memberVocabularyRepository.findById(memberVocab.getId()).isPresent(), is(false));
+		assertThat(dictationHistoryDAO.getLastestOfAllDictationByMember(member), is(Optional.empty()));
+		assertThat(vocabDAO.get(dictation.getVocabs().get(0).getId()), nullValue());
+		assertThat(dictationDAO.get(dictation.getId()), nullValue());
+		assertThat(memberDAO.getMemberByEmail(memberEmail).isPresent(), is(false));
 	}
 
 	private Optional<Claims> newUserClaims() {

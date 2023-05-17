@@ -36,7 +36,7 @@ public class MemberVocabularyService {
         return memberVocab.orElseGet(() -> saveNewMemberVocabulary(member, word));
     }
 
-    private MemberVocabulary saveNewMemberVocabulary(Member member, String word) {
+    public MemberVocabulary saveNewMemberVocabulary(Member member, String word) {
         var memberVocabulary = new MemberVocabulary(member, word);
         memberVocabularyRepository.save(memberVocabulary);
         return memberVocabulary;
@@ -57,5 +57,11 @@ public class MemberVocabularyService {
         return request.histories.stream()
             .map(h -> updateResult(member, h.question.getWord(), h.correct))
             .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteByMember(Member member) {
+        log.info("delete all MemberVocabulary by member {}:{}", member.getId(), member.getEmailAddress());
+        memberVocabularyRepository.deleteByIdMember(member);
     }
 }

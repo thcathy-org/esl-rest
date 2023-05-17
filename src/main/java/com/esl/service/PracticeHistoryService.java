@@ -2,6 +2,7 @@ package com.esl.service;
 
 import com.esl.dao.repository.PracticeHistoryRepository;
 import com.esl.entity.practice.PracticeHistory;
+import com.esl.model.Member;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,5 +28,10 @@ public class PracticeHistoryService {
 		if (oldHistories.size() >= maxHistoryPerMember)
 			practiceHistoryRepository.delete(oldHistories.get(0));
 		return practiceHistoryRepository.save(history);
+	}
+
+	public void deleteByMember(Member member) {
+		log.info("delete all PracticeHistory by member {}:{}", member.getId(), member.getEmailAddress());
+		practiceHistoryRepository.deleteByMember(member);
 	}
 }

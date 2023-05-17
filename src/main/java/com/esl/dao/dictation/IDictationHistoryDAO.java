@@ -1,6 +1,7 @@
 package com.esl.dao.dictation;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.esl.dao.IESLDao;
 import com.esl.entity.dictation.Dictation;
@@ -16,7 +17,7 @@ public interface IDictationHistoryDAO extends IESLDao<DictationHistory> {
 	public int removeByDictation(Dictation dictation);
 
 	/**
-	 * Get the lastest history of all the dictation created by the member
-	 */
-	public DictationHistory getLastestOfAllDictationByMember(Member member);
+     * Get the lastest history of all the dictation created by the member
+     */
+	public Optional<DictationHistory> getLastestOfAllDictationByMember(Member member);
 }

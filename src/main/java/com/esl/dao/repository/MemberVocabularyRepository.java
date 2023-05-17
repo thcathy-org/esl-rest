@@ -18,4 +18,6 @@ public interface MemberVocabularyRepository extends PagingAndSortingRepository<M
 
     @Async
     CompletableFuture<List<MemberVocabulary>> findByIdMember(Member member);
+
+    void deleteByIdMember(Member member);
 }

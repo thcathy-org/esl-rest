@@ -3,6 +3,7 @@ package com.esl.service
 import com.esl.TestService
 import com.esl.dao.dictation.DictationDAO
 import com.esl.dao.repository.MemberVocabularyRepository
+import com.esl.entity.dictation.Dictation
 import com.esl.entity.practice.MemberScore
 import com.esl.entity.practice.MemberVocabulary
 import com.esl.entity.rest.SaveMemberVocabularyHistoryRequest
@@ -47,7 +48,7 @@ class MemberVocabularyServiceSpec extends Specification {
         vocabHistory1.correct = true
         def thisMonthScore = memberScoreService.findOrCreateMemberScore(member, MemberScore.thisMonth())
         def allTimesScore = memberScoreService.findOrCreateMemberScore(member, MemberScore.allTimesMonth())
-        def dictation = testService.newPersistedSelectVocabDictation();
+        def dictation = testService.withDictation(member, Dictation.Source.Select);
         if (includeDictationId) request.dictationId = dictation.id
         request.histories = [vocabHistory1] as List<VocabPracticeHistory>
         def memberVocab = memberVocabularyRepository.findByIdMemberAndIdWord(member, vocabHistory1.question.word)

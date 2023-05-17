@@ -36,4 +36,6 @@ public interface MemberScoreRepository extends PagingAndSortingRepository<Member
     @Async
     @Query("select s from MemberScore s where s.scoreYearMonth = ?1 and s.score > 0 order by s.score desc, s.lastUpdatedDate")
     CompletableFuture<List<MemberScore>> findTopScore(int scoreYearMonth, Pageable pageable);
+
+    void deleteByMember(Member member);
 }

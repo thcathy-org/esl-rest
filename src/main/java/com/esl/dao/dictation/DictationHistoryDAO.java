@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Query;
 import java.util.List;
+import java.util.Optional;
 
 @Repository("dictationHistoryDAO")
 public class DictationHistoryDAO extends ESLDao<DictationHistory> implements IDictationHistoryDAO {
@@ -71,16 +72,15 @@ public class DictationHistoryDAO extends ESLDao<DictationHistory> implements IDi
 	}
 
 	@Transactional(readOnly=true)
-	public DictationHistory getLastestOfAllDictationByMember(Member member) {
-		final String logPrefix = "getLastestOfAllDictationByMember: ";
-		logger.info(logPrefix + "START");
+	public Optional<DictationHistory> getLastestOfAllDictationByMember(Member member) {
+		logger.info("getLastestOfAllDictationByMember: START");
 		if (member == null) throw new IllegalParameterException(new String[]{"member"}, new Object[]{member});
 
 		final String queryStr = "FROM DictationHistory h WHERE h.dictation.creator = :member ORDER BY h.createdDate DESC";
 		Query query = em.createQuery(queryStr);
 		query.setParameter("member", member);
 		query.setMaxResults(1);
-
-		return (DictationHistory) query.getResultList().get(0);
+		var result = query.getResultList();
+		return result.size() > 0 ? Optional.of((DictationHistory) result.get(0)) : Optional.empty();
 	}
 }

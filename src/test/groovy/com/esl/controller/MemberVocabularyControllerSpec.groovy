@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static com.esl.security.JWTAuthorizationFilter.TESTING_HEADER
 import static org.hamcrest.Matchers.hasSize
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -24,7 +25,7 @@ class MemberVocabularyControllerSpec extends Specification {
     def "get all vocabulary"(String email, int expectedSize) {
         when:
         this.mockMvc.perform(
-                get("/member/vocab/practice/history/getall").header("email", email)
+                get("/member/vocab/practice/history/getall").header(TESTING_HEADER, email)
         )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$', hasSize(expectedSize)))

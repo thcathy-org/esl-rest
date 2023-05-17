@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Arrays;
 
 import static com.esl.entity.dictation.Dictation.Source.FillIn;
+import static com.esl.security.JWTAuthorizationFilter.TESTING_HEADER;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -145,14 +146,14 @@ public class MemberDictationControllerTests {
 		this.mockMvc.perform( post("/member/dictation/edit")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request))
-				.header("email", "tester2@esl.com"))
+				.header(TESTING_HEADER, "tester2@esl.com"))
 				.andExpect(status().isBadRequest());
 	}
 
 	@Test
 	public void deleteDictationWithCorrectUser_shouldSuccess() throws Exception {
 		this.mockMvc.perform(
-				get("/member/dictation/delete/2").header("email", "tester@esl.com")
+				get("/member/dictation/delete/2").header(TESTING_HEADER, "tester@esl.com")
 		).andExpect(status().isOk());
 
 		assertThat(dictationDAO.get(2L), nullValue());
@@ -161,7 +162,7 @@ public class MemberDictationControllerTests {
 	@Test
 	public void deleteDictationWithWrongUser_shouldFail() throws Exception {
 		this.mockMvc.perform(
-				get("/member/dictation/delete/1").header("email", "tester2@esl.com")
+				get("/member/dictation/delete/1").header(TESTING_HEADER, "tester2@esl.com")
 		).andExpect(status().is5xxServerError());
 
 		assertThat(dictationDAO.get(1L), notNullValue());
@@ -169,7 +170,7 @@ public class MemberDictationControllerTests {
 
 	@Test
 	public void deleteNotExistsDictation_shouldFail() throws Exception {
-		this.mockMvc.perform(get("/member/dictation/delete/99999999").header("email", "tester2@esl.com"))
+		this.mockMvc.perform(get("/member/dictation/delete/99999999").header(TESTING_HEADER, "tester2@esl.com"))
 				.andExpect(status().is5xxServerError());
 	}
 

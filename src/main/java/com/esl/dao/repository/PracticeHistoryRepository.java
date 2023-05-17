@@ -16,4 +16,6 @@ import com.esl.model.Member;
 public interface PracticeHistoryRepository extends PagingAndSortingRepository<PracticeHistory, Long> {
     @Async
     CompletableFuture<List<PracticeHistory>> findByMember(Member member, Sort sort);
+
+    void deleteByMember(Member member);
 }

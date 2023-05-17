@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
+    public static String TESTING_HEADER = "email";
     private static Logger log = LoggerFactory.getLogger(JWTService.class);
     private boolean isTesting;
     private JWTService jwtService;
@@ -69,7 +70,7 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
     }
 
     public UsernamePasswordAuthenticationToken isTestingWithToken(HttpServletRequest req) {
-        String header = req.getHeader("email");
+        String header = req.getHeader(TESTING_HEADER);
         if (isTesting && header != null ) {
             String userId = header.trim();
             return new UsernamePasswordAuthenticationToken(userId, null, null);

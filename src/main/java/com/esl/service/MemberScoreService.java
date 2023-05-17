@@ -42,4 +42,9 @@ public class MemberScoreService {
         });
     }
 
+    public void deleteByMember(Member member) {
+        log.info("delete all member score by member {}:{}", member.getId(), member.getEmailAddress());
+        memberScoreRepository.deleteByMember(member);
+    }
+
 }
