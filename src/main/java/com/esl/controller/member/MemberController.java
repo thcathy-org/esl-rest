@@ -2,13 +2,10 @@ package com.esl.controller.member;
 
 import com.esl.controller.MemberAware;
 import com.esl.dao.MemberDAO;
-import com.esl.dao.dictation.DictationDAO;
 import com.esl.entity.rest.UpdateMemberRequest;
 import com.esl.model.Member;
 import com.esl.service.JWTService;
-import com.esl.service.MemberScoreService;
-import com.esl.service.MemberVocabularyService;
-import com.esl.service.PracticeHistoryService;
+import com.esl.service.MemberService;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,13 +24,8 @@ public class MemberController implements MemberAware {
 
 	@Autowired JWTService jwtService;
 	@Autowired MemberDAO memberDAO;
-	@Autowired DictationDAO dictationDAO;
 	@Autowired
-	MemberScoreService memberScoreService;
-	@Autowired
-	PracticeHistoryService practiceHistoryService;
-	@Autowired
-	MemberVocabularyService memberVocabularyService;
+	MemberService memberService;
 
 	@Override
 	public MemberDAO getMemberDAO() { return memberDAO; }
@@ -68,18 +60,8 @@ public class MemberController implements MemberAware {
 	@DeleteMapping(value = "/delete")
 	public HttpStatus delete() {
 		return getSecurityContextMember()
-				.map(this::deleteMember)
+				.map(memberService::deleteMember)
 				.orElse(Boolean.FALSE) ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
-	}
-
-	private Boolean deleteMember(Member m) {
-		// be-careful to the sequence
-		memberVocabularyService.deleteByMember(m);
-		memberScoreService.deleteByMember(m);
-		practiceHistoryService.deleteByMember(m);
-		dictationDAO.listByMember(m).forEach(d -> dictationDAO.remove(d));
-		memberDAO.delete(m);
-		return true;
 	}
 
 	private Member applyRequest(Member m, UpdateMemberRequest request) {
