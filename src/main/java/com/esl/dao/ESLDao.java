@@ -1,10 +1,12 @@
 package com.esl.dao;
 
 import com.esl.entity.IAuditable;
+import com.esl.model.Member;
 import org.hibernate.LockMode;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
@@ -60,12 +62,11 @@ public abstract class ESLDao<T> implements IESLDao<T> {
 		em.refresh(entity);
 	}
 
-	@SuppressWarnings("unchecked")
 	public T merge(T entity) {
 		return (T) em.merge(entity);
 	}
 
-	public void delete(Object entity) {
+	public void delete(T entity) {
 		em.remove(entity);
 	}
 	public void deleteAll(Collection<? extends Object> entities) {

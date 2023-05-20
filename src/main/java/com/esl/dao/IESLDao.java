@@ -11,7 +11,7 @@ public interface IESLDao<T> {
 	public void persistAll(Collection<? extends T> entities);
 	public void refresh(Object entity);
 	public T merge(T entity);
-	public void delete(Object entity);
+	public void delete(T entity);
 	public void deleteAll(Collection<? extends Object> entities);
 	public T get(Serializable id);
 	public List<T> getAll();
