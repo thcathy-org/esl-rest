@@ -34,12 +34,9 @@ public class MemberController implements MemberAware {
 	public ResponseEntity<Member> getOrCreate(HttpServletRequest request) {
 		try {
 			String token = request.getHeader("Authorization");
-			Claims claims = jwtService.parseClaims(token).get();
+			Claims claims = jwtService.parseClaims(token).orElseThrow();
 
-			Member member =
-					memberDAO.getMemberByEmail(claims.get("email", String.class))
-					.orElseGet(() -> createMember(claims));
-
+			Member member = memberService.getOrCreate(claims);
 			log.info("Get member: {}", member);
 			return ResponseEntity.ok(member);
 		} catch (Exception e) {
@@ -51,9 +48,8 @@ public class MemberController implements MemberAware {
 	@PostMapping(value = "/update")
 	public ResponseEntity<Member> update(@RequestBody UpdateMemberRequest request) {
 		Member member = getSecurityContextMember()
-				.map(m -> applyRequest(m, request))
-				.map(memberDAO::persist)
-				.get();
+				.map(m -> memberService.applyRequest(m, request))
+				.orElseThrow();
 		return ResponseEntity.ok(member);
 	}
 
@@ -62,26 +58,6 @@ public class MemberController implements MemberAware {
 		return getSecurityContextMember()
 				.map(memberService::deleteMember)
 				.orElse(Boolean.FALSE) ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
-	}
-
-	private Member applyRequest(Member m, UpdateMemberRequest request) {
-		m = memberDAO.merge(m);
-		m.setName(request.lastName, request.firstName);
-		m.setAddress(request.address);
-		m.setPhoneNumber(request.phoneNumber);
-		m.setSchool(request.school);
-		m.setBirthday(request.birthday);
-		return m;
-	}
-
-	private Member createMember(Claims claims) {
-		Member member = new Member();
-		member.setEmailAddress(claims.get("email", String.class));
-		member.setUserId(claims.getSubject());
-		member.setCreatedDate(new Date());
-		member.setName(claims.get("family_name", String.class), claims.get("given_name", String.class));
-		memberDAO.persist(member);
-		return member;
 	}
 
 }

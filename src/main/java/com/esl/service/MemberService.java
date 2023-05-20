@@ -3,13 +3,16 @@ package com.esl.service;
 import com.esl.dao.MemberDAO;
 import com.esl.dao.dictation.DictationDAO;
 import com.esl.dao.repository.MemberScoreRepository;
+import com.esl.entity.rest.UpdateMemberRequest;
 import com.esl.model.Member;
+import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Date;
 
 @Transactional
 @Service
@@ -33,6 +36,32 @@ public class MemberService {
         dictationDAO.listByMember(m).forEach(d -> dictationDAO.remove(d));
         memberDAO.delete(m);
         return true;
+    }
+
+    public Member getOrCreate(Claims claims) {
+        return memberDAO.getMemberByEmail(claims.get("email", String.class))
+                .orElseGet(() -> createMember(claims));
+    }
+
+    public Member applyRequest(Member m, UpdateMemberRequest request) {
+        m = memberDAO.merge(m);
+        m.setName(request.lastName, request.firstName);
+        m.setAddress(request.address);
+        m.setPhoneNumber(request.phoneNumber);
+        m.setSchool(request.school);
+        m.setBirthday(request.birthday);
+        m = memberDAO.persist(m);
+        return m;
+    }
+
+    private Member createMember(Claims claims) {
+        Member member = new Member();
+        member.setEmailAddress(claims.get("email", String.class));
+        member.setUserId(claims.getSubject());
+        member.setCreatedDate(new Date());
+        member.setName(claims.get("family_name", String.class), claims.get("given_name", String.class));
+        memberDAO.persist(member);
+        return member;
     }
 
 }
