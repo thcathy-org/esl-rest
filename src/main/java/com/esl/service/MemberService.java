@@ -26,6 +26,7 @@ public class MemberService {
     public Boolean deleteMember(Member m) {
         log.info("Delete member {}:{}", m.getId(), m.getEmailAddress());
         // be-careful to the sequence
+        m = (Member) memberDAO.attachSession(m);
         memberVocabularyService.deleteByMember(m);
         memberScoreService.deleteByMember(m);
         practiceHistoryService.deleteByMember(m);
