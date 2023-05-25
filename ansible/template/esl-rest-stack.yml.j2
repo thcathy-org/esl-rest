@@ -3,6 +3,7 @@ version: '3.7'
 services:
   esl-mysql:
     image: mysql/mysql-server:8.0
+    command: --default-authentication-plugin=mysql_native_password
     deploy:
       mode: global
     volumes:
