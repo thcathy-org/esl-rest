@@ -9,6 +9,7 @@ public class EditDictationRequest {
     public String title;
     public String description;
     public boolean showImage;
+    public boolean includeAIImage;
     public List<String> vocabulary;
     public String article;
     public Dictation.StudentLevel suitableStudent;

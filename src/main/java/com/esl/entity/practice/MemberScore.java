@@ -4,7 +4,7 @@ import com.esl.entity.IAuditable;
 import com.esl.model.Member;
 import com.fasterxml.jackson.annotation.JsonGetter;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

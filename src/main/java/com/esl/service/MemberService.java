@@ -8,10 +8,10 @@ import com.esl.model.Member;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
 import java.util.Date;
 
 @Transactional
@@ -19,12 +19,13 @@ import java.util.Date;
 public class MemberService {
     private static Logger log = LoggerFactory.getLogger(MemberService.class);
 
-    @Resource private MemberScoreRepository memberScoreRepository;
-    @Resource private MemberVocabularyService memberVocabularyService;
-    @Resource private MemberScoreService memberScoreService;
-    @Resource private PracticeHistoryService practiceHistoryService;
-    @Resource private DictationDAO dictationDAO;
-    @Resource private MemberDAO memberDAO;
+    @Autowired
+    private MemberScoreRepository memberScoreRepository;
+    @Autowired private MemberVocabularyService memberVocabularyService;
+    @Autowired private MemberScoreService memberScoreService;
+    @Autowired private PracticeHistoryService practiceHistoryService;
+    @Autowired private DictationDAO dictationDAO;
+    @Autowired private MemberDAO memberDAO;
 
     public Boolean deleteMember(Member m) {
         log.info("Delete member {}:{}", m.getId(), m.getEmailAddress());

@@ -7,10 +7,10 @@ import com.esl.model.MemberWord;
 import com.esl.model.PhoneticQuestion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
 import java.util.List;
 
 @Transactional
@@ -20,7 +20,7 @@ public class MemberWordManageService implements IMemberWordManageService {
 	private static int MAX_WORD = 100;
 
 	//	 supporting class
-	@Resource
+	@Autowired
     private MemberWordDAO memberWordDAO;
 
 	//	 ============== Setter / Getter ================//

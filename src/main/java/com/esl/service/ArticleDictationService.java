@@ -28,8 +28,8 @@ public class ArticleDictationService {
         log.info("compare: question [{}]", question);
         log.info("compare: answer   [{}]", answer);
 
-        List<String> questionSegments = CollectionUtils.arrayToList(question.split(" "));
-        List<String> answerSegments = CollectionUtils.arrayToList(answer.split(" "));
+        List<String> questionSegments = Arrays.asList(question.split(" "));
+        List<String> answerSegments = Arrays.asList(answer.split(" "));
         List<Boolean> isCorrect = new ArrayList<>(questionSegments.size());
 
         int answerPosition = 0;

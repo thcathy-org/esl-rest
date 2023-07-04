@@ -3,9 +3,9 @@ package com.esl.entity.dictation;
 import com.esl.enumeration.VocabDifficulty;
 import com.esl.model.Member;
 import com.esl.model.group.MemberGroup;
+import jakarta.persistence.*;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.persistence.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -121,6 +121,9 @@ public class Dictation extends UserCreatedPractice {
 	@Column(name="SOURCE")
 	@Enumerated(EnumType.STRING)
 	private Source source;
+
+	@Column(name="INCLUDE_AI_IMAGE", columnDefinition = "boolean default false")
+	private boolean includeAIImage;
 
 	@ManyToOne()
 	@JoinColumn(name="MEMBER_ID")
@@ -283,6 +286,14 @@ public class Dictation extends UserCreatedPractice {
 	public Dictation setSentenceLength(String sentenceLength) {
 		this.sentenceLength = sentenceLength;
 		return this;
+	}
+
+	public boolean isIncludeAIImage() {
+		return includeAIImage;
+	}
+
+	public void setIncludeAIImage(boolean includeAIImage) {
+		this.includeAIImage = includeAIImage;
 	}
 
 	public List<Vocab> getVocabs() {return vocabs;}

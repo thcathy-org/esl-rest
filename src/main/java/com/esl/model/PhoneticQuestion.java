@@ -1,15 +1,15 @@
 package com.esl.model;
 
+import jakarta.persistence.*;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.*;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.*;
 
-import static javax.persistence.GenerationType.IDENTITY;
+import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Table(name = "phonetic_question")

@@ -1,11 +1,13 @@
 package com.esl.service
 
+
 import com.esl.TestService
 import com.esl.entity.dictation.Dictation
 import com.esl.entity.rest.EditDictationRequest
 import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import spock.lang.Specification
 

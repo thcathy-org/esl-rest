@@ -1,13 +1,20 @@
 plugins {
-	id 'org.springframework.boot' version '2.3.3.RELEASE'
-	id 'io.spring.dependency-management' version '1.0.10.RELEASE'
-	id 'java'
+	id 'org.springframework.boot' version '3.0.1'
+	id 'io.spring.dependency-management' version '1.1.0'
+	id 'java-library'
 	id 'idea'
 	id 'groovy'
+	id 'maven-publish'
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
 }
 
 group = 'com.esl'
-version = '2.0.0'
+version = '2.1.0'
 
 bootJar {
 	archiveFileName = 'esl-rest.jar'
@@ -24,6 +31,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.apache.commons:commons-lang3:3.7'
 	implementation 'commons-io:commons-io:2.6'
 	implementation 'commons-codec:commons-codec:1.11'
@@ -31,16 +39,16 @@ dependencies {
 	implementation 'javax.cache:cache-api'
 	implementation 'org.ehcache:ehcache:3.4.0'
 	implementation 'io.jsonwebtoken:jjwt:0.9.0'
-	implementation 'org.codehaus.groovy:groovy-all:2.4.13'
+	implementation 'org.apache.groovy:groovy-all:4.0.13'
 	implementation 'javax.xml.bind:jaxb-api:2.3.0'
 	implementation 'mysql:mysql-connector-java:8.0.27'
 	implementation 'net.sf.extjwnl:extjwnl:2.0.1'
 	implementation 'net.sf.extjwnl:extjwnl-data-wn31:1.2'
-	implementation 'com.github.ben-manes.caffeine:caffeine:3.0.4'
+	implementation 'com.github.ben-manes.caffeine:caffeine:3.1.5'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-devtools'
 	testImplementation 'com.h2database:h2'
-	testImplementation 'org.spockframework:spock-core:1.1-groovy-2.4'
-	testImplementation 'org.spockframework:spock-spring:1.1-groovy-2.4'
+	testImplementation 'org.spockframework:spock-core:2.4-M1-groovy-4.0'
+	testImplementation 'org.spockframework:spock-spring:2.4-M1-groovy-4.0'
 }

@@ -1,9 +1,10 @@
 package com.esl.dao.dictation;
 
-import javax.annotation.Resource;
 
+import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +18,8 @@ import com.esl.exception.IllegalParameterException;
 public class VocabDAO extends ESLDao<Vocab> implements IVocabDAO {
 	private static Logger logger = LoggerFactory.getLogger(VocabDAO.class);
 
-	@Resource private IVocabHistoryDAO vocabHistoryDAO;
+	@Autowired
+	private IVocabHistoryDAO vocabHistoryDAO;
 
 	public void setVocabHistoryDAO(IVocabHistoryDAO vocabHistoryDAO) {this.vocabHistoryDAO = vocabHistoryDAO; }
 
