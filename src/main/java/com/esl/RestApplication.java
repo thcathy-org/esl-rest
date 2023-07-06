@@ -1,7 +1,5 @@
 package com.esl;
 
-import com.esl.service.rest.ImageGenerationService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -13,7 +11,6 @@ import org.springframework.web.filter.CommonsRequestLoggingFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -46,14 +43,6 @@ public class RestApplication {
 		filter.setMaxPayloadLength(1000);
 		filter.setIncludeHeaders(true);
 		return filter;
-	}
-
-	@Value("${IMAGE_GENERATION_SERVER_HOST:test_value}") String imageGenerationServiceHost;
-	@Value("${IMAGE_GENERATION_SERVER_APIKEY:test_value}") String imageGenerationServiceApiKey;
-
-	@Bean
-	public ImageGenerationService imageGenerationService() {
-		return new ImageGenerationService(imageGenerationServiceHost, imageGenerationServiceApiKey, Duration.ofSeconds(30));
 	}
 
 	@Bean
