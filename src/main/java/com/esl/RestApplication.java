@@ -48,8 +48,8 @@ public class RestApplication {
 		return filter;
 	}
 
-	@Value("${IMAGE_GENERATION_SERVER_HOST:}") String imageGenerationServiceHost;
-	@Value("${IMAGE_GENERATION_SERVER_APIKEY:}") String imageGenerationServiceApiKey;
+	@Value("${IMAGE_GENERATION_SERVER_HOST:test_value}") String imageGenerationServiceHost;
+	@Value("${IMAGE_GENERATION_SERVER_APIKEY:test_value}") String imageGenerationServiceApiKey;
 
 	@Bean
 	public ImageGenerationService imageGenerationService() {
