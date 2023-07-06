@@ -4,12 +4,12 @@ import com.esl.enumeration.ESLPracticeType;
 import com.esl.model.Member;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.Date;
 
-import static javax.persistence.GenerationType.IDENTITY;
+import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Table(name = "QUESTION_HISTORY")

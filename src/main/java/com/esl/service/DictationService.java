@@ -11,6 +11,7 @@ import com.esl.entity.rest.CreateDictationHistoryRequest;
 import com.esl.entity.rest.EditDictationRequest;
 import com.esl.entity.rest.VocabPracticeHistory;
 import com.esl.model.Member;
+import com.esl.service.rest.ImageGenerationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
 
@@ -35,6 +37,7 @@ public class DictationService {
 	@Autowired private DictationHistoryDAO dictationHistoryDAO;
 	@Autowired private MemberScoreService memberScoreService;
 	@Autowired private PracticeHistoryService practiceHistoryService;
+	@Autowired private ImageGenerationService imageGenerationService;
 
 	public DictationService() {}
 
@@ -116,8 +119,18 @@ public class DictationService {
 		Dictation d = findOrCreateDictation(member, request);
 		applyRequestToDictation(request, d, member);
 		dictationDAO.persist(d);
+		SubmitAIImageRequest(d);
+
 		log.info("Dictation created: {}", d);
 		return d;
+	}
+
+	private void SubmitAIImageRequest(Dictation d) {
+		if (d.isIncludeAIImage())
+		{
+			if (Dictation.DictationType.Vocab == d.getType() && d.getVocabs() != null)
+				d.getVocabs().forEach(v -> imageGenerationService.generate(v.getWord()).blockOptional(Duration.ofSeconds(1)));
+		}
 	}
 
 	private Dictation findOrCreateDictation(Member member, EditDictationRequest request) {
@@ -139,6 +152,7 @@ public class DictationService {
 		dictation.setDescription(request.description);
 		dictation.setSuitableStudent(request.suitableStudent);
 		dictation.setShowImage(request.showImage);
+		dictation.setIncludeAIImage(request.includeAIImage);
 		dictation.setWordContainSpace(request.wordContainSpace);
 		dictation.setSentenceLength(request.sentenceLength);
 		dictation.setCreator(member);

@@ -4,6 +4,7 @@ import com.esl.dao.dictation.DictationDAO;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.dictation.Vocab;
 import com.esl.entity.rest.EditDictationRequest;
+import com.esl.service.rest.ImageGenerationService;
 import com.esl.utils.MockMvcUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
@@ -11,10 +12,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 
@@ -23,6 +26,10 @@ import static com.esl.security.JWTAuthorizationFilter.TESTING_HEADER;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -33,10 +40,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @TestPropertySource(locations = "classpath:application-test.properties")
 public class MemberDictationControllerTests {
-
 	@Autowired private MockMvc mockMvc;
 	@Autowired ObjectMapper objectMapper;
 	@Autowired DictationDAO dictationDAO;
+	@MockBean ImageGenerationService imageGenerationService;
 
 	@Test
 	public void postEditWithoutAuthentication_shouldFail() throws Exception {
@@ -53,6 +60,7 @@ public class MemberDictationControllerTests {
 	public void createNewWordDictation() throws Exception {
 		EditDictationRequest request = createNewDictationRequest(true);
 		request.wordContainSpace = true;
+		given(imageGenerationService.generate(any())).willReturn(Mono.empty());
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
@@ -61,6 +69,7 @@ public class MemberDictationControllerTests {
 				.andExpect(jsonPath("$.createdDate").exists())
 				.andExpect(jsonPath("$.wordContainSpace", is(true)))
 				.andExpect(jsonPath("$.source", is(FillIn.name())))
+				.andExpect(jsonPath("$.includeAIImage", is(true)))
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
 		Dictation dictation = dictationDAO.listNewCreated(1).get(0);
@@ -69,6 +78,7 @@ public class MemberDictationControllerTests {
 		assertThat(dictation.getArticle(), isEmptyOrNullString());
 		assertThat(dictation.isWordContainSpace(), is(true));
 		assertThat(dictation.getSource(), is(FillIn));
+		assertThat(dictation.isIncludeAIImage(), is(true));
 	}
 
 	@Test
@@ -124,12 +134,14 @@ public class MemberDictationControllerTests {
 		request.dictationId = 3;
 		request.title = "Sentence Dictation 1";
 		request.article = "Updated article";
+		request.includeAIImage = true;
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.title", is("Sentence Dictation 1")))
 				.andExpect(jsonPath("$.article", is("Updated article")))
 				.andExpect(jsonPath("$.lastModifyDate").exists())
+				.andExpect(jsonPath("$.includeAIImage", is(true)))
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
 		Dictation d = dictationDAO.get(3L);
@@ -174,10 +186,39 @@ public class MemberDictationControllerTests {
 				.andExpect(status().is5xxServerError());
 	}
 
+	@Test
+	public void createNewThenUpdateWordDictationWithAIImage() throws Exception {
+		EditDictationRequest request = createNewDictationRequest(true);
+		request.wordContainSpace = true;
+		request.includeAIImage = true;
+		given(imageGenerationService.generate(any())).willReturn(Mono.empty());
+
+		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType("application/json"))
+				.andExpect(jsonPath("$.includeAIImage", is(true)));
+
+		Dictation dictation = dictationDAO.listNewCreated(1).get(0);
+		assertThat(dictation.isIncludeAIImage(), is(true));
+		verify(imageGenerationService, times(dictation.getVocabsSize())).generate(any());
+
+		request.dictationId = dictation.getId();
+		request.includeAIImage = false;
+		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType("application/json"))
+				.andExpect(jsonPath("$.includeAIImage", is(false)));
+
+		Dictation updatedDictation = dictationDAO.get(dictation.getId());
+		assertThat(updatedDictation.isIncludeAIImage(), is(false));
+		verify(imageGenerationService, times(dictation.getVocabsSize())).generate(any());	// remain the same times before update
+	}
+
 	private EditDictationRequest createNewDictationRequest(boolean isWord) {
 		EditDictationRequest request = new EditDictationRequest();
 		request.title = "new dictation";
 		request.suitableStudent = Dictation.StudentLevel.JuniorPrimary;
+		request.includeAIImage = true;
 		if (isWord) {
 			request.vocabulary = Arrays.asList("apple", "bus", "car");
 		} else {

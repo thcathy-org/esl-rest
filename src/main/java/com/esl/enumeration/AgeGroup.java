@@ -1,8 +1,8 @@
 package com.esl.enumeration;
 
-import javax.persistence.Column;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 public enum AgeGroup {
 	@Column(name="AGE_GROUP")

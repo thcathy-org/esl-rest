@@ -5,9 +5,6 @@ import com.esl.model.PhoneticQuestion;
 import com.esl.util.practice.PhoneticQuestionUtil;
 import com.esl.util.practice.PhoneticQuestionUtil.FindIPAAndPronoun;
 import org.apache.commons.lang3.Range;
-import org.hibernate.Query;
-import org.hibernate.Session;
-import org.hibernate.type.LongType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -42,7 +39,7 @@ public class PhoneticQuestionDAO extends ESLDao<PhoneticQuestion> {
 
 	public List<PhoneticQuestion> getRandomQuestionWithinRank(Range<Integer> rank, int totalResult) {
 		String queryString = "FROM PhoneticQuestion pq WHERE pq.rank >= :fromRank and pq.rank <= :toRank ORDER BY RAND()";
-		javax.persistence.Query query = em.createQuery(queryString);
+		jakarta.persistence.Query query = em.createQuery(queryString);
 		query.setParameter("fromRank", rank.getMinimum());
 		query.setParameter("toRank", rank.getMaximum());
 		query.setMaxResults(totalResult);
@@ -52,7 +49,7 @@ public class PhoneticQuestionDAO extends ESLDao<PhoneticQuestion> {
 
 	public List<PhoneticQuestion> getRandomQuestionWithinLength(Range<Integer> length, int totalResult) {
 		String queryString = "FROM PhoneticQuestion pq WHERE length(pq.word) >= :fromLength and length(pq.word) <= :toLength ORDER BY RAND()";
-		javax.persistence.Query query = em.createQuery(queryString);
+		jakarta.persistence.Query query = em.createQuery(queryString);
 		query.setParameter("fromLength", length.getMinimum());
 		query.setParameter("toLength", length.getMaximum());
 		query.setMaxResults(totalResult);
@@ -66,7 +63,7 @@ public class PhoneticQuestionDAO extends ESLDao<PhoneticQuestion> {
 		if (isRandom) queryString += " ORDER BY RAND()";
 
 		// Get Questions ID
-		javax.persistence.Query query = em.createNativeQuery(queryString);
+		jakarta.persistence.Query query = em.createNativeQuery(queryString);
 		query.setParameter("gradeId", grade.getId());
 		query.setMaxResults(total);
 		logger.info("getRandomQuestionsByGrade: queryString[" + queryString + "]");

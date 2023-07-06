@@ -5,10 +5,10 @@ import com.esl.entity.practice.MemberScore;
 import com.esl.model.Member;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
 import java.util.Date;
 import java.util.Optional;
 
@@ -17,7 +17,8 @@ import java.util.Optional;
 public class MemberScoreService {
     private static Logger log = LoggerFactory.getLogger(MemberScoreService.class);
 
-    @Resource private MemberScoreRepository memberScoreRepository;
+    @Autowired
+    private MemberScoreRepository memberScoreRepository;
 
     public void addScoreToMember(Member member, int score) {
         updateMemberScore(member, score, MemberScore.allTimesMonth());

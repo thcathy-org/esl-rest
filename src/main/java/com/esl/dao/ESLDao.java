@@ -1,16 +1,10 @@
 package com.esl.dao;
 
 import com.esl.entity.IAuditable;
-import com.esl.model.Member;
-import org.hibernate.LockMode;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
@@ -21,7 +15,8 @@ import java.util.List;
 public abstract class ESLDao<T> implements IESLDao<T> {
 	protected Class<?> entityClass;
 
-	@PersistenceContext	protected EntityManager em;
+	@PersistenceContext
+	protected EntityManager em;
 
 	public ESLDao() {
 		Class<?> clazz = getClass();
@@ -30,11 +25,6 @@ public abstract class ESLDao<T> implements IESLDao<T> {
 		this.entityClass = (Class<?>) ((ParameterizedType)clazz.getGenericSuperclass()).getActualTypeArguments()[0];
 	}
 
-	/**
-	 * Hibernate reattach object to session
-	 * 
-	 * @param practiceResult
-	 */
 	public Object attachSession(Object o) {
 		if (o == null) return null;
 		return em.merge(o);

@@ -5,19 +5,20 @@ import com.esl.entity.dictation.Dictation;
 import com.esl.entity.dictation.MemberDictationHistory;
 import com.esl.exception.IllegalParameterException;
 import com.esl.model.Member;
+import jakarta.persistence.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
-import javax.persistence.Query;
 import java.util.List;
 @Repository("memberDictationHistoryDAO")
 public class MemberDictationHistoryDAO extends ESLDao<MemberDictationHistory> implements IMemberDictationHistoryDAO {
 	private static Logger logger = LoggerFactory.getLogger(MemberDictationHistoryDAO.class);
 
-	@Resource private IVocabHistoryDAO vocabHistoryDAO;
+	@Autowired
+	private IVocabHistoryDAO vocabHistoryDAO;
 
 	public void setVocabHistoryDAO(IVocabHistoryDAO vocabHistoryDAO) {this.vocabHistoryDAO = vocabHistoryDAO; }
 

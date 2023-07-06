@@ -7,13 +7,13 @@ import com.esl.entity.dictation.Vocab;
 import com.esl.exception.IllegalParameterException;
 import com.esl.model.Member;
 import com.esl.model.group.MemberGroup;
+import jakarta.persistence.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
-import javax.persistence.Query;
 import java.util.List;
 import java.util.Map;
 
@@ -24,9 +24,10 @@ import static com.esl.entity.dictation.DictationSearchCriteria.*;
 public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 	private static Logger logger = LoggerFactory.getLogger(DictationDAO.class);
 
-	@Resource private IVocabDAO vocabDAO;
-	@Resource private IMemberDictationHistoryDAO memberDictationHistoryDAO;
-	@Resource private IDictationHistoryDAO dictationHistoryDAO;
+	@Autowired
+	private IVocabDAO vocabDAO;
+	@Autowired private IMemberDictationHistoryDAO memberDictationHistoryDAO;
+	@Autowired private IDictationHistoryDAO dictationHistoryDAO;
 
 	public void setVocabDAO(IVocabDAO vocabDAO) {this.vocabDAO = vocabDAO;}
 	public void setMemberDictationHistoryDAO(IMemberDictationHistoryDAO memberDictationHistoryDAO) {this.memberDictationHistoryDAO = memberDictationHistoryDAO;}
@@ -38,7 +39,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 
 		logger.info("listByDictation: input member[" + member.getUserId() + "]");
 		String queryStr = "FROM Dictation d WHERE d.creator = :member ORDER BY d.id DESC";
-		javax.persistence.Query query = em.createQuery(queryStr).setParameter("member", member);
+		jakarta.persistence.Query query = em.createQuery(queryStr).setParameter("member", member);
 		return query.getResultList();
 	}
 
@@ -114,7 +115,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 
 		// construct query string
 		StringBuilder querySB = new StringBuilder();
-		querySB.append("SELECT DISTINCT d FROM Dictation d WHERE SOURCE='FillIn' ");
+		querySB.append("SELECT DISTINCT d FROM Dictation d WHERE d.source=com.esl.entity.dictation.Dictation$Source.FillIn ");
 		querySB.append(getSearchDictationWhereClause(searchCriteria));
 		querySB.append(" ORDER BY d.lastModifyDate DESC, d.rating DESC, d.totalRated DESC");
 		logger.info(logPrefix + "queryStr[" + querySB.toString() + "]");

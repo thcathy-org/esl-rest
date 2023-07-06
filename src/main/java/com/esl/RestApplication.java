@@ -10,21 +10,19 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @SpringBootApplication
 public class RestApplication {
-
 	@Bean
 	public RestTemplate restTemplate(RestTemplateBuilder builder) {
 		return builder.build();
 	}
 
 	@Bean
-	public ExecutorService executionPool () {
+	public ExecutorService executionPool() {
 		return Executors.newFixedThreadPool(20);
 	}
 
@@ -49,7 +47,7 @@ public class RestApplication {
 
 	@Bean
 	public WebMvcConfigurer corsConfigurer() {
-		return new WebMvcConfigurerAdapter() {
+		return new WebMvcConfigurer() {
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
 				registry.addMapping("/**")

@@ -1,6 +1,6 @@
 package com.esl.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Comparator;
 import java.util.Date;
 

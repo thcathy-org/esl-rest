@@ -1,10 +1,10 @@
 package com.esl.model;
 
 import com.esl.model.group.MemberGroup;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.persistence.*;
-import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 import java.util.*;
 

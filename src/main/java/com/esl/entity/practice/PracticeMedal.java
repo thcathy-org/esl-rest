@@ -5,7 +5,7 @@ import com.esl.enumeration.ESLPracticeType;
 import com.esl.enumeration.Medal;
 import com.esl.model.Member;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Comparator;
 
