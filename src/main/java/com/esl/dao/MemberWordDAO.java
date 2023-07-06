@@ -4,14 +4,13 @@ import com.esl.exception.IllegalParameterException;
 import com.esl.model.Member;
 import com.esl.model.MemberWord;
 import com.esl.model.PhoneticQuestion;
-import org.hibernate.Session;
+import jakarta.persistence.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.Query;
 import java.util.Collection;
 import java.util.List;
 
@@ -34,7 +33,7 @@ public class MemberWordDAO extends ESLDao<MemberWord> {
 
 		logger.info("getWord: input member[" + member.getUserId() + "], word[" + word.getWord() + "]");
 
-		String query = "from MemberWord w where w.member = :member and w.word = :word";
+		String query = "select from MemberWord w where w.member = :member and w.word = :word";
 		Query q = em.createQuery(query);
 		List result = q.setParameter("member", member).setParameter("word", word).getResultList();
 
@@ -59,7 +58,7 @@ public class MemberWordDAO extends ESLDao<MemberWord> {
 		if (member == null) throw new IllegalParameterException(new String[]{"member"}, new Object[]{member});
 		logger.info("listWords: input member[" + member.getUserId() + "]");
 
-		String query = "from MemberWord w where w.member = :member";
+		String query = "Select w from MemberWord w where w.member = :member";
 		return em.createQuery(query).setParameter("member", member).getResultList();
 	}
 

@@ -10,12 +10,12 @@ import com.esl.service.rest.WebParserRestService;
 import org.apache.commons.codec.binary.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.Resource;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -30,9 +30,10 @@ public class PhoneticQuestionService {
     @Value("${NAImage.data}")
     public String NAImage;
 
-    @Resource private PhoneticQuestionDAO phoneticQuestionDAO;
-    @Resource private WebParserRestService webService;
-    @Resource private RestTemplate restTemplate;
+    @Autowired
+    private PhoneticQuestionDAO phoneticQuestionDAO;
+    @Autowired private WebParserRestService webService;
+    @Autowired private RestTemplate restTemplate;
 
     public Optional<PhoneticQuestion> getQuestionFromDBWithImage(String word) {
         Optional<PhoneticQuestion> question = Optional.ofNullable(phoneticQuestionDAO.getPhoneticQuestionByWord(word));

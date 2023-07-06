@@ -1,6 +1,7 @@
 package com.esl.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -40,7 +41,7 @@ public class Grade implements Serializable, Comparable  {
 
 
 	// ********************** Constructors ********************** //
-	Grade() {}
+	public Grade() {}
 
 	public Grade(String title, int level) {
 		this.title = title;

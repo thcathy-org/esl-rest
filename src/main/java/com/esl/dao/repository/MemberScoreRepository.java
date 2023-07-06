@@ -5,6 +5,7 @@ import com.esl.entity.practice.MemberScore;
 import com.esl.model.Member;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Repository;
@@ -15,18 +16,18 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Repository
-public interface MemberScoreRepository extends PagingAndSortingRepository<MemberScore, String> {
+public interface MemberScoreRepository extends CrudRepository<MemberScore, String> {
     Optional<MemberScore> findByMemberAndScoreYearMonth(Member member, int scoreYearMonth);
 
     @Async
     CompletableFuture<List<MemberScore>> findByMemberAndScoreYearMonthGreaterThanEqual(Member member, int greaterEqualScoreYearMonth);
 
     @Async
-    @Query("select s from MemberScore s where s.scoreYearMonth = ?1 and (s.score > ?2 or (s.score = ?2 and s.lastUpdatedDate < ?3)) order by score, lastUpdatedDate desc")
+    @Query("select s from MemberScore s where s.scoreYearMonth = ?1 and (s.score > ?2 or (s.score = ?2 and s.lastUpdatedDate < ?3)) order by s.score, s.lastUpdatedDate desc")
     CompletableFuture<List<MemberScore>> findTop5HigherScore(int scoreYearMonth, int minScore, Date lastUpdatedDate);
 
     @Async
-    @Query("select s from MemberScore s where s.scoreYearMonth = ?1 and (s.score < ?2 or (s.score = ?2 and s.lastUpdatedDate > ?3)) order by score, lastUpdatedDate desc")
+    @Query("select s from MemberScore s where s.scoreYearMonth = ?1 and (s.score < ?2 or (s.score = ?2 and s.lastUpdatedDate > ?3)) order by s.score, s.lastUpdatedDate desc")
     CompletableFuture<List<MemberScore>> findTop5LowerScore(int scoreYearMonth, int minScore, Date lastUpdatedDate);
 
     @Async

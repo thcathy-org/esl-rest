@@ -8,6 +8,8 @@ import org.springframework.test.context.TestPropertySource
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.text.SimpleDateFormat
+
 import static com.esl.entity.dictation.Dictation.StudentLevel.JuniorPrimary
 import static com.esl.entity.dictation.Dictation.StudentLevel.SeniorSecondary
 
@@ -142,6 +144,6 @@ class SearchDictationServiceSpec extends Specification {
     }
 
     def dateFrom(String date) {
-        return new Date().parse("yyyy-MM-dd", date)
+        return new SimpleDateFormat("yyyy-MM-dd").parse(date);
     }
 }

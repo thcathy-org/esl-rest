@@ -61,6 +61,7 @@ public class MemberDictationControllerTests {
 				.andExpect(jsonPath("$.createdDate").exists())
 				.andExpect(jsonPath("$.wordContainSpace", is(true)))
 				.andExpect(jsonPath("$.source", is(FillIn.name())))
+				.andExpect(jsonPath("$.includeAIImage", is(true)))
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
 		Dictation dictation = dictationDAO.listNewCreated(1).get(0);
@@ -69,6 +70,7 @@ public class MemberDictationControllerTests {
 		assertThat(dictation.getArticle(), isEmptyOrNullString());
 		assertThat(dictation.isWordContainSpace(), is(true));
 		assertThat(dictation.getSource(), is(FillIn));
+		assertThat(dictation.isIncludeAIImage(), is(true));
 	}
 
 	@Test
@@ -124,12 +126,14 @@ public class MemberDictationControllerTests {
 		request.dictationId = 3;
 		request.title = "Sentence Dictation 1";
 		request.article = "Updated article";
+		request.includeAIImage = true;
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.title", is("Sentence Dictation 1")))
 				.andExpect(jsonPath("$.article", is("Updated article")))
 				.andExpect(jsonPath("$.lastModifyDate").exists())
+				.andExpect(jsonPath("$.includeAIImage", is(true)))
 				.andExpect(jsonPath("$.id", greaterThan(0)));
 
 		Dictation d = dictationDAO.get(3L);
@@ -178,6 +182,7 @@ public class MemberDictationControllerTests {
 		EditDictationRequest request = new EditDictationRequest();
 		request.title = "new dictation";
 		request.suitableStudent = Dictation.StudentLevel.JuniorPrimary;
+		request.includeAIImage = true;
 		if (isWord) {
 			request.vocabulary = Arrays.asList("apple", "bus", "car");
 		} else {

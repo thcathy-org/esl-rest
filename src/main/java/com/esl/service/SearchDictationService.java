@@ -27,7 +27,7 @@ public class SearchDictationService {
 	public SearchDictationService() {}
 
 	public List<Dictation> searchDictation(SearchDictationRequest request, int maxResult) {
-		log.info("search dictation: ", ReflectionToStringBuilder.toString(request));
+		log.info("search dictation: {}", ReflectionToStringBuilder.toString(request));
 
 		if (StringUtils.isNumeric(request.keyword))
 			return getDictationByIdToList(Long.valueOf(request.keyword));

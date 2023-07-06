@@ -1,6 +1,6 @@
 package com.esl.entity.practice.qa;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.List;
 
 @Entity

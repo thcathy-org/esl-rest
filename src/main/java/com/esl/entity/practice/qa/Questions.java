@@ -1,6 +1,6 @@
 package com.esl.entity.practice.qa;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name ="practice_questions")

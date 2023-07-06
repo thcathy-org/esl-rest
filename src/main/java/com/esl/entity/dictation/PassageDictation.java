@@ -2,9 +2,9 @@ package com.esl.entity.dictation;
 
 import com.esl.entity.practice.qa.Sentence;
 
-import javax.persistence.CascadeType;
-import javax.persistence.FetchType;
-import javax.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.OneToMany;
 import java.util.List;
 
 

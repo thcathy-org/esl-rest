@@ -13,6 +13,4 @@ public class WebParserRestServiceTest {
         assertThat(new WebParserRestService("http://ffs.com").host, is("http://ffs.com/"));
         assertThat(new WebParserRestService("ffs.com").host, is("http://ffs.com/"));
     }
-
-
 }
