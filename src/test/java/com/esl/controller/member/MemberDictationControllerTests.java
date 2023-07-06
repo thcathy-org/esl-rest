@@ -191,6 +191,7 @@ public class MemberDictationControllerTests {
 		EditDictationRequest request = createNewDictationRequest(true);
 		request.wordContainSpace = true;
 		request.includeAIImage = true;
+		given(imageGenerationService.generate(any())).willReturn(Mono.empty());
 
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
@@ -201,17 +202,16 @@ public class MemberDictationControllerTests {
 		assertThat(dictation.isIncludeAIImage(), is(true));
 		verify(imageGenerationService, times(dictation.getVocabsSize())).generate(any());
 
+		request.dictationId = dictation.getId();
+		request.includeAIImage = false;
 		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.includeAIImage", is(false)));
 
-		request.dictationId = dictation.getId();
-		request.includeAIImage = false;
-
 		Dictation updatedDictation = dictationDAO.get(dictation.getId());
 		assertThat(updatedDictation.isIncludeAIImage(), is(false));
-		verify(imageGenerationService, times(dictation.getVocabsSize())).generate(any());
+		verify(imageGenerationService, times(dictation.getVocabsSize())).generate(any());	// remain the same times before update
 	}
 
 	private EditDictationRequest createNewDictationRequest(boolean isWord) {
