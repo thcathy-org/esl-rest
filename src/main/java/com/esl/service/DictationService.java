@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
 
@@ -129,7 +128,7 @@ public class DictationService {
 		if (d.isIncludeAIImage())
 		{
 			if (Dictation.DictationType.Vocab == d.getType() && d.getVocabs() != null)
-				d.getVocabs().forEach(v -> imageGenerationService.generate(v.getWord()).blockOptional(Duration.ofSeconds(1)));
+				d.getVocabs().forEach(v -> imageGenerationService.submitRequest(v.getWord()));
 		}
 	}
 
