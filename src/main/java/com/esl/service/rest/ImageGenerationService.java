@@ -66,7 +66,7 @@ public class ImageGenerationService {
 
     public Mono<ResponseEntity<Void>> generate(String phrase) {
         logger.info("submit request: {}", phrase);
-        return webClient.post().uri("/generate/" + phrase).retrieve().toBodilessEntity();
+        return webClient.post().uri("/image/generate/" + phrase).retrieve().toBodilessEntity();
     }
 
 }
