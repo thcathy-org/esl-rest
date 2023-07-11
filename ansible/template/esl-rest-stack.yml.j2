@@ -11,8 +11,6 @@ services:
       MYSQL_USER: {{ mysql_user }}
       MYSQL_PASSWORD: {{ mysql_password }}
       MYSQL_DATABASE: {{ mysql_database }}
-      IMAGE_GENERATION_SERVER_HOST: {{ image_generation_server_host }}
-      IMAGE_GENERATION_SERVER_APIKEY: {{ image_generation_server_apikey }}
     networks:
       - overlay
     ports:
@@ -44,6 +42,8 @@ services:
       MYSQL_USER: {{ mysql_user }}
       MYSQL_PASSWORD: {{ mysql_password }}
       MYSQL_DATABASE: {{ mysql_database }}
+      IMAGE_GENERATION_SERVER_HOST: {{ image_generation_server_host }}
+      IMAGE_GENERATION_SERVER_APIKEY: {{ image_generation_server_apikey }}
     volumes:
       - logs:/logs
     networks:
