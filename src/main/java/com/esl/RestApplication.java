@@ -51,6 +51,8 @@ public class RestApplication {
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
 				registry.addMapping("/**")
+						.allowedOrigins("*")
+						.allowedHeaders("*")
 						.allowedMethods("HEAD", "GET", "PUT", "POST", "DELETE", "PATCH");
 			}
 		};
