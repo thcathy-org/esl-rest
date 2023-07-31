@@ -1,4 +1,4 @@
-# esl-rest [![Build Status](https://travis-ci.com/thcathy/esl-rest.svg?branch=master)](https://travis-ci.com/thcathy/esl-rest)
+# esl-rest
 
 spring boot restful server to support [funfunspell](https://www.funfunspell.com) website / iOS / Android, a free English vocabulary learning application
 
