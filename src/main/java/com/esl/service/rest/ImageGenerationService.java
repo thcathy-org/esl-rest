@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class ImageGenerationService {
@@ -52,15 +53,20 @@ public class ImageGenerationService {
                 try {
                     generate(phrase).block(requestTimeout);
                 } catch (Exception e) {
+                    sleep(5);
                     logger.warn("Exception when submitting, retry later", e);
                     queue.add(phrase);
                 }
             }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            sleep(1);
+        }
+    }
+
+    private void sleep(int second) {
+        try {
+            TimeUnit.SECONDS.sleep(second);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
         }
     }
 
