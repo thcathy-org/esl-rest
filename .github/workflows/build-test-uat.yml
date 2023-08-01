@@ -10,9 +10,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  APISERVER_HOST: ${{ secrets.APISERVER_HOST }}
-
 permissions:
   checks: write
   pull-requests: write

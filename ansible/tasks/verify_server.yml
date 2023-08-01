@@ -1,5 +1,5 @@
 ---
-- name: check server is respsonding
+- name: check server is responding
   uri:
     url: "{{ server_url }}/vocab/get/question/apple"
     return_content: yes
