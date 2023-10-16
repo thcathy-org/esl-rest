@@ -4,4 +4,4 @@ ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 traefik_network:  traefik_traefik-public
 traefik_router_rule: Host(`{{ inventory_hostname }}`) && PathPrefix(`/{{ app_name }}`)
 server_url: https://{{ inventory_hostname }}/{{ app_name }}
-
+docker_volume_root: ~/docker/volume
