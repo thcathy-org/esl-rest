@@ -36,16 +36,11 @@ public class JWTService {
     }
 
     public Optional<Claims> parseClaims(String token) {
-        try {
-            return Optional.of(
-                    Jwts.parser().setSigningKey(key)
-                            .parseClaimsJws(token.replace("Bearer", "").replaceAll("\"", ""))
-                            .getBody()
-            );
-        } catch (Exception e) {
-            log.warn("Fail to parse clamis: {}", e.getMessage());
-            return Optional.empty();
-        }
+        return Optional.of(
+                Jwts.parser().setSigningKey(key)
+                        .parseClaimsJws(token.replace("Bearer", "").replaceAll("\"", ""))
+                        .getBody()
+        );
     }
 
     public Optional<String> parseEmail(String token) {
