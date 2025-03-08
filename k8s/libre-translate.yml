@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: libretranslate
+  labels:
+    app: libretranslate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: libretranslate
+  template:
+    metadata:
+      labels:
+        app: libretranslate
+    spec:
+      containers:
+        - name: libretranslate
+          image: libretranslate/libretranslate
+          ports:
+            - containerPort: 5000
+          env:
+            - name: LT_LOAD_ONLY
+              value: "en,zh,zt"
+            - name: LT_DISABLE_FILES_TRANSLATION
+            - name: LT_DISABLE_WEB_UI
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: libretranslate-service
+spec:
+  selector:
+    app: libretranslate
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: libretranslate-prefix-remover
+spec:
+  stripPrefix:
+    prefixes:
+      - /libretranslate
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: libretranslate-ingress
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: libretranslate-libretranslate-prefix-remover@kubernetescrd
+spec:
+  tls:
+    - secretName: libretranslate-tls
+      hosts:
+        - ${INVENTORY_HOSTNAME}
+  rules:
+    - host: ${INVENTORY_HOSTNAME}
+      http:
+        paths:
+          - path: /libretranslate
+            pathType: Prefix
+            backend:
+              service:
+                name: libretranslate-service
+                port:
+                  name: http

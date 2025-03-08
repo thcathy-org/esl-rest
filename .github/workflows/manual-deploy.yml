@@ -38,3 +38,4 @@ jobs:
           -e docker_image_tag=${{ github.event.inputs.docker_tag_version }}
           -e image_generation_server_host=${{ secrets.IMAGE_GENERATION_SERVER_HOST }}
           -e image_generation_server_apikey=${{ secrets.IMAGE_GENERATION_SERVER_APIKEY }}
+          -e replicate_api_token=${{ secrets.REPLICATE_API_TOKEN }}

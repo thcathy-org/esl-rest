@@ -44,6 +44,7 @@ services:
       MYSQL_DATABASE: {{ mysql_database }}
       IMAGE_GENERATION_SERVER_HOST: {{ image_generation_server_host }}
       IMAGE_GENERATION_SERVER_APIKEY: {{ image_generation_server_apikey }}
+      REPLICATE_API_TOKEN: {{ replicate_api_token }}
     volumes:
       - {{ docker_volume_root }}/{{ app_name }}/logs:/logs
     networks:
