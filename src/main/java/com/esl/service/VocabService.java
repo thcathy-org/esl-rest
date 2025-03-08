@@ -49,7 +49,10 @@ public class VocabService {
     public String getMeaning(String word) {
         log.info("get meaning for '{}' using AI", word);
         var aiResponse = replicateAIService.getDefinition(word);
-        String definition = String.join("", aiResponse);
+        String definition = aiResponse.stream()
+                .map(s -> s.replaceAll("[\n\r]", " "))
+                .filter(s -> !s.trim().isEmpty())
+                .collect(Collectors.joining(""));;
 
         String[] wordParts = word.toLowerCase().replaceAll("[^a-zA-Z\\s-]", "").split("[-\\s]+");
 

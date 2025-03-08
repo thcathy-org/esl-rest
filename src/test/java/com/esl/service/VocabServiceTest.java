@@ -110,4 +110,23 @@ class VocabServiceTest {
 
         assertEquals("To *** something again. You may need to *** the process.", result);
     }
+
+    @Test
+    public void testGetMeaning_ReplaceNewlinesWithSpace_FilterOnlySpaces() {
+        String word = "example";
+        List<String> aiResponse = Arrays.asList(
+                "A ",
+                "\n",
+                "",
+                "\n\n",
+                "word\nhere",
+                " \n ",
+                " test\nend"
+        );
+        when(mockReplicateAIService.getDefinition(word)).thenReturn(aiResponse);
+
+        String result = vocabService.getMeaning(word);
+
+        assertEquals("A word here test end", result);
+    }
 }
