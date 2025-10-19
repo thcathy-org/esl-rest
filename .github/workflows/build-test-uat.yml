@@ -80,7 +80,7 @@ jobs:
         file: docker/Dockerfile
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/esl-rest:latest,${{ secrets.DOCKERHUB_USERNAME }}/esl-rest:${{ env.DOCKER_IMAGE_TAG }}
 
-  deploy-uat-traditional:
+  deploy-uat-docker-swarm:
     runs-on: ubuntu-latest
     needs: [docker-build]
     steps:
