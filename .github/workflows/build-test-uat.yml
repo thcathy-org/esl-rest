@@ -39,10 +39,13 @@ jobs:
       with:
         name: build
         path: build
-  docker-uat:
+
+  docker-build:
     runs-on: ubuntu-latest
     needs: [build-test]
     if: github.ref == 'refs/heads/master'
+    outputs:
+      docker_image_tag: ${{ steps.set-tag.outputs.docker_image_tag }}
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-java@v3
@@ -59,8 +62,11 @@ jobs:
       run: |
         echo "RELEASE_VERSION=$(./gradlew properties -q | grep 'version:' | awk '{print $2}')" >> $GITHUB_ENV
     - name: Set docker image tag env variable
+      id: set-tag
       run: |
-        echo "DOCKER_IMAGE_TAG=${{ env.RELEASE_VERSION }}-${{ github.run_number }}" >> $GITHUB_ENV
+        TAG="${{ env.RELEASE_VERSION }}-${{ github.run_number }}"
+        echo "DOCKER_IMAGE_TAG=$TAG" >> $GITHUB_ENV
+        echo "docker_image_tag=$TAG" >> $GITHUB_OUTPUT
     - uses: docker/setup-qemu-action@v2
     - uses: docker/setup-buildx-action@v2
     - uses: docker/login-action@v2
@@ -73,7 +79,13 @@ jobs:
         context: .
         file: docker/Dockerfile
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/esl-rest:latest,${{ secrets.DOCKERHUB_USERNAME }}/esl-rest:${{ env.DOCKER_IMAGE_TAG }}
-    - name: Run ansible playbook to deploy and verify UAT
+
+  deploy-uat-traditional:
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Deploy to traditional UAT
       uses: dawidd6/action-ansible-playbook@v2
       with:    
         playbook: ansible/deploy.yml
@@ -82,11 +94,17 @@ jobs:
         options: |
           --inventory ansible/inventory_uat
           --limit uat          
-          -e docker_image_tag=${{ env.DOCKER_IMAGE_TAG }}
+          -e docker_image_tag=${{ needs.docker-build.outputs.docker_image_tag }}
           -e image_generation_server_host=${{ secrets.IMAGE_GENERATION_SERVER_HOST }}
           -e image_generation_server_apikey=${{ secrets.IMAGE_GENERATION_SERVER_APIKEY }}
           -e replicate_api_token=${{ secrets.REPLICATE_API_TOKEN }}
-    - name: Run ansible playbook to deploy and verify UAT via k8s
+
+  deploy-uat-k8s:
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Deploy to k8s UAT
       uses: dawidd6/action-ansible-playbook@v2
       with:    
         playbook: ansible/deploy-k8s.yml
@@ -94,7 +112,7 @@ jobs:
         vault_password: ${{ secrets.VAULT_PASSWORD }}
         options: |
           --inventory ansible/inventory_k8s-uat
-          -e docker_image_tag=${{ env.DOCKER_IMAGE_TAG }}
+          -e docker_image_tag=${{ needs.docker-build.outputs.docker_image_tag }}
           -e image_generation_server_host=${{ secrets.IMAGE_GENERATION_SERVER_HOST }}
           -e image_generation_server_apikey=${{ secrets.IMAGE_GENERATION_SERVER_APIKEY }}
           -e replicate_api_token=${{ secrets.REPLICATE_API_TOKEN }}
