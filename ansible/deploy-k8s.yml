@@ -1,0 +1,75 @@
+---
+- hosts: all
+  vars_files:
+    - vars/secret.yml
+
+  tasks:
+    - name: create deployment directory
+      file:
+        path: "{{ deploy_folder }}/{{ namespace }}"
+        state: directory
+        mode: '0755'
+
+    - name: create manifest yml
+      template:
+        src: template/esl-rest-k8s.yml.j2
+        dest: "{{ deploy_folder }}/{{ namespace }}/{{ app_name }}-manifest.yml"
+
+    - name: create k8s namespace
+      k8s:
+        api_version: v1
+        kubeconfig: "{{ kubeconfig }}"
+        definition:
+          kind: Namespace
+          metadata:
+            name: "{{ namespace }}"
+
+    - name: set k8s secret
+      k8s:
+        kubeconfig: "{{ kubeconfig }}"
+        state: present
+        kind: Secret
+        name: "{{ app_name }}-secrets"
+        namespace: "{{ namespace }}"
+        inline:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: "{{ app_name }}-secrets"
+            namespace: "{{ namespace }}"
+          stringData:
+            MYSQL_USER: "{{ mysql_user }}"
+            MYSQL_PASSWORD: "{{ mysql_password }}"
+            MYSQL_DATABASE: "{{ mysql_database }}"
+            IMAGE_GENERATION_SERVER_HOST: "{{ image_generation_server_host }}"
+            IMAGE_GENERATION_SERVER_APIKEY: "{{ image_generation_server_apikey }}"
+            REPLICATE_API_TOKEN: "{{ replicate_api_token }}"
+
+    - name: apply k8s manifest
+      k8s:
+        kubeconfig: "{{ kubeconfig }}"
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ deploy_folder }}/{{ namespace }}/{{ app_name }}-manifest.yml"
+
+    - name: check new pod are running
+      shell: kubectl get pods -l app={{ app_name }} -n={{ namespace }} -o jsonpath='{range .items[*]}{.spec.containers[].image}{"\n"}{end}' | grep {{ app_name }}:{{ docker_image_tag }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      register: pod_check
+      until: pod_check.rc == 0
+      retries: 10
+      delay: 30
+    - debug: msg="{{ pod_check }}"
+
+    - name: verify server is responding
+      uri:
+        url: "https://{{ inventory_hostname }}/{{ url_base_path }}/actuator/health"
+        return_content: yes
+        status_code: 200
+        validate_certs: no
+      register: result
+      until: result.status == 200
+      retries: 5
+      delay: 30
+    - debug: msg="{{ result }}"

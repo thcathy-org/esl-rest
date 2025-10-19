@@ -1,0 +1,213 @@
+######## MySQL Database (start)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ app_name }}-mysql-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ app_name }}-mysql
+  labels:
+    app: {{ app_name }}-mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ app_name }}-mysql
+  template:
+    metadata:
+      labels:
+        app: {{ app_name }}-mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql/mysql-server:8.0
+        ports:
+        - containerPort: 3306
+          name: mysql
+        env:
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: MYSQL_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: MYSQL_DATABASE
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-data
+        persistentVolumeClaim:
+          claimName: {{ app_name }}-mysql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ app_name }}-mysql
+spec:
+  selector:
+    app: {{ app_name }}-mysql
+  ports:
+  - name: mysql
+    protocol: TCP
+    port: 3306
+    targetPort: 3306
+---
+######## MySQL Database (end)
+######## esl-rest Application (start)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ app_name }}
+  labels:
+    app: {{ app_name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ app_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ app_name }}
+    spec:
+      containers:
+      - name: {{ app_name }}
+        image: thcathy/{{ app_name }}:{{ docker_image_tag }}
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "4Gi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: MYSQL_HOST
+          value: "{{ app_name }}-mysql:3306"
+        - name: APISERVER_HOST
+          value: "{{ apiserver_host }}"
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: MYSQL_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: MYSQL_DATABASE
+        - name: IMAGE_GENERATION_SERVER_HOST
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: IMAGE_GENERATION_SERVER_HOST
+        - name: IMAGE_GENERATION_SERVER_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: IMAGE_GENERATION_SERVER_APIKEY
+        - name: REPLICATE_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: REPLICATE_API_TOKEN
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /logs
+      volumes:
+      - name: logs
+        hostPath:
+          path: {{ volume_root }}/{{ namespace }}/logs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ app_name }}-service
+spec:
+  selector:
+    app: {{ app_name }}
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+---
+######## esl-rest Application (end)
+######## Traefik Ingress (start)
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ app_name }}-prefix-remover
+spec:
+  stripPrefix:
+    prefixes:
+    - /{{ url_base_path }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ app_name }}-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: {{ namespace }}-{{ app_name }}-prefix-remover@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+  - secretName: {{ app_name }}-tls
+    hosts:
+      - {{ inventory_hostname }}
+  rules:
+  - host: {{ inventory_hostname }}
+    http:
+      paths:
+      - path: /{{ url_base_path }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ app_name }}-service
+            port:
+              name: http
+---
+######## Traefik Ingress (end)
