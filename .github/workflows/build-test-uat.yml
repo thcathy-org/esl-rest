@@ -78,6 +78,7 @@ jobs:
         push: true
         context: .
         file: docker/Dockerfile
+        platforms: linux/amd64,linux/arm64
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/esl-rest:latest,${{ secrets.DOCKERHUB_USERNAME }}/esl-rest:${{ env.DOCKER_IMAGE_TAG }}
 
   deploy-uat-docker-swarm:
