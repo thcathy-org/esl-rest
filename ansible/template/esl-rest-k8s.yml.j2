@@ -199,11 +199,11 @@ spec:
   tls:
   - secretName: {{ app_name }}-tls
     hosts:
-{% for host in ingress_hosts | default([inventory_hostname]) %}
+{% for host in ((ingress_hosts | default([])) + [inventory_hostname]) | unique %}
     - {{ host }}
 {% endfor %}
   rules:
-{% for host in ingress_hosts | default([inventory_hostname]) %}
+{% for host in ((ingress_hosts | default([])) + [inventory_hostname]) | unique %}
   - host: {{ host }}
     http:
       paths:

@@ -4,4 +4,5 @@ namespace: esl-rest
 url_base_path: esl-rest
 volume_root: "{{ ansible_env.HOME }}/k3s/volumes"
 kubeconfig: "{{ ansible_env.HOME }}/.kube/config"
-ingress_hosts: "{{ ingress_hosts_uat }}"
+ingress_hosts:
+  - esl-rest-uat.funfunspell.com
