@@ -199,11 +199,11 @@ spec:
   tls:
   - secretName: {{ app_name }}-tls
     hosts:
-    {% for host in ingress_hosts | default([inventory_hostname]) %}
-      - {{ host }}
-    {% endfor %}
+{% for host in ingress_hosts | default([inventory_hostname]) %}
+    - {{ host }}
+{% endfor %}
   rules:
-  {% for host in ingress_hosts | default([inventory_hostname]) %}
+{% for host in ingress_hosts | default([inventory_hostname]) %}
   - host: {{ host }}
     http:
       paths:
@@ -214,6 +214,6 @@ spec:
             name: {{ app_name }}-service
             port:
               name: http
-  {% endfor %}
+{% endfor %}
 ---
 ######## Traefik Ingress (end)
