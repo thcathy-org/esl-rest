@@ -1,8 +1,6 @@
 package com.esl.service;
 
-import com.esl.dao.IVocabImageDAO;
 import com.esl.dao.PhoneticQuestionDAO;
-import com.esl.entity.VocabImage;
 import com.esl.entity.rest.DictionaryResult;
 import com.esl.entity.rest.WebItem;
 import com.esl.model.PhoneticQuestion;
@@ -11,13 +9,11 @@ import org.apache.commons.codec.binary.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -25,10 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class PhoneticQuestionService {
-    private static Logger log = LoggerFactory.getLogger(PhoneticQuestionService.class);
-
-    @Value("${NAImage.data}")
-    public String NAImage;
+    private static final Logger log = LoggerFactory.getLogger(PhoneticQuestionService.class);
 
     @Autowired
     private PhoneticQuestionDAO phoneticQuestionDAO;
@@ -73,18 +66,31 @@ public class PhoneticQuestionService {
 
         log.debug("images: {}", images);
 
-        question.setPicsFullPaths(images.toArray(new String[images.size()]));
+        question.setPicsFullPaths(images.toArray(new String[0]));
     }
 
     private void fillQuestionByDictionaryResult(PhoneticQuestion question, Optional<DictionaryResult> r) {
-        if (!r.isPresent()) {
+        if (r.isEmpty()) {
             question.setIPAUnavailable(true);
         } else {
             DictionaryResult result = r.get();
+
+            // only use pronunciation and IPA if exact match
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(result.word)
+                    && org.apache.commons.lang3.StringUtils.isNotBlank(question.getWord())
+                    && !result.word.equalsIgnoreCase(question.getWord())) {
+                log.info("Dictionary resolved '{}' to base form '{}'; skipping pronunciationUrl so client uses TTS",
+                        question.getWord(), result.word);
+                question.setIPAUnavailable(true);
+                question.setPronouncedLink(null);
+                return;
+            }
+
             if (org.apache.commons.lang3.StringUtils.isNotBlank(result.IPA))
                 question.setIPA(result.IPA);
             else
                 question.setIPAUnavailable(true);
+
             question.setPronouncedLink(result.pronunciationUrl);
         }
     }
@@ -104,7 +110,7 @@ public class PhoneticQuestionService {
         } catch (Exception e) {
             log.error("Cannot get images from web for {}", word, e);
         }
-        return Collections.EMPTY_LIST;
+        return new LinkedList<>();
     }
 
     public Optional<String> retrieveImageToString(String url) {
