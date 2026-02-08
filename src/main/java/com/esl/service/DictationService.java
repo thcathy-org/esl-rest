@@ -12,6 +12,7 @@ import com.esl.entity.rest.EditDictationRequest;
 import com.esl.entity.rest.VocabPracticeHistory;
 import com.esl.model.Member;
 import com.esl.service.rest.ImageGenerationService;
+import com.esl.service.tts.TtsQueueService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,7 @@ public class DictationService {
 	@Autowired private MemberScoreService memberScoreService;
 	@Autowired private PracticeHistoryService practiceHistoryService;
 	@Autowired private ImageGenerationService imageGenerationService;
+	@Autowired private TtsQueueService ttsQueueService;
 
 	public DictationService() {}
 
@@ -115,13 +117,14 @@ public class DictationService {
 	}
 
 	public Dictation createOrAmendDictation(Member member, EditDictationRequest request) {
-		Dictation d = findOrCreateDictation(member, request);
-		applyRequestToDictation(request, d, member);
-		dictationDAO.persist(d);
-		SubmitAIImageRequest(d);
+		var dictation = findOrCreateDictation(member, request);
+		applyRequestToDictation(request, dictation, member);
+		dictationDAO.persist(dictation);
+		SubmitAIImageRequest(dictation);
+		ttsQueueService.enqueueForDictation(dictation);
 
-		log.info("Dictation created: {}", d);
-		return d;
+		log.info("Dictation created: {}", dictation);
+		return dictation;
 	}
 
 	private void SubmitAIImageRequest(Dictation d) {

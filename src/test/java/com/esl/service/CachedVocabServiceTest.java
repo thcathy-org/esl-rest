@@ -39,6 +39,7 @@ class CachedVocabServiceTest {
             service.createQuestion("word" + i, true);
         }
         verify(mockVocabService, times(12)).createQuestion(any(), anyBoolean());
+        service.cache.cleanUp();
         assertEquals(10, service.cache.estimatedSize());
     }
 }

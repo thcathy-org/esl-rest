@@ -44,6 +44,11 @@
             IMAGE_GENERATION_SERVER_HOST: "{{ image_generation_server_host }}"
             IMAGE_GENERATION_SERVER_APIKEY: "{{ image_generation_server_apikey }}"
             REPLICATE_API_TOKEN: "{{ replicate_api_token }}"
+            ESL_SPEECH_WORKER_HOST: "{{ esl_speech_worker_host }}"
+            ESL_SPEECH_WORKER_APIKEY: "{{ esl_speech_worker_apikey }}"
+            R2_ENDPOINT: "{{ r2_endpoint }}"
+            R2_ACCESS_KEY_ID: "{{ r2_access_key_id }}"
+            R2_SECRET_ACCESS_KEY: "{{ r2_secret_access_key }}"
 
     - name: apply k8s manifest
       k8s:

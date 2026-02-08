@@ -45,6 +45,7 @@ dependencies {
 	implementation 'net.sf.extjwnl:extjwnl:2.0.1'
 	implementation 'net.sf.extjwnl:extjwnl-data-wn31:1.2'
 	implementation 'com.github.ben-manes.caffeine:caffeine:3.1.5'
+	implementation 'software.amazon.awssdk:s3:2.41.21'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-devtools'

@@ -139,6 +139,31 @@ spec:
             secretKeyRef:
               name: {{ app_name }}-secrets
               key: REPLICATE_API_TOKEN
+        - name: ESL_SPEECH_WORKER_HOST
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: ESL_SPEECH_WORKER_HOST
+        - name: ESL_SPEECH_WORKER_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: ESL_SPEECH_WORKER_APIKEY
+        - name: R2_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: R2_ENDPOINT
+        - name: R2_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: R2_ACCESS_KEY_ID
+        - name: R2_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: R2_SECRET_ACCESS_KEY
         readinessProbe:
           httpGet:
             path: /actuator/health
