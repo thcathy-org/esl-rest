@@ -19,9 +19,9 @@ public class SpeechWorkerService {
     private static final Logger logger = LoggerFactory.getLogger(SpeechWorkerService.class);
     private static final String API_HEADER_NAME = "X-API-KEY";
 
-    private final WebClient webClient;
-    private final Duration requestTimeout;
-    private final String apiKey;
+    private WebClient webClient;
+    private Duration requestTimeout;
+    private String apiKey;
 
     public SpeechWorkerService(
             @Value("${ESL_SPEECH_WORKER_HOST}") String apiHost,
@@ -30,6 +30,7 @@ public class SpeechWorkerService {
     ) {
         if (StringUtils.isBlank(apiHost)) {
             logger.warn("ESL_SPEECH_WORKER_HOST is not set; speech worker calls will be disabled");
+            return;
         }
         if (!apiHost.startsWith("http://") && !apiHost.startsWith("https://")) {
             apiHost = "http://" + apiHost;
