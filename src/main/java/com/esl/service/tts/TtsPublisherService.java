@@ -13,7 +13,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -30,6 +31,7 @@ public class TtsPublisherService {
             TtsPublishQueue.STATUS_FAILED
     );
 
+    private final TransactionTemplate transactionTemplate;
     private final TtsPublishQueueRepository repository;
     private final R2StorageService r2StorageService;
     private final SpeechWorkerService speechWorkerService;
@@ -47,11 +49,14 @@ public class TtsPublisherService {
     private int batchSize;
 
     public TtsPublisherService(
+            TransactionTemplate transactionTemplate,
             TtsPublishQueueRepository repository,
             R2StorageService r2StorageService,
             SpeechWorkerService speechWorkerService,
             ObjectMapper objectMapper
     ) {
+        this.transactionTemplate = transactionTemplate;
+        this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.repository = repository;
         this.r2StorageService = r2StorageService;
         this.speechWorkerService = speechWorkerService;
@@ -59,7 +64,6 @@ public class TtsPublisherService {
     }
 
     @Scheduled(fixedDelayString = "${TtsPublisherService.IntervalSeconds}", timeUnit = TimeUnit.SECONDS)
-    @Transactional
     public void publishNext() {
         if (!r2StorageService.isConfigured()) {
             logger.info("TTS publisher skipped: R2 is not configured");
@@ -75,44 +79,55 @@ public class TtsPublisherService {
 
         for (var item : results) {
             try {
-                var ttsVersion = StringUtils.defaultIfBlank(item.getTtsVersion(), defaultTtsVersion);
-                var original = StringUtils.trimToNull(item.getContent());
-                var normalized = TtsTextUtil.normalize(original);
-                var normalKeyHash = TtsTextUtil.sha256Hex(normalized);
-                var punctText = TtsTextUtil.normalize(TtsTextUtil.toPunctuationText(normalized));
-                var punctKeyHash = TtsTextUtil.sha256Hex(punctText);
-
-                var normalAudioKey = buildAudioKey(ttsVersion, normalKeyHash);
-                var normalTimestampsKey = buildTimestampsKey(ttsVersion, normalKeyHash);
-                var punctAudioKey = buildAudioKey(ttsVersion, punctKeyHash);
-                var punctTimestampsKey = buildTimestampsKey(ttsVersion, punctKeyHash);
-
-                var allExist = r2StorageService.exists(normalAudioKey)
-                        && r2StorageService.exists(normalTimestampsKey)
-                        && r2StorageService.exists(punctAudioKey)
-                        && r2StorageService.exists(punctTimestampsKey);
-                if (allExist) {
-                    repository.delete(item);
-                    logger.info("TTS artifacts already exist; deleted queue content: {}", item.getContent());
-                    continue;
-                }
-
-                publishVariant(normalized, normalAudioKey, normalTimestampsKey);
-                publishVariant(punctText, punctAudioKey, punctTimestampsKey);
-                repository.delete(item);
-                logger.info("Published TTS artifacts for queue content: {}", item.getContent());
+                transactionTemplate.executeWithoutResult(status -> {
+                    try {
+                        processOne(item);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
             } catch (Exception ex) {
-                logger.error("Publishing TTS artifacts for queue content {}", item.getContent(), ex);
+                var rootCause = ex.getCause() == null ? ex : ex.getCause();
+                logger.error("Publishing TTS artifacts for queue content {}", item.getContent(), rootCause);
                 var nextAttemptAt = Date.from(Instant.now().plus(backoffSeconds, ChronoUnit.SECONDS));
                 item.setAttemptCount(item.getAttemptCount() + 1);
                 item.setNextAttemptAt(nextAttemptAt);
                 item.setLastUpdatedDate(now);
                 item.setStatus(TtsPublishQueue.STATUS_FAILED);
-                item.setLastError(StringUtils.abbreviate(ex.getMessage(), 1000));
+                item.setLastError(StringUtils.abbreviate(rootCause.getMessage(), 1000));
                 repository.save(item);
                 return;
             }
         }
+    }
+
+    private void processOne(TtsPublishQueue item) throws Exception {
+        var ttsVersion = StringUtils.defaultIfBlank(item.getTtsVersion(), defaultTtsVersion);
+        var original = StringUtils.trimToNull(item.getContent());
+        var normalized = TtsTextUtil.normalize(original);
+        var normalKeyHash = TtsTextUtil.sha256Hex(normalized);
+        var punctText = TtsTextUtil.normalize(TtsTextUtil.toPunctuationText(normalized));
+        var punctKeyHash = TtsTextUtil.sha256Hex(punctText);
+
+        var normalAudioKey = buildAudioKey(ttsVersion, normalKeyHash);
+        var normalTimestampsKey = buildTimestampsKey(ttsVersion, normalKeyHash);
+        var punctAudioKey = buildAudioKey(ttsVersion, punctKeyHash);
+        var punctTimestampsKey = buildTimestampsKey(ttsVersion, punctKeyHash);
+
+        var allExist = r2StorageService.exists(normalAudioKey)
+                && r2StorageService.exists(normalTimestampsKey)
+                && r2StorageService.exists(punctAudioKey)
+                && r2StorageService.exists(punctTimestampsKey);
+        if (allExist) {
+            repository.deleteById(item.getId());
+            logger.info("TTS artifacts already exist; deleted queue content: {}", item.getContent());
+            return;
+        }
+
+        publishVariant(normalized, normalAudioKey, normalTimestampsKey);
+        publishVariant(punctText, punctAudioKey, punctTimestampsKey);
+        repository.deleteById(item.getId());
+        logger.info("Published TTS artifacts for queue content: {}", item.getContent());
     }
 
     private String buildAudioKey(String ttsVersion, String keyHash) {

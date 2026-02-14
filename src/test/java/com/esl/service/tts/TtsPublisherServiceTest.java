@@ -7,11 +7,14 @@ import com.esl.service.rest.SpeechWorkerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -50,7 +53,7 @@ class TtsPublisherServiceTest {
 
         service.publishNext();
 
-        verify(repository).delete(item);
+        verify(repository).deleteById(1L);
         verify(speechWorkerService, never()).generate(any());
     }
 
@@ -83,7 +86,7 @@ class TtsPublisherServiceTest {
         service.publishNext();
 
         verify(r2StorageService, times(4)).putBytes(anyString(), any(byte[].class), anyString());
-        verify(repository).delete(item);
+        verify(repository).deleteById(1L);
     }
 
     @Test
@@ -120,13 +123,27 @@ class TtsPublisherServiceTest {
         return item;
     }
 
+    @SuppressWarnings("unchecked")
     private TtsPublisherService createService(
             TtsPublishQueueRepository repository,
             R2StorageService r2StorageService,
             SpeechWorkerService speechWorkerService,
             ObjectMapper objectMapper
     ) {
-        var service = new TtsPublisherService(repository, r2StorageService, speechWorkerService, objectMapper);
+        var transactionTemplate = mock(TransactionTemplate.class);
+        doAnswer(invocation -> {
+            var callback = (Consumer<TransactionStatus>) invocation.getArgument(0);
+            callback.accept(null);
+            return null;
+        }).when(transactionTemplate).executeWithoutResult(any());
+
+        var service = new TtsPublisherService(
+                transactionTemplate,
+                repository,
+                r2StorageService,
+                speechWorkerService,
+                objectMapper
+        );
         ReflectionTestUtils.setField(service, "defaultTtsVersion", "v1");
         ReflectionTestUtils.setField(service, "backoffSeconds", 60);
         ReflectionTestUtils.setField(service, "ttsVoice", "af_sarah");
