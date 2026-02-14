@@ -4,7 +4,7 @@ import com.esl.dao.repository.TtsPublishQueueRepository;
 import com.esl.entity.TtsPublishQueue;
 import com.esl.service.rest.R2StorageService;
 import com.esl.service.rest.SpeechWorkerService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.esl.util.TtsTextUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.TransactionStatus;
@@ -27,8 +27,7 @@ class TtsPublisherServiceTest {
         var repository = mock(TtsPublishQueueRepository.class);
         var r2StorageService = mock(R2StorageService.class);
         var speechWorkerService = mock(SpeechWorkerService.class);
-        var objectMapper = mock(ObjectMapper.class);
-        var service = createService(repository, r2StorageService, speechWorkerService, objectMapper);
+        var service = createService(repository, r2StorageService, speechWorkerService);
 
         when(r2StorageService.isConfigured()).thenReturn(false);
 
@@ -42,8 +41,7 @@ class TtsPublisherServiceTest {
         var repository = mock(TtsPublishQueueRepository.class);
         var r2StorageService = mock(R2StorageService.class);
         var speechWorkerService = mock(SpeechWorkerService.class);
-        var objectMapper = mock(ObjectMapper.class);
-        var service = createService(repository, r2StorageService, speechWorkerService, objectMapper);
+        var service = createService(repository, r2StorageService, speechWorkerService);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -62,15 +60,13 @@ class TtsPublisherServiceTest {
         var repository = mock(TtsPublishQueueRepository.class);
         var r2StorageService = mock(R2StorageService.class);
         var speechWorkerService = mock(SpeechWorkerService.class);
-        var objectMapper = mock(ObjectMapper.class);
-        var service = createService(repository, r2StorageService, speechWorkerService, objectMapper);
+        var service = createService(repository, r2StorageService, speechWorkerService);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
         when(repository.findNext(anyList(), any(Date.class), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
-        when(objectMapper.writeValueAsBytes(any(Map.class))).thenReturn(new byte[] {1, 2, 3});
 
         var response = new SpeechWorkerService.GenerateResponse();
         response.audioBase64 = Base64.getEncoder().encodeToString("hello".getBytes());
@@ -85,8 +81,47 @@ class TtsPublisherServiceTest {
 
         service.publishNext();
 
-        verify(r2StorageService, times(4)).putBytes(anyString(), any(byte[].class), anyString());
+        verify(r2StorageService, times(2)).putBytes(anyString(), any(byte[].class), anyString());
         verify(repository).deleteById(1L);
+    }
+
+    @Test
+    void publishNext_shouldBuildDeterministicAudioKeysFromNormalizedText() {
+        var repository = mock(TtsPublishQueueRepository.class);
+        var r2StorageService = mock(R2StorageService.class);
+        var speechWorkerService = mock(SpeechWorkerService.class);
+        var service = createService(repository, r2StorageService, speechWorkerService);
+        var item = createItem();
+        item.setContent("Hello world.");
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(repository.findNext(anyList(), any(Date.class), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+
+        var response = new SpeechWorkerService.GenerateResponse();
+        response.audioBase64 = Base64.getEncoder().encodeToString("hello".getBytes());
+        response.audioFormat = "mp3";
+        response.mimeType = "audio/mpeg";
+        response.sampleRate = 24000;
+        response.originalText = "hello";
+        response.processedText = "hello";
+        // response.wordTimestamps intentionally omitted
+
+        when(speechWorkerService.generate(any(SpeechWorkerService.GenerateRequest.class))).thenReturn(response);
+
+        service.publishNext();
+
+        var normalText = TtsTextUtil.normalize("Hello world.");
+        var punctText = TtsTextUtil.normalize(TtsTextUtil.toPunctuationText(normalText));
+        var normalHash = TtsTextUtil.sha256Hex(normalText);
+        var punctHash = TtsTextUtil.sha256Hex(punctText);
+
+        var normalExpectedKey = TtsAudioKeyBuilder.buildAudioKey("v1", normalText, normalHash);
+        var punctExpectedKey = TtsAudioKeyBuilder.buildAudioKey("v1", punctText, punctHash);
+
+        verify(r2StorageService).putBytes(eq(normalExpectedKey), any(byte[].class), anyString());
+        verify(r2StorageService).putBytes(eq(punctExpectedKey), any(byte[].class), anyString());
     }
 
     @Test
@@ -94,8 +129,7 @@ class TtsPublisherServiceTest {
         var repository = mock(TtsPublishQueueRepository.class);
         var r2StorageService = mock(R2StorageService.class);
         var speechWorkerService = mock(SpeechWorkerService.class);
-        var objectMapper = mock(ObjectMapper.class);
-        var service = createService(repository, r2StorageService, speechWorkerService, objectMapper);
+        var service = createService(repository, r2StorageService, speechWorkerService);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -123,12 +157,11 @@ class TtsPublisherServiceTest {
         return item;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "null"})
     private TtsPublisherService createService(
             TtsPublishQueueRepository repository,
             R2StorageService r2StorageService,
-            SpeechWorkerService speechWorkerService,
-            ObjectMapper objectMapper
+            SpeechWorkerService speechWorkerService
     ) {
         var transactionTemplate = mock(TransactionTemplate.class);
         doAnswer(invocation -> {
@@ -141,8 +174,7 @@ class TtsPublisherServiceTest {
                 transactionTemplate,
                 repository,
                 r2StorageService,
-                speechWorkerService,
-                objectMapper
+                speechWorkerService
         );
         ReflectionTestUtils.setField(service, "defaultTtsVersion", "v1");
         ReflectionTestUtils.setField(service, "backoffSeconds", 60);
@@ -150,4 +182,5 @@ class TtsPublisherServiceTest {
         ReflectionTestUtils.setField(service, "batchSize", 100);
         return service;
     }
+
 }

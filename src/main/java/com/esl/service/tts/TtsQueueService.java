@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.LinkedHashSet;
 
 @Service
 public class TtsQueueService {
@@ -37,7 +38,13 @@ public class TtsQueueService {
 
         var article = StringUtils.trimToNull(dictation.getArticle());
         if (article != null) {
-            enqueueContent(article);
+            var uniqueChunks = new LinkedHashSet<String>();
+            for (var maxWords : DictationSentenceChunker.ALL_PRESET_WORD_COUNTS) {
+                uniqueChunks.addAll(DictationSentenceChunker.divideToSentences(article, maxWords));
+            }
+            for (var chunk : uniqueChunks) {
+                enqueueContent(chunk);
+            }
         }
     }
 
@@ -53,7 +60,7 @@ public class TtsQueueService {
         item.setAttemptCount(0);
         item.setCreatedDate(now);
         item.setLastUpdatedDate(now);
-        item.setContent(content);
+        item.setContent(content.trim());
 
         repository.save(item);
     }

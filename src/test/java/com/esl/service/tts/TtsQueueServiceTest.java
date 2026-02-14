@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("null")
 class TtsQueueServiceTest {
 
     @Test
@@ -37,7 +38,33 @@ class TtsQueueServiceTest {
     }
 
     @Test
-    void enqueueForDictation_shouldQueueArticleWhenNoVocabs() {
+    void enqueueForDictation_shouldQueueDeduplicatedArticleChunksAcrossAllPresets() {
+        var repository = mock(TtsPublishQueueRepository.class);
+        var service = new TtsQueueService(repository, "v1");
+        var dictation = new Dictation();
+        dictation.setVocabs(List.of());
+        dictation.setArticle("The cat sat on the mat. The dog ran fast.");
+
+        service.enqueueForDictation(dictation);
+
+        var captor = ArgumentCaptor.forClass(TtsPublishQueue.class);
+        verify(repository, times(6)).save(captor.capture());
+        var contents = captor.getAllValues().stream()
+                .map(TtsPublishQueue::getContent)
+                .toList();
+
+        assertEquals(List.of(
+                "The cat sat",
+                "on the mat.",
+                "The dog",
+                "ran fast.",
+                "The dog ran fast.",
+                "The cat sat on the mat."
+        ), contents);
+    }
+
+    @Test
+    void enqueueForDictation_shouldQueueSingleChunkWhenArticleDoesNotSplit() {
         var repository = mock(TtsPublishQueueRepository.class);
         var service = new TtsQueueService(repository, "v1");
         var dictation = new Dictation();
@@ -47,7 +74,7 @@ class TtsQueueServiceTest {
         service.enqueueForDictation(dictation);
 
         var captor = ArgumentCaptor.forClass(TtsPublishQueue.class);
-        verify(repository).save(captor.capture());
+        verify(repository, times(1)).save(captor.capture());
         assertEquals("Hello world", captor.getValue().getContent());
     }
 
@@ -60,4 +87,5 @@ class TtsQueueServiceTest {
 
         verify(repository, never()).save(any());
     }
+
 }
