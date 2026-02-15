@@ -9,9 +9,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.regex.Pattern;
 
 @Service
 public class TtsQueueService {
+    private static final Pattern ENGLISH_OR_DIGIT_PATTERN = Pattern.compile(".*[A-Za-z0-9].*");
     private final TtsPublishQueueRepository repository;
     private final String ttsVersion;
 
@@ -49,7 +51,8 @@ public class TtsQueueService {
     }
 
     public void enqueueContent(String content) {
-        if (StringUtils.isBlank(content)) {
+        var trimmed = StringUtils.trimToNull(content);
+        if (!isQueueableContent(trimmed)) {
             return;
         }
 
@@ -60,8 +63,15 @@ public class TtsQueueService {
         item.setAttemptCount(0);
         item.setCreatedDate(now);
         item.setLastUpdatedDate(now);
-        item.setContent(content.trim());
+        item.setContent(trimmed);
 
         repository.save(item);
+    }
+
+    boolean isQueueableContent(String trimmedContent) {
+        if (trimmedContent == null) {
+            return false;
+        }
+        return ENGLISH_OR_DIGIT_PATTERN.matcher(trimmedContent).matches();
     }
 }

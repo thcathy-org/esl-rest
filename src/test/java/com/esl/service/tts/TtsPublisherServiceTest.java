@@ -146,6 +146,34 @@ class TtsPublisherServiceTest {
         verify(repository).save(item);
     }
 
+    @Test
+    @SuppressWarnings("null")
+    void publishNext_shouldDeleteQueueItemOnInvalidSpeechWorkerInputError() {
+        var repository = mock(TtsPublishQueueRepository.class);
+        var r2StorageService = mock(R2StorageService.class);
+        var speechWorkerService = mock(SpeechWorkerService.class);
+        var service = createService(repository, r2StorageService, speechWorkerService);
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(repository.findNext(anyList(), any(Date.class), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(speechWorkerService.generate(any())).thenThrow(
+                new RuntimeException(
+                        "Speech worker call failed: 500 INTERNAL_SERVER_ERROR\n"
+                                + "Response body: {\"detail\":\"need at least one array to concatenate\"}"
+                )
+        );
+
+        service.publishNext();
+
+        verify(repository).deleteById(1L);
+        verify(repository, never()).save(item);
+        assertNull(item.getNextAttemptAt());
+        assertEquals(0, item.getAttemptCount());
+    }
+
     private TtsPublishQueue createItem() {
         var item = new TtsPublishQueue();
         item.setId(1L);

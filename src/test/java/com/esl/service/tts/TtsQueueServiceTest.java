@@ -88,4 +88,24 @@ class TtsQueueServiceTest {
         verify(repository, never()).save(any());
     }
 
+    @Test
+    void enqueueContent_shouldSkipWhenMissingEnglishLetterOrDigit() {
+        var repository = mock(TtsPublishQueueRepository.class);
+        var service = new TtsQueueService(repository, "v1");
+
+        service.enqueueContent("。。。。");
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void enqueueContent_shouldQueueSingleEnglishLetter() {
+        var repository = mock(TtsPublishQueueRepository.class);
+        var service = new TtsQueueService(repository, "v1");
+
+        service.enqueueContent("a");
+
+        verify(repository, times(1)).save(any());
+    }
+
 }

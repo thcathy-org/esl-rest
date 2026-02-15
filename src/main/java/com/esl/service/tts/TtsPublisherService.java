@@ -26,6 +26,8 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class TtsPublisherService {
     private static final Logger logger = LoggerFactory.getLogger(TtsPublisherService.class);
+    private static final String INVALID_INPUT_DETAIL = "need at least one array to concatenate";
+    private static final String INTERNAL_SERVER_ERROR = "500 INTERNAL_SERVER_ERROR";
     private static final List<String> ACTIVE_STATUSES = List.of(
             TtsPublishQueue.STATUS_PENDING,
             TtsPublishQueue.STATUS_FAILED
@@ -85,6 +87,22 @@ public class TtsPublisherService {
                 });
             } catch (Exception ex) {
                 var rootCause = ex.getCause() == null ? ex : ex.getCause();
+                if (isInvalidSpeechWorkerInputError(rootCause)) {
+                    var itemId = item.getId();
+                    if (itemId != null) {
+                        repository.deleteById(itemId);
+                        logger.warn(
+                                "Deleted invalid TTS queue content after non-retryable speech worker error: {}",
+                                item.getContent()
+                        );
+                    } else {
+                        logger.warn(
+                                "Skipping delete for invalid TTS queue content because id is null: {}",
+                                item.getContent()
+                        );
+                    }
+                    continue;
+                }
                 logger.error("Publishing TTS artifacts for queue content {}", item.getContent(), rootCause);
                 var nextAttemptAt = Date.from(Instant.now().plus(backoffSeconds, ChronoUnit.SECONDS));
                 item.setAttemptCount(item.getAttemptCount() + 1);
@@ -138,5 +156,14 @@ public class TtsPublisherService {
         var audioBytes = Base64.getDecoder().decode(response.audioBase64);
         var mimeType = StringUtils.defaultIfBlank(response.mimeType, "audio/mpeg");
         r2StorageService.putBytes(audioKey, audioBytes, mimeType);
+    }
+
+    private boolean isInvalidSpeechWorkerInputError(Throwable throwable) {
+        if (throwable == null) {
+            return false;
+        }
+
+        var message = StringUtils.defaultString(throwable.getMessage());
+        return message.contains(INTERNAL_SERVER_ERROR) && message.contains(INVALID_INPUT_DETAIL);
     }
 }
