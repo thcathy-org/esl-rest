@@ -9,7 +9,7 @@ class TtsAudioKeyBuilderTest {
     @Test
     void buildAudioKey_shouldUseSlugShardSlugMaxAndHash() {
         var key = TtsAudioKeyBuilder.buildAudioKey("v1", "hello world", "abc123");
-        assertEquals("tts/v1/he/hello world/abc123.mp3", key);
+        assertEquals("tts/v1/he/hello-world/abc123.mp3", key);
     }
 
     @Test
@@ -23,6 +23,12 @@ class TtsAudioKeyBuilderTest {
         var normalized = "abcdefghijklmnopqrstuvwxyz0123456789-EXTRA";
         var key = TtsAudioKeyBuilder.buildAudioKey("v1", normalized, "abc123");
         assertEquals("tts/v1/ab/abcdefghijklmnopqrstuvwxyz0123456789-EXT/abc123.mp3", key);
+    }
+
+    @Test
+    void buildAudioKey_shouldRemoveUnsafeSlugCharacters() {
+        var key = TtsAudioKeyBuilder.buildAudioKey("v1", "Hello, world! 你好 / test", "abc123");
+        assertEquals("tts/v1/he/hello-world-test/abc123.mp3", key);
     }
 }
 
