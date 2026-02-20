@@ -33,7 +33,7 @@ class TtsPublisherServiceTest {
 
         service.publishNext();
 
-        verify(repository, never()).findNext(anyList(), any(Date.class), any());
+        verify(repository, never()).findNext(anyList(), any(Date.class), anyInt(), any());
     }
 
     @Test
@@ -45,7 +45,7 @@ class TtsPublisherServiceTest {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), any()))
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(true);
 
@@ -64,7 +64,7 @@ class TtsPublisherServiceTest {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), any()))
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
 
@@ -95,7 +95,7 @@ class TtsPublisherServiceTest {
         item.setContent("Hello world.");
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), any()))
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
 
@@ -133,7 +133,7 @@ class TtsPublisherServiceTest {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), any()))
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(speechWorkerService.generate(any())).thenThrow(new RuntimeException("boom"));
@@ -156,7 +156,7 @@ class TtsPublisherServiceTest {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), any()))
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(speechWorkerService.generate(any())).thenThrow(
@@ -206,6 +206,7 @@ class TtsPublisherServiceTest {
         );
         ReflectionTestUtils.setField(service, "defaultTtsVersion", "v1");
         ReflectionTestUtils.setField(service, "backoffSeconds", 60);
+        ReflectionTestUtils.setField(service, "maxAttempts", 288);
         ReflectionTestUtils.setField(service, "ttsVoice", "af_sarah");
         ReflectionTestUtils.setField(service, "batchSize", 100);
         return service;

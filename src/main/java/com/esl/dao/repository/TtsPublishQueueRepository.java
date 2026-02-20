@@ -13,6 +13,7 @@ import java.util.List;
 public interface TtsPublishQueueRepository extends CrudRepository<TtsPublishQueue, Long> {
     @Query("select q from TtsPublishQueue q " +
             "where q.status in ?1 and (q.nextAttemptAt is null or q.nextAttemptAt <= ?2) " +
+            "and (q.status <> 'failed' or q.attemptCount < ?3) " +
             "order by q.lastUpdatedDate asc, q.createdDate asc")
-    List<TtsPublishQueue> findNext(List<String> statuses, Date now, Pageable pageable);
+    List<TtsPublishQueue> findNext(List<String> statuses, Date now, int maxAttempts, Pageable pageable);
 }

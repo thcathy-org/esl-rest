@@ -43,6 +43,9 @@ public class TtsPublisherService {
     @Value("${TtsPublisherService.BackoffSeconds}")
     private int backoffSeconds;
 
+    @Value("${TtsPublisherService.MaxAttempts:288}")
+    private int maxAttempts;
+
     @Value("${TtsPublisherService.Voice:af_sarah}")
     private String ttsVoice;
 
@@ -71,7 +74,7 @@ public class TtsPublisherService {
 
         var now = new Date();
         var page = PageRequest.of(0, batchSize);
-        var results = repository.findNext(ACTIVE_STATUSES, now, page);
+        var results = repository.findNext(ACTIVE_STATUSES, now, maxAttempts, page);
         if (results.isEmpty()) {
             return;
         }
