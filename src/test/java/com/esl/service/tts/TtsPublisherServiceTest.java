@@ -2,10 +2,15 @@ package com.esl.service.tts;
 
 import com.esl.dao.repository.TtsPublishQueueRepository;
 import com.esl.entity.TtsPublishQueue;
+import com.esl.service.rest.CloudflareAIService;
 import com.esl.service.rest.R2StorageService;
 import com.esl.service.rest.SpeechWorkerService;
 import com.esl.util.TtsTextUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -20,15 +25,43 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class TtsPublisherServiceTest {
+
+    @Mock TtsPublishQueueRepository repository;
+    @Mock R2StorageService r2StorageService;
+    @Mock SpeechWorkerService speechWorkerService;
+    @Mock CloudflareAIService cloudflareAIService;
+
+    TtsPublisherService service;
+
+    @BeforeEach
+    @SuppressWarnings({"unchecked", "null"})
+    void setUp() {
+        var transactionTemplate = mock(TransactionTemplate.class);
+        doAnswer(invocation -> {
+            var callback = (Consumer<TransactionStatus>) invocation.getArgument(0);
+            callback.accept(null);
+            return null;
+        }).when(transactionTemplate).executeWithoutResult(any());
+
+        service = new TtsPublisherService(
+                transactionTemplate,
+                repository,
+                r2StorageService,
+                speechWorkerService,
+                cloudflareAIService
+        );
+        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_SPEECH_WORKER);
+        ReflectionTestUtils.setField(service, "defaultTtsVersion", "v1");
+        ReflectionTestUtils.setField(service, "backoffSeconds", 60);
+        ReflectionTestUtils.setField(service, "maxAttempts", 288);
+        ReflectionTestUtils.setField(service, "ttsVoice", "af_sarah");
+        ReflectionTestUtils.setField(service, "batchSize", 100);
+    }
 
     @Test
     void publishNext_shouldSkipWhenR2NotConfigured() {
-        var repository = mock(TtsPublishQueueRepository.class);
-        var r2StorageService = mock(R2StorageService.class);
-        var speechWorkerService = mock(SpeechWorkerService.class);
-        var service = createService(repository, r2StorageService, speechWorkerService);
-
         when(r2StorageService.isConfigured()).thenReturn(false);
 
         service.publishNext();
@@ -38,10 +71,6 @@ class TtsPublisherServiceTest {
 
     @Test
     void publishNext_shouldDeleteWhenArtifactsExist() {
-        var repository = mock(TtsPublishQueueRepository.class);
-        var r2StorageService = mock(R2StorageService.class);
-        var speechWorkerService = mock(SpeechWorkerService.class);
-        var service = createService(repository, r2StorageService, speechWorkerService);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -56,11 +85,7 @@ class TtsPublisherServiceTest {
     }
 
     @Test
-    void publishNext_shouldPublishAndDeleteWhenMissingArtifacts() throws Exception {
-        var repository = mock(TtsPublishQueueRepository.class);
-        var r2StorageService = mock(R2StorageService.class);
-        var speechWorkerService = mock(SpeechWorkerService.class);
-        var service = createService(repository, r2StorageService, speechWorkerService);
+    void publishNext_shouldPublishAndDeleteWhenMissingArtifacts() {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -87,10 +112,6 @@ class TtsPublisherServiceTest {
 
     @Test
     void publishNext_shouldBuildDeterministicAudioKeysFromNormalizedText() {
-        var repository = mock(TtsPublishQueueRepository.class);
-        var r2StorageService = mock(R2StorageService.class);
-        var speechWorkerService = mock(SpeechWorkerService.class);
-        var service = createService(repository, r2StorageService, speechWorkerService);
         var item = createItem();
         item.setContent("Hello world.");
 
@@ -106,7 +127,6 @@ class TtsPublisherServiceTest {
         response.sampleRate = 24000;
         response.originalText = "hello";
         response.processedText = "hello";
-        // response.wordTimestamps intentionally omitted
 
         when(speechWorkerService.generate(any(SpeechWorkerService.GenerateRequest.class))).thenReturn(response);
 
@@ -126,10 +146,6 @@ class TtsPublisherServiceTest {
 
     @Test
     void publishNext_shouldMarkFailedOnError() {
-        var repository = mock(TtsPublishQueueRepository.class);
-        var r2StorageService = mock(R2StorageService.class);
-        var speechWorkerService = mock(SpeechWorkerService.class);
-        var service = createService(repository, r2StorageService, speechWorkerService);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -149,10 +165,6 @@ class TtsPublisherServiceTest {
     @Test
     @SuppressWarnings("null")
     void publishNext_shouldDeleteQueueItemOnInvalidSpeechWorkerInputError() {
-        var repository = mock(TtsPublishQueueRepository.class);
-        var r2StorageService = mock(R2StorageService.class);
-        var speechWorkerService = mock(SpeechWorkerService.class);
-        var service = createService(repository, r2StorageService, speechWorkerService);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -174,6 +186,65 @@ class TtsPublisherServiceTest {
         assertEquals(0, item.getAttemptCount());
     }
 
+    @Test
+    void publishNext_shouldUseCloudflareWhenProviderIsCloudflareAura2() {
+        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_CLOUDFLARE_AURA2);
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(cloudflareAIService.textToSpeech(anyString())).thenReturn("audio-data".getBytes());
+
+        service.publishNext();
+
+        verify(cloudflareAIService, times(2)).textToSpeech(anyString());
+        verify(speechWorkerService, never()).generate(any());
+        verify(r2StorageService, times(2)).putBytes(anyString(), any(byte[].class), eq("audio/mpeg"));
+        verify(repository).deleteById(1L);
+    }
+
+    @Test
+    void publishNext_shouldMarkFailedWhenCloudflareErrors() {
+        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_CLOUDFLARE_AURA2);
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(cloudflareAIService.textToSpeech(anyString()))
+                .thenThrow(new RuntimeException("Cloudflare AI call failed: 400"));
+
+        service.publishNext();
+
+        assertEquals(TtsPublishQueue.STATUS_FAILED, item.getStatus());
+        assertNotNull(item.getNextAttemptAt());
+        assertTrue(item.getAttemptCount() > 0);
+        verify(repository).save(item);
+    }
+
+    @Test
+    void publishNext_shouldDefaultToSpeechWorkerProvider() {
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+
+        var response = new SpeechWorkerService.GenerateResponse();
+        response.audioBase64 = Base64.getEncoder().encodeToString("hello".getBytes());
+        response.mimeType = "audio/mpeg";
+        when(speechWorkerService.generate(any(SpeechWorkerService.GenerateRequest.class))).thenReturn(response);
+
+        service.publishNext();
+
+        verify(speechWorkerService, times(2)).generate(any());
+        verify(cloudflareAIService, never()).textToSpeech(anyString());
+    }
+
     private TtsPublishQueue createItem() {
         var item = new TtsPublishQueue();
         item.setId(1L);
@@ -183,33 +254,6 @@ class TtsPublisherServiceTest {
         item.setCreatedDate(new Date());
         item.setLastUpdatedDate(new Date());
         return item;
-    }
-
-    @SuppressWarnings({"unchecked", "null"})
-    private TtsPublisherService createService(
-            TtsPublishQueueRepository repository,
-            R2StorageService r2StorageService,
-            SpeechWorkerService speechWorkerService
-    ) {
-        var transactionTemplate = mock(TransactionTemplate.class);
-        doAnswer(invocation -> {
-            var callback = (Consumer<TransactionStatus>) invocation.getArgument(0);
-            callback.accept(null);
-            return null;
-        }).when(transactionTemplate).executeWithoutResult(any());
-
-        var service = new TtsPublisherService(
-                transactionTemplate,
-                repository,
-                r2StorageService,
-                speechWorkerService
-        );
-        ReflectionTestUtils.setField(service, "defaultTtsVersion", "v1");
-        ReflectionTestUtils.setField(service, "backoffSeconds", 60);
-        ReflectionTestUtils.setField(service, "maxAttempts", 288);
-        ReflectionTestUtils.setField(service, "ttsVoice", "af_sarah");
-        ReflectionTestUtils.setField(service, "batchSize", 100);
-        return service;
     }
 
 }

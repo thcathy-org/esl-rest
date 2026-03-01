@@ -2,6 +2,7 @@ package com.esl.service.tts;
 
 import com.esl.dao.repository.TtsPublishQueueRepository;
 import com.esl.entity.TtsPublishQueue;
+import com.esl.service.rest.CloudflareAIService;
 import com.esl.service.rest.R2StorageService;
 import com.esl.service.rest.SpeechWorkerService;
 import com.esl.util.TtsTextUtil;
@@ -26,6 +27,9 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class TtsPublisherService {
     private static final Logger logger = LoggerFactory.getLogger(TtsPublisherService.class);
+    public static final String PROVIDER_SPEECH_WORKER = "esl_speech_worker";
+    public static final String PROVIDER_CLOUDFLARE_AURA2 = "cloudflare_aura2";
+
     private static final String INVALID_INPUT_DETAIL = "need at least one array to concatenate";
     private static final String INTERNAL_SERVER_ERROR = "500 INTERNAL_SERVER_ERROR";
     private static final List<String> ACTIVE_STATUSES = List.of(
@@ -37,6 +41,11 @@ public class TtsPublisherService {
     private final TtsPublishQueueRepository repository;
     private final R2StorageService r2StorageService;
     private final SpeechWorkerService speechWorkerService;
+    private final CloudflareAIService cloudflareAIService;
+
+    @Value("${TtsPublisherService.Provider:esl_speech_worker}")
+    private String ttsProvider;
+
     @Value("${TtsPublisherService.Version:v1}")
     private String defaultTtsVersion;
 
@@ -56,13 +65,15 @@ public class TtsPublisherService {
             TransactionTemplate transactionTemplate,
             TtsPublishQueueRepository repository,
             R2StorageService r2StorageService,
-            SpeechWorkerService speechWorkerService
+            SpeechWorkerService speechWorkerService,
+            CloudflareAIService cloudflareAIService
     ) {
         this.transactionTemplate = transactionTemplate;
         this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.repository = repository;
         this.r2StorageService = r2StorageService;
         this.speechWorkerService = speechWorkerService;
+        this.cloudflareAIService = cloudflareAIService;
     }
 
     @Scheduled(fixedDelayString = "${TtsPublisherService.IntervalSeconds}", timeUnit = TimeUnit.SECONDS)
@@ -146,6 +157,14 @@ public class TtsPublisherService {
     }
 
     private void publishVariant(String processedText, String audioKey) {
+        if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(ttsProvider)) {
+            publishViaCloudflareTts(processedText, audioKey);
+        } else {
+            publishViaSpeechWorker(processedText, audioKey);
+        }
+    }
+
+    private void publishViaSpeechWorker(String processedText, String audioKey) {
         var request = new SpeechWorkerService.GenerateRequest();
         request.text = processedText;
         request.voice = ttsVoice;
@@ -159,6 +178,14 @@ public class TtsPublisherService {
         var audioBytes = Base64.getDecoder().decode(response.audioBase64);
         var mimeType = StringUtils.defaultIfBlank(response.mimeType, "audio/mpeg");
         r2StorageService.putBytes(audioKey, audioBytes, mimeType);
+    }
+
+    private void publishViaCloudflareTts(String processedText, String audioKey) {
+        var audioBytes = cloudflareAIService.textToSpeech(processedText);
+        if (audioBytes == null || audioBytes.length == 0) {
+            throw new IllegalStateException("Cloudflare AI returned empty audio");
+        }
+        r2StorageService.putBytes(audioKey, audioBytes, "audio/mpeg");
     }
 
     private boolean isInvalidSpeechWorkerInputError(Throwable throwable) {
