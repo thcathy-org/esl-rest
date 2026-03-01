@@ -49,6 +49,8 @@
             R2_ENDPOINT: "{{ r2_endpoint }}"
             R2_ACCESS_KEY_ID: "{{ r2_access_key_id }}"
             R2_SECRET_ACCESS_KEY: "{{ r2_secret_access_key }}"
+            CLOUDFLARE_ACCOUNT_ID: "{{ cloudflare_account_id }}"
+            CLOUDFLARE_API_TOKEN: "{{ cloudflare_api_token }}"
 
     - name: apply k8s manifest
       k8s:

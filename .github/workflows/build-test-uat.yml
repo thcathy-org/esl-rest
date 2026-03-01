@@ -103,3 +103,5 @@ jobs:
           -e r2_endpoint=${{ secrets.R2_ENDPOINT }}
           -e r2_access_key_id=${{ secrets.R2_ACCESS_KEY_ID }}
           -e r2_secret_access_key=${{ secrets.R2_SECRET_ACCESS_KEY }}
+          -e cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          -e cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}
