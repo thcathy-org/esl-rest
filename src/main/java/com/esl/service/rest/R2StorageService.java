@@ -84,6 +84,14 @@ public class R2StorageService {
             request.contentType(contentType);
         }
         s3Client.putObject(request.build(), RequestBody.fromBytes(data));
+        logger.info(
+                "Stored object in R2 bucket={} key={} bytes={} contentType={} publicUrl={}",
+                bucket,
+                key,
+                data == null ? 0 : data.length,
+                StringUtils.defaultIfBlank(contentType, "unknown"),
+                StringUtils.defaultIfBlank(buildPublicUrl(key), "n/a")
+        );
     }
 
     public String buildPublicUrl(String key) {

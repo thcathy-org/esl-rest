@@ -82,6 +82,10 @@ public class TtsPublisherService {
             logger.info("TTS publisher skipped: R2 is not configured");
             return;
         }
+        if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(ttsProvider) && !cloudflareAIService.isConfigured()) {
+            logger.warn("TTS publisher skipped: provider={} but Cloudflare AI is not configured", ttsProvider);
+            return;
+        }
 
         var now = new Date();
         var page = PageRequest.of(0, batchSize);
@@ -170,6 +174,7 @@ public class TtsPublisherService {
         request.voice = ttsVoice;
         request.audioFormat = "mp3";
 
+        logger.info("Calling speech worker provider for text={}", processedText);
         var response = speechWorkerService.generate(request);
         if (response == null || StringUtils.isBlank(response.audioBase64)) {
             throw new IllegalStateException("Speech worker returned empty audio");
@@ -181,6 +186,7 @@ public class TtsPublisherService {
     }
 
     private void publishViaCloudflareTts(String processedText, String audioKey) {
+        logger.info("Calling Cloudflare AI provider for text={}", processedText);
         var audioBytes = cloudflareAIService.textToSpeech(processedText);
         if (audioBytes == null || audioBytes.length == 0) {
             throw new IllegalStateException("Cloudflare AI returned empty audio");
