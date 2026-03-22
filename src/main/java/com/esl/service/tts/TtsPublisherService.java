@@ -55,7 +55,7 @@ public class TtsPublisherService {
     @Value("${TtsPublisherService.MaxAttempts:288}")
     private int maxAttempts;
 
-    @Value("${TtsPublisherService.Voice:af_bella}")
+    @Value("${TtsPublisherService.Voice:}")
     private String ttsVoice;
 
     @Value("${TtsPublisherService.BatchSize:100}")
@@ -174,7 +174,7 @@ public class TtsPublisherService {
     private void publishViaSpeechWorker(String processedText, String audioKey) {
         var request = new SpeechWorkerService.GenerateRequest();
         request.text = processedText;
-        request.voice = ttsVoice;
+        if (StringUtils.isNotBlank(ttsVoice)) request.voice = ttsVoice;
         request.audioFormat = "mp3";
 
         logger.info("Calling speech worker provider for text={}", processedText);

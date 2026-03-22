@@ -56,7 +56,7 @@ class TtsPublisherServiceTest {
         ReflectionTestUtils.setField(service, "defaultTtsVersion", "v1");
         ReflectionTestUtils.setField(service, "backoffSeconds", 60);
         ReflectionTestUtils.setField(service, "maxAttempts", 288);
-        ReflectionTestUtils.setField(service, "ttsVoice", "af_bella");
+        ReflectionTestUtils.setField(service, "ttsVoice", "");
         ReflectionTestUtils.setField(service, "batchSize", 100);
     }
 
