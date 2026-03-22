@@ -55,7 +55,7 @@ public class TtsPublisherService {
     @Value("${TtsPublisherService.MaxAttempts:288}")
     private int maxAttempts;
 
-    @Value("${TtsPublisherService.Voice:af_sarah}")
+    @Value("${TtsPublisherService.Voice:af_bella}")
     private String ttsVoice;
 
     @Value("${TtsPublisherService.BatchSize:100}")
