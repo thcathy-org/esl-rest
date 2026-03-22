@@ -245,6 +245,27 @@ class TtsPublisherServiceTest {
         verify(cloudflareAIService, never()).textToSpeech(anyString());
     }
 
+    @Test
+    void publishNext_shouldPublishEvenWhenArtifactsExistWhenForceReplaceAudio() {
+        var item = createItem();
+        item.setForceReplaceAudio(true);
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+
+        var response = new SpeechWorkerService.GenerateResponse();
+        response.audioBase64 = Base64.getEncoder().encodeToString("hello".getBytes());
+        response.mimeType = "audio/mpeg";
+        when(speechWorkerService.generate(any(SpeechWorkerService.GenerateRequest.class))).thenReturn(response);
+
+        service.publishNext();
+
+        verify(r2StorageService, never()).exists(anyString());
+        verify(r2StorageService, times(2)).putBytes(anyString(), any(byte[].class), anyString());
+        verify(repository).deleteById(1L);
+    }
+
     private TtsPublishQueue createItem() {
         var item = new TtsPublishQueue();
         item.setId(1L);

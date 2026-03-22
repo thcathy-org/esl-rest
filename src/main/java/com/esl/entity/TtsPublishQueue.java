@@ -42,6 +42,9 @@ public class TtsPublishQueue {
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastUpdatedDate;
 
+    @Column(name = "FORCE_REPLACE_AUDIO")
+    private boolean forceReplaceAudio;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -68,4 +71,7 @@ public class TtsPublishQueue {
 
     public Date getLastUpdatedDate() { return lastUpdatedDate; }
     public void setLastUpdatedDate(Date lastUpdatedDate) { this.lastUpdatedDate = lastUpdatedDate; }
+
+    public boolean isForceReplaceAudio() { return forceReplaceAudio; }
+    public void setForceReplaceAudio(boolean forceReplaceAudio) { this.forceReplaceAudio = forceReplaceAudio; }
 }

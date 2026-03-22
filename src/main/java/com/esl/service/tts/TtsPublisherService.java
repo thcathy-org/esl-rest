@@ -145,13 +145,16 @@ public class TtsPublisherService {
         var normalAudioKey = TtsAudioKeyBuilder.buildAudioKey(ttsVersion, normalized, normalKeyHash);
         var punctAudioKey = TtsAudioKeyBuilder.buildAudioKey(ttsVersion, punctText, punctKeyHash);
 
-        var allExist = r2StorageService.exists(normalAudioKey)
-                && r2StorageService.exists(punctAudioKey);
         var itemId = Objects.requireNonNull(item.getId(), "TTS queue item id is required");
-        if (allExist) {
-            repository.deleteById(itemId);
-            logger.info("TTS artifacts already exist; deleted queue content: {}", item.getContent());
-            return;
+
+        if (!item.isForceReplaceAudio()) {
+            var allExist = r2StorageService.exists(normalAudioKey)
+                    && r2StorageService.exists(punctAudioKey);
+            if (allExist) {
+                repository.deleteById(itemId);
+                logger.info("TTS artifacts already exist; deleted queue content: {}", item.getContent());
+                return;
+            }
         }
 
         publishVariant(normalized, normalAudioKey);
