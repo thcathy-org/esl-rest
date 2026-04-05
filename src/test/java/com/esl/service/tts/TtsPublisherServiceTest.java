@@ -4,6 +4,7 @@ import com.esl.dao.repository.TtsPublishQueueRepository;
 import com.esl.entity.TtsPublishQueue;
 import com.esl.service.rest.CloudflareAIService;
 import com.esl.service.rest.R2StorageService;
+import com.esl.service.rest.ReplicateAIService;
 import com.esl.service.rest.SpeechWorkerService;
 import com.esl.util.TtsTextUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +33,7 @@ class TtsPublisherServiceTest {
     @Mock R2StorageService r2StorageService;
     @Mock SpeechWorkerService speechWorkerService;
     @Mock CloudflareAIService cloudflareAIService;
+    @Mock ReplicateAIService replicateAIService;
 
     TtsPublisherService service;
 
@@ -50,7 +52,8 @@ class TtsPublisherServiceTest {
                 repository,
                 r2StorageService,
                 speechWorkerService,
-                cloudflareAIService
+                cloudflareAIService,
+                replicateAIService
         );
         ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_SPEECH_WORKER);
         ReflectionTestUtils.setField(service, "defaultTtsVersion", "v1");
@@ -243,6 +246,39 @@ class TtsPublisherServiceTest {
 
         verify(speechWorkerService, times(2)).generate(any());
         verify(cloudflareAIService, never()).textToSpeech(anyString());
+    }
+
+    @Test
+    void publishNext_shouldUseInworldWhenProviderIsInworldTts() {
+        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_INWORLD_TTS);
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(replicateAIService.isConfigured()).thenReturn(true);
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(replicateAIService.inworldTextToSpeech(anyString())).thenReturn("audio-data".getBytes());
+
+        service.publishNext();
+
+        verify(replicateAIService, times(2)).inworldTextToSpeech(anyString());
+        verify(speechWorkerService, never()).generate(any());
+        verify(cloudflareAIService, never()).textToSpeech(anyString());
+        verify(r2StorageService, times(2)).putBytes(anyString(), any(byte[].class), eq("audio/mpeg"));
+        verify(repository).deleteById(1L);
+    }
+
+    @Test
+    void publishNext_shouldSkipWhenInworldProviderNotConfigured() {
+        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_INWORLD_TTS);
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(replicateAIService.isConfigured()).thenReturn(false);
+
+        service.publishNext();
+
+        verify(repository, never()).findNext(anyList(), any(Date.class), anyInt(), any());
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.esl.dao.repository.TtsPublishQueueRepository;
 import com.esl.entity.TtsPublishQueue;
 import com.esl.service.rest.CloudflareAIService;
 import com.esl.service.rest.R2StorageService;
+import com.esl.service.rest.ReplicateAIService;
 import com.esl.service.rest.SpeechWorkerService;
 import com.esl.util.TtsTextUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -29,6 +30,7 @@ public class TtsPublisherService {
     private static final Logger logger = LoggerFactory.getLogger(TtsPublisherService.class);
     public static final String PROVIDER_SPEECH_WORKER = "esl_speech_worker";
     public static final String PROVIDER_CLOUDFLARE_AURA2 = "cloudflare_aura2";
+    public static final String PROVIDER_INWORLD_TTS = "inworld_tts";
 
     private static final String INVALID_INPUT_DETAIL = "need at least one array to concatenate";
     private static final String INTERNAL_SERVER_ERROR = "500 INTERNAL_SERVER_ERROR";
@@ -42,6 +44,7 @@ public class TtsPublisherService {
     private final R2StorageService r2StorageService;
     private final SpeechWorkerService speechWorkerService;
     private final CloudflareAIService cloudflareAIService;
+    private final ReplicateAIService replicateAIService;
 
     @Value("${TtsPublisherService.Provider:esl_speech_worker}")
     private String ttsProvider;
@@ -66,7 +69,8 @@ public class TtsPublisherService {
             TtsPublishQueueRepository repository,
             R2StorageService r2StorageService,
             SpeechWorkerService speechWorkerService,
-            CloudflareAIService cloudflareAIService
+            CloudflareAIService cloudflareAIService,
+            ReplicateAIService replicateAIService
     ) {
         this.transactionTemplate = transactionTemplate;
         this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -74,6 +78,7 @@ public class TtsPublisherService {
         this.r2StorageService = r2StorageService;
         this.speechWorkerService = speechWorkerService;
         this.cloudflareAIService = cloudflareAIService;
+        this.replicateAIService = replicateAIService;
     }
 
     @Scheduled(fixedDelayString = "${TtsPublisherService.IntervalSeconds}", timeUnit = TimeUnit.SECONDS)
@@ -84,6 +89,10 @@ public class TtsPublisherService {
         }
         if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(ttsProvider) && !cloudflareAIService.isConfigured()) {
             logger.warn("TTS publisher skipped: provider={} but Cloudflare AI is not configured", ttsProvider);
+            return;
+        }
+        if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(ttsProvider) && !replicateAIService.isConfigured()) {
+            logger.warn("TTS publisher skipped: provider={} but Replicate AI is not configured", ttsProvider);
             return;
         }
 
@@ -166,6 +175,8 @@ public class TtsPublisherService {
     private void publishVariant(String processedText, String audioKey) {
         if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(ttsProvider)) {
             publishViaCloudflareTts(processedText, audioKey);
+        } else if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(ttsProvider)) {
+            publishViaInworldTts(processedText, audioKey);
         } else {
             publishViaSpeechWorker(processedText, audioKey);
         }
@@ -186,6 +197,15 @@ public class TtsPublisherService {
         var audioBytes = Base64.getDecoder().decode(response.audioBase64);
         var mimeType = StringUtils.defaultIfBlank(response.mimeType, "audio/mpeg");
         r2StorageService.putBytes(audioKey, audioBytes, mimeType);
+    }
+
+    private void publishViaInworldTts(String processedText, String audioKey) {
+        logger.info("Calling Inworld TTS provider for text={}", processedText);
+        var audioBytes = replicateAIService.inworldTextToSpeech(processedText);
+        if (audioBytes == null || audioBytes.length == 0) {
+            throw new IllegalStateException("Inworld TTS returned empty audio");
+        }
+        r2StorageService.putBytes(audioKey, audioBytes, "audio/mpeg");
     }
 
     private void publishViaCloudflareTts(String processedText, String audioKey) {
