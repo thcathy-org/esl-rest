@@ -19,10 +19,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -32,12 +31,7 @@ public class TtsPublisherService {
     public static final String PROVIDER_CLOUDFLARE_AURA2 = "cloudflare_aura2";
     public static final String PROVIDER_INWORLD_TTS = "inworld_tts";
 
-    private static final String INVALID_INPUT_DETAIL = "need at least one array to concatenate";
-    private static final String INTERNAL_SERVER_ERROR = "500 INTERNAL_SERVER_ERROR";
-    private static final List<String> ACTIVE_STATUSES = List.of(
-            TtsPublishQueue.STATUS_PENDING,
-            TtsPublishQueue.STATUS_FAILED
-    );
+    private static final List<String> ACTIVE_STATUSES = List.of(TtsPublishQueue.STATUS_FAILED);
 
     private final TransactionTemplate transactionTemplate;
     private final TtsPublishQueueRepository repository;
@@ -45,6 +39,7 @@ public class TtsPublisherService {
     private final SpeechWorkerService speechWorkerService;
     private final CloudflareAIService cloudflareAIService;
     private final ReplicateAIService replicateAIService;
+    private final ExecutorService executionPool;
 
     @Value("${TtsPublisherService.Provider:esl_speech_worker}")
     private String ttsProvider;
@@ -70,7 +65,8 @@ public class TtsPublisherService {
             R2StorageService r2StorageService,
             SpeechWorkerService speechWorkerService,
             CloudflareAIService cloudflareAIService,
-            ReplicateAIService replicateAIService
+            ReplicateAIService replicateAIService,
+            ExecutorService executionPool
     ) {
         this.transactionTemplate = transactionTemplate;
         this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -79,6 +75,30 @@ public class TtsPublisherService {
         this.speechWorkerService = speechWorkerService;
         this.cloudflareAIService = cloudflareAIService;
         this.replicateAIService = replicateAIService;
+        this.executionPool = executionPool;
+    }
+
+    public void publishAsync(Collection<String> contents) {
+        if (!r2StorageService.isConfigured()) {
+            logger.info("publishAsync skipped: R2 is not configured");
+            return;
+        }
+        if (!isProviderConfigured()) {
+            logger.warn("publishAsync skipped: provider={} is not configured", ttsProvider);
+            return;
+        }
+
+        contents.forEach(content ->
+                CompletableFuture.runAsync(() -> publishOne(content), executionPool));
+    }
+
+    private void publishOne(String content) {
+        try {
+            processContentString(content, false);
+        } catch (Exception ex) {
+            logger.error("publishAsync: TTS failed, saving FAILED queue entry for: {}", content, ex);
+            saveFailedQueueEntry(content, ex);
+        }
     }
 
     @Scheduled(fixedDelayString = "${TtsPublisherService.IntervalSeconds}", timeUnit = TimeUnit.SECONDS)
@@ -87,12 +107,8 @@ public class TtsPublisherService {
             logger.info("TTS publisher skipped: R2 is not configured");
             return;
         }
-        if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(ttsProvider) && !cloudflareAIService.isConfigured()) {
-            logger.warn("TTS publisher skipped: provider={} but Cloudflare AI is not configured", ttsProvider);
-            return;
-        }
-        if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(ttsProvider) && !replicateAIService.isConfigured()) {
-            logger.warn("TTS publisher skipped: provider={} but Replicate AI is not configured", ttsProvider);
+        if (!isProviderConfigured()) {
+            logger.warn("TTS publisher skipped: provider={} is not configured", ttsProvider);
             return;
         }
 
@@ -107,29 +123,15 @@ public class TtsPublisherService {
             try {
                 transactionTemplate.executeWithoutResult(status -> {
                     try {
-                        processOne(item);
+                        var itemId = Objects.requireNonNull(item.getId(), "TTS queue item id is required");
+                        processContentString(item.getContent(), item.isForceReplaceAudio());
+                        repository.deleteById(itemId);
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
                 });
             } catch (Exception ex) {
                 var rootCause = ex.getCause() == null ? ex : ex.getCause();
-                if (isInvalidSpeechWorkerInputError(rootCause)) {
-                    var itemId = item.getId();
-                    if (itemId != null) {
-                        repository.deleteById(itemId);
-                        logger.warn(
-                                "Deleted invalid TTS queue content after non-retryable speech worker error: {}",
-                                item.getContent()
-                        );
-                    } else {
-                        logger.warn(
-                                "Skipping delete for invalid TTS queue content because id is null: {}",
-                                item.getContent()
-                        );
-                    }
-                    continue;
-                }
                 logger.error("Publishing TTS artifacts for queue content {}", item.getContent(), rootCause);
                 var nextAttemptAt = Date.from(Instant.now().plus(backoffSeconds, ChronoUnit.SECONDS));
                 item.setAttemptCount(item.getAttemptCount() + 1);
@@ -143,10 +145,9 @@ public class TtsPublisherService {
         }
     }
 
-    private void processOne(TtsPublishQueue item) throws Exception {
-        var ttsVersion = StringUtils.defaultIfBlank(item.getTtsVersion(), defaultTtsVersion);
-        var original = StringUtils.trimToNull(item.getContent());
-        var normalized = TtsTextUtil.normalize(original);
+    private void processContentString(String content, boolean forceReplaceAudio) {
+        var ttsVersion = defaultTtsVersion;
+        var normalized = TtsTextUtil.normalize(StringUtils.trimToNull(content));
         var normalKeyHash = TtsTextUtil.sha256Hex(normalized);
         var punctText = TtsTextUtil.normalize(TtsTextUtil.toPunctuationText(normalized));
         var punctKeyHash = TtsTextUtil.sha256Hex(punctText);
@@ -154,22 +155,37 @@ public class TtsPublisherService {
         var normalAudioKey = TtsAudioKeyBuilder.buildAudioKey(ttsVersion, normalized, normalKeyHash);
         var punctAudioKey = TtsAudioKeyBuilder.buildAudioKey(ttsVersion, punctText, punctKeyHash);
 
-        var itemId = Objects.requireNonNull(item.getId(), "TTS queue item id is required");
-
-        if (!item.isForceReplaceAudio()) {
-            var allExist = r2StorageService.exists(normalAudioKey)
-                    && r2StorageService.exists(punctAudioKey);
+        if (!forceReplaceAudio) {
+            var allExist = r2StorageService.exists(normalAudioKey) && r2StorageService.exists(punctAudioKey);
             if (allExist) {
-                repository.deleteById(itemId);
-                logger.info("TTS artifacts already exist; deleted queue content: {}", item.getContent());
+                logger.info("processContentString: content already exists: {}", content);
                 return;
             }
         }
 
         publishVariant(normalized, normalAudioKey);
         publishVariant(punctText, punctAudioKey);
-        repository.deleteById(itemId);
-        logger.info("Published TTS artifacts for queue content: {}", item.getContent());
+        logger.info("processContentString: TTS published for content: {}", content);
+    }
+
+    private void saveFailedQueueEntry(String content, Throwable cause) {
+        var now = new Date();
+        var item = new TtsPublishQueue();
+        item.setTtsVersion(defaultTtsVersion);
+        item.setContent(content);
+        item.setStatus(TtsPublishQueue.STATUS_FAILED);
+        item.setAttemptCount(1);
+        item.setCreatedDate(now);
+        item.setLastUpdatedDate(now);
+        item.setNextAttemptAt(Date.from(Instant.now().plus(backoffSeconds, ChronoUnit.SECONDS)));
+        item.setLastError(StringUtils.abbreviate(cause.getMessage(), 1000));
+        repository.save(item);
+    }
+
+    private boolean isProviderConfigured() {
+        if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(ttsProvider)) return cloudflareAIService.isConfigured();
+        if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(ttsProvider)) return replicateAIService.isConfigured();
+        return true;
     }
 
     private void publishVariant(String processedText, String audioKey) {
@@ -217,12 +233,4 @@ public class TtsPublisherService {
         r2StorageService.putBytes(audioKey, audioBytes, "audio/mpeg");
     }
 
-    private boolean isInvalidSpeechWorkerInputError(Throwable throwable) {
-        if (throwable == null) {
-            return false;
-        }
-
-        var message = StringUtils.defaultString(throwable.getMessage());
-        return message.contains(INTERNAL_SERVER_ERROR) && message.contains(INVALID_INPUT_DETAIL);
-    }
 }
