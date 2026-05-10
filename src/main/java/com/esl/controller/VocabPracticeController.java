@@ -58,9 +58,17 @@ public class VocabPracticeController {
 		}
 	}
 
+	/**
+	 * @deprecated Use {@code GET /interpretation?text=&lang=en} instead. This endpoint is preserved
+	 * for old client app installs that have not yet updated. Track usage via the WARN log line
+	 * below; only remove the endpoint once the warning shows zero traffic for a long observation
+	 * window.
+	 */
+	@Deprecated
 	@Cacheable("meanings")
 	@RequestMapping(value = "/meaning/{word}")
 	public ResponseEntity<String> meaning(@PathVariable String word) {
+		log.warn("Deprecated /vocab/meaning called for word={}", word);
 		try {
 			if (ValidationUtil.isValidWord(word)) {
 				return ResponseEntity.ok(vocabService.getMeaning(word));
