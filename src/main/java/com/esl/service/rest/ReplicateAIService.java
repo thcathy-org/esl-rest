@@ -28,6 +28,9 @@ public class ReplicateAIService {
     @Value("${ReplicateAIService.InworldTts.VoiceId:Ashley}")
     private String inworldVoiceId;
 
+    @Value("${ReplicateAIService.InterpretationModel:}")
+    private String interpretationModel;
+
     public ReplicateAIService(
             @Value("${REPLICATE_API_TOKEN:}") String apiToken,
             @Value("${ReplicateAIService.RequestTimeoutInSecond}") int requestTimeoutInSecond
@@ -129,6 +132,55 @@ public class ReplicateAIService {
                 .bodyToMono(byte[].class)
                 .timeout(Duration.ofSeconds(30))
                 .block();
+    }
+
+    public String getInterpretation(String text, String lang) {
+        if (!configured) {
+            throw new IllegalStateException("ReplicateAIService is not configured");
+        }
+        if (StringUtils.isBlank(interpretationModel)) {
+            throw new IllegalStateException("ReplicateAIService.InterpretationModel is not configured");
+        }
+
+        var prompt = buildInterpretationPrompt(text, lang);
+
+        var input = Map.of(
+                "prompt", prompt,
+                "max_tokens", 256,
+                "reasoning_effort", "minimal"
+        );
+
+        logger.info("Calling Replicate {} for interpretation lang={} textLen={}", interpretationModel, lang, text.length());
+
+        var response = webClient.post()
+                .uri("/models/" + interpretationModel + "/predictions")
+                .header("Prefer", "wait")
+                .bodyValue(Map.of("input", input))
+                .retrieve()
+                .onStatus(status -> status.value() >= 400, this::handleErrorResponse)
+                .bodyToMono(PredictionResponse.class)
+                .timeout(requestTimeout)
+                .block();
+
+        if (response == null || response.output == null) {
+            throw new RuntimeException("Empty response from interpretation API");
+        }
+        return String.join("", response.output)
+                .replaceAll("[\\r\\n]+", " ")
+                .trim();
+    }
+
+    private String buildInterpretationPrompt(String text, String lang) {
+        if ("en".equals(lang)) {
+            return "You are an English dictionary for ESL learners. Define the text within triple quotes in fewer than 30 words, on one line. " +
+                    "Strict rule: do NOT include the input text or any morphological form of its words (e.g. plural, gerund, past tense) anywhere in your definition - use synonyms or paraphrases instead. " +
+                    "'''" + text + "'''";
+        }
+        var chinese = "zh-Hant".equals(lang) ? "Traditional Chinese" : "Simplified Chinese";
+        return "You are a professional English-to-Chinese translator for an ESL learning app. " +
+                "Translate the text within triple quotes to " + chinese + ". " +
+                "Output only the " + chinese + " translation. No quotes, no pinyin, no explanation, no English. " +
+                "'''" + text + "'''";
     }
 
     public List<String> getDefinition(String term) {
