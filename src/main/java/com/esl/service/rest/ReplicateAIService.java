@@ -61,19 +61,16 @@ public class ReplicateAIService {
 
         var input = Map.of(
                 "text", text,
-                "voiceId", inworldVoiceId,
-                "modelId", "inworld-tts-1.5-mini",
-                "audioConfig", Map.of(
-                        "audioEncoding", "MP3",
-                        "sampleRateHertz", 24000,
-                        "speakingRate", 1.0
-                )
+                "voice_id", inworldVoiceId,
+                "audio_format", "mp3",
+                "sample_rate", 24000,
+                "speaking_rate", 1.0
         );
 
         logger.info("Calling Inworld TTS via Replicate for text={}", text);
 
         var prediction = webClient.post()
-                .uri("/models/inworld/tts-1.5-mini/predictions")
+                .uri("/models/inworld/realtime-tts-1.5-mini/predictions")
                 .header("Prefer", "wait=60")
                 .bodyValue(Map.of("input", input))
                 .retrieve()
