@@ -139,17 +139,17 @@ class TtsPublisherServiceTest {
 
         service.publishNext();
 
-        verify(repository, never()).findNext(anyList(), any(Date.class), anyInt(), any());
+        verify(repository, never()).findNext(any(Date.class), anyInt(), any());
     }
 
     @Test
     void publishNext_shouldOnlyPickUpFailedItems() {
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any())).thenReturn(List.of());
+        when(repository.findNext(any(Date.class), anyInt(), any())).thenReturn(List.of());
 
         service.publishNext();
 
-        verify(repository).findNext(eq(List.of(TtsPublishQueue.STATUS_FAILED)), any(), anyInt(), any());
+        verify(repository).findNext(any(Date.class), anyInt(), any());
     }
 
     @Test
@@ -157,7 +157,7 @@ class TtsPublisherServiceTest {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(true);
 
@@ -172,7 +172,7 @@ class TtsPublisherServiceTest {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
 
@@ -190,7 +190,7 @@ class TtsPublisherServiceTest {
         item.setContent("Hello world.");
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
 
@@ -215,7 +215,7 @@ class TtsPublisherServiceTest {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(speechWorkerService.generate(any())).thenThrow(new RuntimeException("boom"));
@@ -235,7 +235,7 @@ class TtsPublisherServiceTest {
 
         when(r2StorageService.isConfigured()).thenReturn(true);
         when(cloudflareAIService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(cloudflareAIService.textToSpeech(anyString())).thenReturn("audio-data".getBytes());
@@ -255,7 +255,7 @@ class TtsPublisherServiceTest {
 
         when(r2StorageService.isConfigured()).thenReturn(true);
         when(cloudflareAIService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(cloudflareAIService.textToSpeech(anyString()))
@@ -276,7 +276,7 @@ class TtsPublisherServiceTest {
 
         when(r2StorageService.isConfigured()).thenReturn(true);
         when(azureTtsService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(azureTtsService.textToSpeech(anyString())).thenReturn("audio-data".getBytes());
@@ -298,7 +298,7 @@ class TtsPublisherServiceTest {
 
         when(r2StorageService.isConfigured()).thenReturn(true);
         when(azureTtsService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(azureTtsService.textToSpeech(anyString()))
@@ -321,7 +321,7 @@ class TtsPublisherServiceTest {
 
         service.publishNext();
 
-        verify(repository, never()).findNext(anyList(), any(Date.class), anyInt(), any());
+        verify(repository, never()).findNext(any(Date.class), anyInt(), any());
         verify(azureTtsService, never()).textToSpeech(anyString());
     }
 
@@ -330,7 +330,7 @@ class TtsPublisherServiceTest {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
 
@@ -352,7 +352,7 @@ class TtsPublisherServiceTest {
 
         when(r2StorageService.isConfigured()).thenReturn(true);
         when(replicateAIService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(replicateAIService.inworldTextToSpeech(anyString())).thenReturn("audio-data".getBytes());
@@ -375,7 +375,7 @@ class TtsPublisherServiceTest {
 
         service.publishNext();
 
-        verify(repository, never()).findNext(anyList(), any(Date.class), anyInt(), any());
+        verify(repository, never()).findNext(any(Date.class), anyInt(), any());
     }
 
     @Test
@@ -384,7 +384,7 @@ class TtsPublisherServiceTest {
         item.setForceReplaceAudio(true);
 
         when(r2StorageService.isConfigured()).thenReturn(true);
-        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+        when(repository.findNext(any(Date.class), anyInt(), any()))
                 .thenReturn(List.of(item));
 
         var response = new SpeechWorkerService.GenerateResponse();

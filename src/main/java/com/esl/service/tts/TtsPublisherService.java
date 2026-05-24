@@ -29,8 +29,6 @@ public class TtsPublisherService {
     public static final String PROVIDER_INWORLD_TTS = "inworld_tts";
     public static final String PROVIDER_AZURE_TTS = "azure_tts";
 
-    private static final List<String> ACTIVE_STATUSES = List.of(TtsPublishQueue.STATUS_FAILED);
-
     private final TransactionTemplate transactionTemplate;
     private final TtsPublishQueueRepository repository;
     private final R2StorageService r2StorageService;
@@ -115,7 +113,7 @@ public class TtsPublisherService {
 
         var now = new Date();
         var page = PageRequest.of(0, batchSize);
-        var results = repository.findNext(ACTIVE_STATUSES, now, maxAttempts, page);
+        var results = repository.findNext(now, maxAttempts, page);
         if (results.isEmpty()) {
             return;
         }
