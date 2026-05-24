@@ -174,6 +174,11 @@ spec:
             secretKeyRef:
               name: {{ app_name }}-secrets
               key: CLOUDFLARE_API_TOKEN
+        - name: AZURE_SPEECH_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: AZURE_SPEECH_KEY
         readinessProbe:
           httpGet:
             path: /actuator/health
