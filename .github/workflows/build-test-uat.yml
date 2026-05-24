@@ -105,3 +105,4 @@ jobs:
           -e r2_secret_access_key=${{ secrets.R2_SECRET_ACCESS_KEY }}
           -e cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           -e cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          -e azure_speech_key=${{ secrets.AZURE_SPEECH_KEY }}

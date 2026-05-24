@@ -2,10 +2,7 @@ package com.esl.service.tts;
 
 import com.esl.dao.repository.TtsPublishQueueRepository;
 import com.esl.entity.TtsPublishQueue;
-import com.esl.service.rest.CloudflareAIService;
-import com.esl.service.rest.R2StorageService;
-import com.esl.service.rest.ReplicateAIService;
-import com.esl.service.rest.SpeechWorkerService;
+import com.esl.service.rest.*;
 import com.esl.util.TtsTextUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +34,7 @@ class TtsPublisherServiceTest {
     @Mock SpeechWorkerService speechWorkerService;
     @Mock CloudflareAIService cloudflareAIService;
     @Mock ReplicateAIService replicateAIService;
+    @Mock AzureTtsService azureTtsService;
 
     // Direct (same-thread) executor so publishAsync tasks run synchronously in tests
     ExecutorService directExecutor = new AbstractExecutorService() {
@@ -67,6 +65,7 @@ class TtsPublisherServiceTest {
                 speechWorkerService,
                 cloudflareAIService,
                 replicateAIService,
+                azureTtsService,
                 directExecutor
         );
         ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_SPEECH_WORKER);
@@ -268,6 +267,62 @@ class TtsPublisherServiceTest {
         assertNotNull(item.getNextAttemptAt());
         assertTrue(item.getAttemptCount() > 0);
         verify(repository).save(item);
+    }
+
+    @Test
+    void publishNext_shouldUseAzureWhenProviderIsAzureTts() {
+        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_AZURE_TTS);
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(azureTtsService.isConfigured()).thenReturn(true);
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(azureTtsService.textToSpeech(anyString())).thenReturn("audio-data".getBytes());
+
+        service.publishNext();
+
+        verify(azureTtsService, times(2)).textToSpeech(anyString());
+        verify(speechWorkerService, never()).generate(any());
+        verify(cloudflareAIService, never()).textToSpeech(anyString());
+        verify(replicateAIService, never()).inworldTextToSpeech(anyString());
+        verify(r2StorageService, times(2)).putBytes(anyString(), any(byte[].class), eq("audio/mpeg"));
+        verify(repository).deleteById(1L);
+    }
+
+    @Test
+    void publishNext_shouldMarkFailedWhenAzureErrors() {
+        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_AZURE_TTS);
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(azureTtsService.isConfigured()).thenReturn(true);
+        when(repository.findNext(anyList(), any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(azureTtsService.textToSpeech(anyString()))
+                .thenThrow(new RuntimeException("Azure TTS error: 401"));
+
+        service.publishNext();
+
+        assertEquals(TtsPublishQueue.STATUS_FAILED, item.getStatus());
+        assertNotNull(item.getNextAttemptAt());
+        assertTrue(item.getAttemptCount() > 0);
+        verify(repository).save(item);
+    }
+
+    @Test
+    void publishNext_shouldSkipWhenAzureNotConfigured() {
+        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_AZURE_TTS);
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(azureTtsService.isConfigured()).thenReturn(false);
+
+        service.publishNext();
+
+        verify(repository, never()).findNext(anyList(), any(Date.class), anyInt(), any());
+        verify(azureTtsService, never()).textToSpeech(anyString());
     }
 
     @Test

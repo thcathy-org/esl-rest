@@ -51,6 +51,7 @@
             R2_SECRET_ACCESS_KEY: "{{ r2_secret_access_key }}"
             CLOUDFLARE_ACCOUNT_ID: "{{ cloudflare_account_id }}"
             CLOUDFLARE_API_TOKEN: "{{ cloudflare_api_token }}"
+            AZURE_SPEECH_KEY: "{{ azure_speech_key }}"
 
     - name: apply k8s manifest
       k8s:

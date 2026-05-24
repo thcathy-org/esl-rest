@@ -2,10 +2,7 @@ package com.esl.service.tts;
 
 import com.esl.dao.repository.TtsPublishQueueRepository;
 import com.esl.entity.TtsPublishQueue;
-import com.esl.service.rest.CloudflareAIService;
-import com.esl.service.rest.R2StorageService;
-import com.esl.service.rest.ReplicateAIService;
-import com.esl.service.rest.SpeechWorkerService;
+import com.esl.service.rest.*;
 import com.esl.util.TtsTextUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -30,6 +27,7 @@ public class TtsPublisherService {
     public static final String PROVIDER_SPEECH_WORKER = "esl_speech_worker";
     public static final String PROVIDER_CLOUDFLARE_AURA2 = "cloudflare_aura2";
     public static final String PROVIDER_INWORLD_TTS = "inworld_tts";
+    public static final String PROVIDER_AZURE_TTS = "azure_tts";
 
     private static final List<String> ACTIVE_STATUSES = List.of(TtsPublishQueue.STATUS_FAILED);
 
@@ -39,6 +37,7 @@ public class TtsPublisherService {
     private final SpeechWorkerService speechWorkerService;
     private final CloudflareAIService cloudflareAIService;
     private final ReplicateAIService replicateAIService;
+    private final AzureTtsService azureTtsService;
     private final ExecutorService executionPool;
 
     @Value("${TtsPublisherService.Provider:esl_speech_worker}")
@@ -66,6 +65,7 @@ public class TtsPublisherService {
             SpeechWorkerService speechWorkerService,
             CloudflareAIService cloudflareAIService,
             ReplicateAIService replicateAIService,
+            AzureTtsService azureTtsService,
             ExecutorService executionPool
     ) {
         this.transactionTemplate = transactionTemplate;
@@ -75,6 +75,7 @@ public class TtsPublisherService {
         this.speechWorkerService = speechWorkerService;
         this.cloudflareAIService = cloudflareAIService;
         this.replicateAIService = replicateAIService;
+        this.azureTtsService = azureTtsService;
         this.executionPool = executionPool;
     }
 
@@ -185,6 +186,7 @@ public class TtsPublisherService {
     private boolean isProviderConfigured() {
         if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(ttsProvider)) return cloudflareAIService.isConfigured();
         if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(ttsProvider)) return replicateAIService.isConfigured();
+        if (PROVIDER_AZURE_TTS.equalsIgnoreCase(ttsProvider)) return azureTtsService.isConfigured();
         return true;
     }
 
@@ -193,6 +195,8 @@ public class TtsPublisherService {
             publishViaCloudflareTts(processedText, audioKey);
         } else if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(ttsProvider)) {
             publishViaInworldTts(processedText, audioKey);
+        } else if (PROVIDER_AZURE_TTS.equalsIgnoreCase(ttsProvider)) {
+            publishViaAzureTts(processedText, audioKey);
         } else {
             publishViaSpeechWorker(processedText, audioKey);
         }
@@ -229,6 +233,15 @@ public class TtsPublisherService {
         var audioBytes = cloudflareAIService.textToSpeech(processedText);
         if (audioBytes == null || audioBytes.length == 0) {
             throw new IllegalStateException("Cloudflare AI returned empty audio");
+        }
+        r2StorageService.putBytes(audioKey, audioBytes, "audio/mpeg");
+    }
+
+    private void publishViaAzureTts(String processedText, String audioKey) {
+        logger.info("Calling Azure TTS provider for text={}", processedText);
+        var audioBytes = azureTtsService.textToSpeech(processedText);
+        if (audioBytes == null || audioBytes.length == 0) {
+            throw new IllegalStateException("Azure TTS returned empty audio");
         }
         r2StorageService.putBytes(audioKey, audioBytes, "audio/mpeg");
     }
