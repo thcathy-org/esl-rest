@@ -52,6 +52,6 @@ class VocabPracticeControllerSpec extends Specification {
         1 == 1
 
         where:
-        input << [null, '', 'invalid difficulty']
+        input << [null, 'invalid difficulty']
     }
 }

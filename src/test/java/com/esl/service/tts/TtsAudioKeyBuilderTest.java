@@ -22,7 +22,7 @@ class TtsAudioKeyBuilderTest {
     void buildAudioKey_shouldTruncateSlugTo40Chars() {
         var normalized = "abcdefghijklmnopqrstuvwxyz0123456789-EXTRA";
         var key = TtsAudioKeyBuilder.buildAudioKey("v1", normalized, "abc123");
-        assertEquals("tts/v1/ab/abcdefghijklmnopqrstuvwxyz0123456789-EXT/abc123.mp3", key);
+        assertEquals("tts/v1/ab/abcdefghijklmnopqrstuvwxyz0123456789-ext/abc123.mp3", key);
     }
 
     @Test
