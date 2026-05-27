@@ -16,7 +16,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +31,7 @@ public class TtsPublisherService {
     public static final String PROVIDER_CLOUDFLARE_AURA2 = "cloudflare_aura2";
     public static final String PROVIDER_INWORLD_TTS = "inworld_tts";
     public static final String PROVIDER_AZURE_TTS = "azure_tts";
+    public static final String PROVIDER_FISH_SPEECH = "fish_speech";
 
     private final TransactionTemplate transactionTemplate;
     private final TtsPublishQueueRepository repository;
@@ -36,10 +40,14 @@ public class TtsPublisherService {
     private final CloudflareAIService cloudflareAIService;
     private final ReplicateAIService replicateAIService;
     private final AzureTtsService azureTtsService;
+    private final FishSpeechService fishSpeechService;
     private final ExecutorService executionPool;
 
     @Value("${TtsPublisherService.Provider:esl_speech_worker}")
     private String ttsProvider;
+
+    @Value("${TtsPublisherService.QueueProvider:fish_speech}")
+    private String queueTtsProvider;
 
     @Value("${TtsPublisherService.Version:v1}")
     private String defaultTtsVersion;
@@ -64,6 +72,7 @@ public class TtsPublisherService {
             CloudflareAIService cloudflareAIService,
             ReplicateAIService replicateAIService,
             AzureTtsService azureTtsService,
+            FishSpeechService fishSpeechService,
             ExecutorService executionPool
     ) {
         this.transactionTemplate = transactionTemplate;
@@ -74,6 +83,7 @@ public class TtsPublisherService {
         this.cloudflareAIService = cloudflareAIService;
         this.replicateAIService = replicateAIService;
         this.azureTtsService = azureTtsService;
+        this.fishSpeechService = fishSpeechService;
         this.executionPool = executionPool;
     }
 
@@ -82,7 +92,7 @@ public class TtsPublisherService {
             logger.info("publishAsync skipped: R2 is not configured");
             return;
         }
-        if (!isProviderConfigured()) {
+        if (!isProviderConfigured(ttsProvider)) {
             logger.warn("publishAsync skipped: provider={} is not configured", ttsProvider);
             return;
         }
@@ -93,7 +103,7 @@ public class TtsPublisherService {
 
     private void publishOne(String content) {
         try {
-            processContentString(content, false);
+            processContentString(content, false, ttsProvider);
         } catch (Exception ex) {
             logger.error("publishAsync: TTS failed, saving FAILED queue entry for: {}", content, ex);
             saveFailedQueueEntry(content, ex);
@@ -101,13 +111,13 @@ public class TtsPublisherService {
     }
 
     @Scheduled(fixedDelayString = "${TtsPublisherService.IntervalSeconds}", timeUnit = TimeUnit.SECONDS)
-    public void publishNext() {
+    public void processQueue() {
         if (!r2StorageService.isConfigured()) {
             logger.info("TTS publisher skipped: R2 is not configured");
             return;
         }
-        if (!isProviderConfigured()) {
-            logger.warn("TTS publisher skipped: provider={} is not configured", ttsProvider);
+        if (!isProviderConfigured(queueTtsProvider)) {
+            logger.warn("TTS publisher skipped: provider={} is not configured", queueTtsProvider);
             return;
         }
 
@@ -123,7 +133,7 @@ public class TtsPublisherService {
                 transactionTemplate.executeWithoutResult(status -> {
                     try {
                         var itemId = Objects.requireNonNull(item.getId(), "TTS queue item id is required");
-                        processContentString(item.getContent(), item.isForceReplaceAudio());
+                        processContentString(item.getContent(), item.isForceReplaceAudio(), queueTtsProvider);
                         repository.deleteById(itemId);
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
@@ -144,7 +154,7 @@ public class TtsPublisherService {
         }
     }
 
-    private void processContentString(String content, boolean forceReplaceAudio) {
+    private void processContentString(String content, boolean forceReplaceAudio, String provider) {
         var ttsVersion = defaultTtsVersion;
         var normalized = TtsTextUtil.normalize(StringUtils.trimToNull(content));
         var normalKeyHash = TtsTextUtil.sha256Hex(normalized);
@@ -162,8 +172,8 @@ public class TtsPublisherService {
             }
         }
 
-        publishVariant(normalized, normalAudioKey);
-        publishVariant(punctText, punctAudioKey);
+        publishVariant(normalized, normalAudioKey, provider);
+        publishVariant(punctText, punctAudioKey, provider);
         logger.info("processContentString: TTS published for content: {}", content);
     }
 
@@ -181,20 +191,23 @@ public class TtsPublisherService {
         repository.save(item);
     }
 
-    private boolean isProviderConfigured() {
-        if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(ttsProvider)) return cloudflareAIService.isConfigured();
-        if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(ttsProvider)) return replicateAIService.isConfigured();
-        if (PROVIDER_AZURE_TTS.equalsIgnoreCase(ttsProvider)) return azureTtsService.isConfigured();
+    private boolean isProviderConfigured(String provider) {
+        if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(provider)) return cloudflareAIService.isConfigured();
+        if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(provider)) return replicateAIService.isConfigured();
+        if (PROVIDER_AZURE_TTS.equalsIgnoreCase(provider)) return azureTtsService.isConfigured();
+        if (PROVIDER_FISH_SPEECH.equalsIgnoreCase(provider)) return fishSpeechService.isConfigured();
         return true;
     }
 
-    private void publishVariant(String processedText, String audioKey) {
-        if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(ttsProvider)) {
+    private void publishVariant(String processedText, String audioKey, String provider) {
+        if (PROVIDER_CLOUDFLARE_AURA2.equalsIgnoreCase(provider)) {
             publishViaCloudflareTts(processedText, audioKey);
-        } else if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(ttsProvider)) {
+        } else if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(provider)) {
             publishViaInworldTts(processedText, audioKey);
-        } else if (PROVIDER_AZURE_TTS.equalsIgnoreCase(ttsProvider)) {
+        } else if (PROVIDER_AZURE_TTS.equalsIgnoreCase(provider)) {
             publishViaAzureTts(processedText, audioKey);
+        } else if (PROVIDER_FISH_SPEECH.equalsIgnoreCase(provider)) {
+            publishViaFishSpeech(processedText, audioKey);
         } else {
             publishViaSpeechWorker(processedText, audioKey);
         }
@@ -244,4 +257,12 @@ public class TtsPublisherService {
         r2StorageService.putBytes(audioKey, audioBytes, "audio/mpeg");
     }
 
+    private void publishViaFishSpeech(String processedText, String audioKey) {
+        logger.info("Calling Fish Speech provider for text={}", processedText);
+        var audioBytes = fishSpeechService.textToSpeech(processedText);
+        if (audioBytes == null || audioBytes.length == 0) {
+            throw new IllegalStateException("Fish Speech returned empty audio");
+        }
+        r2StorageService.putBytes(audioKey, audioBytes, "audio/mpeg");
+    }
 }

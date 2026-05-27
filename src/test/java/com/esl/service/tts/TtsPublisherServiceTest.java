@@ -35,6 +35,7 @@ class TtsPublisherServiceTest {
     @Mock CloudflareAIService cloudflareAIService;
     @Mock ReplicateAIService replicateAIService;
     @Mock AzureTtsService azureTtsService;
+    @Mock FishSpeechService fishSpeechService;
 
     // Direct (same-thread) executor so publishAsync tasks run synchronously in tests
     ExecutorService directExecutor = new AbstractExecutorService() {
@@ -51,7 +52,7 @@ class TtsPublisherServiceTest {
     @BeforeEach
     @SuppressWarnings({"unchecked", "null"})
     void setUp() {
-        var transactionTemplate = mock(TransactionTemplate.class);
+        var transactionTemplate = mock(TransactionTemplate.class, withSettings().lenient());
         doAnswer(invocation -> {
             var callback = (Consumer<TransactionStatus>) invocation.getArgument(0);
             callback.accept(null);
@@ -66,9 +67,11 @@ class TtsPublisherServiceTest {
                 cloudflareAIService,
                 replicateAIService,
                 azureTtsService,
+                fishSpeechService,
                 directExecutor
         );
         ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_SPEECH_WORKER);
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_SPEECH_WORKER);
         ReflectionTestUtils.setField(service, "defaultTtsVersion", "v1");
         ReflectionTestUtils.setField(service, "backoffSeconds", 60);
         ReflectionTestUtils.setField(service, "maxAttempts", 288);
@@ -131,29 +134,29 @@ class TtsPublisherServiceTest {
         assertEquals("cat", saved.getContent());
     }
 
-    // --- publishNext tests ---
+    // --- processQueue tests ---
 
     @Test
-    void publishNext_shouldSkipWhenR2NotConfigured() {
+    void processQueue_shouldSkipWhenR2NotConfigured() {
         when(r2StorageService.isConfigured()).thenReturn(false);
 
-        service.publishNext();
+        service.processQueue();
 
         verify(repository, never()).findNext(any(Date.class), anyInt(), any());
     }
 
     @Test
-    void publishNext_shouldOnlyPickUpFailedItems() {
+    void processQueue_shouldOnlyPickUpFailedItems() {
         when(r2StorageService.isConfigured()).thenReturn(true);
         when(repository.findNext(any(Date.class), anyInt(), any())).thenReturn(List.of());
 
-        service.publishNext();
+        service.processQueue();
 
         verify(repository).findNext(any(Date.class), anyInt(), any());
     }
 
     @Test
-    void publishNext_shouldDeleteWhenArtifactsExist() {
+    void processQueue_shouldDeleteWhenArtifactsExist() {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -161,14 +164,14 @@ class TtsPublisherServiceTest {
                 .thenReturn(List.of(item));
         when(r2StorageService.exists(anyString())).thenReturn(true);
 
-        service.publishNext();
+        service.processQueue();
 
         verify(repository).deleteById(1L);
         verify(speechWorkerService, never()).generate(any());
     }
 
     @Test
-    void publishNext_shouldPublishAndDeleteWhenMissingArtifacts() {
+    void processQueue_shouldPublishAndDeleteWhenMissingArtifacts() {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -178,14 +181,14 @@ class TtsPublisherServiceTest {
 
         when(speechWorkerService.generate(any(SpeechWorkerService.GenerateRequest.class))).thenReturn(speechWorkerResponse());
 
-        service.publishNext();
+        service.processQueue();
 
         verify(r2StorageService, times(2)).putBytes(anyString(), any(byte[].class), anyString());
         verify(repository).deleteById(1L);
     }
 
     @Test
-    void publishNext_shouldBuildDeterministicAudioKeysFromNormalizedText() {
+    void processQueue_shouldBuildDeterministicAudioKeysFromNormalizedText() {
         var item = createItem();
         item.setContent("Hello world.");
 
@@ -196,7 +199,7 @@ class TtsPublisherServiceTest {
 
         when(speechWorkerService.generate(any(SpeechWorkerService.GenerateRequest.class))).thenReturn(speechWorkerResponse());
 
-        service.publishNext();
+        service.processQueue();
 
         var normalText = TtsTextUtil.normalize("Hello world.");
         var punctText = TtsTextUtil.normalize(TtsTextUtil.toPunctuationText(normalText));
@@ -211,7 +214,7 @@ class TtsPublisherServiceTest {
     }
 
     @Test
-    void publishNext_shouldMarkFailedOnError() {
+    void processQueue_shouldMarkFailedOnError() {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -220,7 +223,7 @@ class TtsPublisherServiceTest {
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(speechWorkerService.generate(any())).thenThrow(new RuntimeException("boom"));
 
-        service.publishNext();
+        service.processQueue();
 
         assertEquals(TtsPublishQueue.STATUS_FAILED, item.getStatus());
         assertNotNull(item.getNextAttemptAt());
@@ -229,8 +232,8 @@ class TtsPublisherServiceTest {
     }
 
     @Test
-    void publishNext_shouldUseCloudflareWhenProviderIsCloudflareAura2() {
-        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_CLOUDFLARE_AURA2);
+    void processQueue_shouldUseCloudflareWhenQueueProviderIsCloudflareAura2() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_CLOUDFLARE_AURA2);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -240,7 +243,7 @@ class TtsPublisherServiceTest {
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(cloudflareAIService.textToSpeech(anyString())).thenReturn("audio-data".getBytes());
 
-        service.publishNext();
+        service.processQueue();
 
         verify(cloudflareAIService, times(2)).textToSpeech(anyString());
         verify(speechWorkerService, never()).generate(any());
@@ -249,8 +252,8 @@ class TtsPublisherServiceTest {
     }
 
     @Test
-    void publishNext_shouldMarkFailedWhenCloudflareErrors() {
-        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_CLOUDFLARE_AURA2);
+    void processQueue_shouldMarkFailedWhenCloudflareErrors() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_CLOUDFLARE_AURA2);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -261,7 +264,7 @@ class TtsPublisherServiceTest {
         when(cloudflareAIService.textToSpeech(anyString()))
                 .thenThrow(new RuntimeException("Cloudflare AI call failed: 400"));
 
-        service.publishNext();
+        service.processQueue();
 
         assertEquals(TtsPublishQueue.STATUS_FAILED, item.getStatus());
         assertNotNull(item.getNextAttemptAt());
@@ -270,8 +273,8 @@ class TtsPublisherServiceTest {
     }
 
     @Test
-    void publishNext_shouldUseAzureWhenProviderIsAzureTts() {
-        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_AZURE_TTS);
+    void processQueue_shouldUseAzureWhenQueueProviderIsAzureTts() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_AZURE_TTS);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -281,7 +284,7 @@ class TtsPublisherServiceTest {
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(azureTtsService.textToSpeech(anyString())).thenReturn("audio-data".getBytes());
 
-        service.publishNext();
+        service.processQueue();
 
         verify(azureTtsService, times(2)).textToSpeech(anyString());
         verify(speechWorkerService, never()).generate(any());
@@ -292,8 +295,8 @@ class TtsPublisherServiceTest {
     }
 
     @Test
-    void publishNext_shouldMarkFailedWhenAzureErrors() {
-        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_AZURE_TTS);
+    void processQueue_shouldMarkFailedWhenAzureErrors() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_AZURE_TTS);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -304,7 +307,7 @@ class TtsPublisherServiceTest {
         when(azureTtsService.textToSpeech(anyString()))
                 .thenThrow(new RuntimeException("Azure TTS error: 401"));
 
-        service.publishNext();
+        service.processQueue();
 
         assertEquals(TtsPublishQueue.STATUS_FAILED, item.getStatus());
         assertNotNull(item.getNextAttemptAt());
@@ -313,20 +316,20 @@ class TtsPublisherServiceTest {
     }
 
     @Test
-    void publishNext_shouldSkipWhenAzureNotConfigured() {
-        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_AZURE_TTS);
+    void processQueue_shouldSkipWhenAzureNotConfigured() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_AZURE_TTS);
 
         when(r2StorageService.isConfigured()).thenReturn(true);
         when(azureTtsService.isConfigured()).thenReturn(false);
 
-        service.publishNext();
+        service.processQueue();
 
         verify(repository, never()).findNext(any(Date.class), anyInt(), any());
         verify(azureTtsService, never()).textToSpeech(anyString());
     }
 
     @Test
-    void publishNext_shouldDefaultToSpeechWorkerProvider() {
+    void processQueue_shouldDefaultToSpeechWorkerProvider() {
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -339,15 +342,15 @@ class TtsPublisherServiceTest {
         response.mimeType = "audio/mpeg";
         when(speechWorkerService.generate(any(SpeechWorkerService.GenerateRequest.class))).thenReturn(response);
 
-        service.publishNext();
+        service.processQueue();
 
         verify(speechWorkerService, times(2)).generate(any());
         verify(cloudflareAIService, never()).textToSpeech(anyString());
     }
 
     @Test
-    void publishNext_shouldUseInworldWhenProviderIsInworldTts() {
-        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_INWORLD_TTS);
+    void processQueue_shouldUseInworldWhenQueueProviderIsInworldTts() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_INWORLD_TTS);
         var item = createItem();
 
         when(r2StorageService.isConfigured()).thenReturn(true);
@@ -357,7 +360,7 @@ class TtsPublisherServiceTest {
         when(r2StorageService.exists(anyString())).thenReturn(false);
         when(replicateAIService.inworldTextToSpeech(anyString())).thenReturn("audio-data".getBytes());
 
-        service.publishNext();
+        service.processQueue();
 
         verify(replicateAIService, times(2)).inworldTextToSpeech(anyString());
         verify(speechWorkerService, never()).generate(any());
@@ -367,19 +370,19 @@ class TtsPublisherServiceTest {
     }
 
     @Test
-    void publishNext_shouldSkipWhenInworldProviderNotConfigured() {
-        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_INWORLD_TTS);
+    void processQueue_shouldSkipWhenInworldProviderNotConfigured() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_INWORLD_TTS);
 
         when(r2StorageService.isConfigured()).thenReturn(true);
         when(replicateAIService.isConfigured()).thenReturn(false);
 
-        service.publishNext();
+        service.processQueue();
 
         verify(repository, never()).findNext(any(Date.class), anyInt(), any());
     }
 
     @Test
-    void publishNext_shouldPublishEvenWhenArtifactsExistWhenForceReplaceAudio() {
+    void processQueue_shouldPublishEvenWhenArtifactsExistWhenForceReplaceAudio() {
         var item = createItem();
         item.setForceReplaceAudio(true);
 
@@ -392,11 +395,82 @@ class TtsPublisherServiceTest {
         response.mimeType = "audio/mpeg";
         when(speechWorkerService.generate(any(SpeechWorkerService.GenerateRequest.class))).thenReturn(response);
 
-        service.publishNext();
+        service.processQueue();
 
         verify(r2StorageService, never()).exists(anyString());
         verify(r2StorageService, times(2)).putBytes(anyString(), any(byte[].class), anyString());
         verify(repository).deleteById(1L);
+    }
+
+    @Test
+    void processQueue_shouldUseFishSpeechWhenQueueProviderIsFishSpeech() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_FISH_SPEECH);
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(fishSpeechService.isConfigured()).thenReturn(true);
+        when(repository.findNext(any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(fishSpeechService.textToSpeech(anyString())).thenReturn("audio-data".getBytes());
+
+        service.processQueue();
+
+        verify(fishSpeechService, times(2)).textToSpeech(anyString());
+        verify(speechWorkerService, never()).generate(any());
+        verify(azureTtsService, never()).textToSpeech(anyString());
+        verify(r2StorageService, times(2)).putBytes(anyString(), any(byte[].class), eq("audio/mpeg"));
+        verify(repository).deleteById(1L);
+    }
+
+    @Test
+    void processQueue_shouldMarkFailedWhenFishSpeechErrors() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_FISH_SPEECH);
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(fishSpeechService.isConfigured()).thenReturn(true);
+        when(repository.findNext(any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(fishSpeechService.textToSpeech(anyString()))
+                .thenThrow(new RuntimeException("Fish Speech error: 503"));
+
+        service.processQueue();
+
+        assertEquals(TtsPublishQueue.STATUS_FAILED, item.getStatus());
+        assertNotNull(item.getNextAttemptAt());
+        assertTrue(item.getAttemptCount() > 0);
+        verify(repository).save(item);
+    }
+
+    @Test
+    void processQueue_shouldSkipWhenFishSpeechNotConfigured() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_FISH_SPEECH);
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(fishSpeechService.isConfigured()).thenReturn(false);
+
+        service.processQueue();
+
+        verify(repository, never()).findNext(any(Date.class), anyInt(), any());
+        verify(fishSpeechService, never()).textToSpeech(anyString());
+    }
+
+    @Test
+    void publishAsync_shouldUseTtsProviderNotQueueProvider() {
+        ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_AZURE_TTS);
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_FISH_SPEECH);
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(azureTtsService.isConfigured()).thenReturn(true);
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(azureTtsService.textToSpeech(anyString())).thenReturn("audio-data".getBytes());
+
+        service.publishAsync(List.of("cat"));
+
+        verify(azureTtsService, times(2)).textToSpeech(anyString());
+        verify(fishSpeechService, never()).textToSpeech(anyString());
     }
 
     private TtsPublishQueue createItem() {

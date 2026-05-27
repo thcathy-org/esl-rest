@@ -33,6 +33,7 @@ public class PhoneticQuestionDAO extends ESLDao<PhoneticQuestion> {
 		}
 	}
 
+	@Deprecated
 	public List<PhoneticQuestion> getNotEnrichedQuestions() {
 		return em.createQuery(GET_NOT_ENRICHED_QUESTIONS).setMaxResults(300).getResultList();
 	}
@@ -57,7 +58,8 @@ public class PhoneticQuestionDAO extends ESLDao<PhoneticQuestion> {
 		return query.getResultList();
 	}
 
-	public List<PhoneticQuestion> getRandomQuestionsByGrade(Grade grade, int total, boolean isRandom) {
+	@Deprecated
+	public List<PhoneticQuestion> bgetRandomQuestionsByGrade(Grade grade, int total, boolean isRandom) {
 		List<PhoneticQuestion> questions = new ArrayList<PhoneticQuestion>();
 		String queryString = "SELECT pq.phoneticquestion_id id FROM phonetic_question pq, grade_phoneticquestion gpq WHERE pq.phoneticquestion_id = gpq.phoneticquestion_id AND gpq.grade_id = :gradeId";
 		if (isRandom) queryString += " ORDER BY RAND()";

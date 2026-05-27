@@ -52,6 +52,9 @@
             CLOUDFLARE_ACCOUNT_ID: "{{ cloudflare_account_id }}"
             CLOUDFLARE_API_TOKEN: "{{ cloudflare_api_token }}"
             AZURE_SPEECH_KEY: "{{ azure_speech_key }}"
+            FISH_SPEECH_URL: "{{ fish_speech_url }}"
+            FISH_SPEECH_USERNAME: "{{ fish_speech_username }}"
+            FISH_SPEECH_PASSWORD: "{{ fish_speech_password }}"
 
     - name: apply k8s manifest
       k8s:

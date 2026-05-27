@@ -18,19 +18,33 @@ public class TtsQueueService {
     private final TtsPublishQueueRepository repository;
     private final String ttsVersion;
     private final TtsPublisherService ttsPublisherService;
+    private final int longContentThreshold;
 
     public TtsQueueService(
             TtsPublishQueueRepository repository,
             @Value("${TtsPublisherService.Version:v1}") String ttsVersion,
-            TtsPublisherService ttsPublisherService
+            TtsPublisherService ttsPublisherService,
+            @Value("${TtsQueueService.LongContentThreshold:1000}") int longContentThreshold
     ) {
         this.repository = repository;
         this.ttsVersion = ttsVersion;
         this.ttsPublisherService = ttsPublisherService;
+        this.longContentThreshold = longContentThreshold;
     }
 
     public void enqueueForDictation(Dictation dictation) {
-        ttsPublisherService.publishAsync(collectContents(dictation));
+        var contents = collectContents(dictation);
+        if (isLongArticle(dictation)) {
+            contents.forEach(this::enqueueContent);
+        } else {
+            ttsPublisherService.publishAsync(contents);
+        }
+    }
+
+    private boolean isLongArticle(Dictation dictation) {
+        var vocabs = dictation.getVocabs();
+        if (vocabs != null && !vocabs.isEmpty()) return false;
+        return StringUtils.length(dictation.getArticle()) > longContentThreshold;
     }
 
     public void enqueueContent(String content) {
@@ -56,7 +70,7 @@ public class TtsQueueService {
         var strings = (vocabs != null && !vocabs.isEmpty())
                 ? vocabs.stream().map(v -> StringUtils.trimToNull(v.getWord()))
                 : articleChunks(dictation.getArticle());
-        return strings.filter(this::isQueueableContent).toList();
+        return strings.filter(this::isQueueableContent).distinct().toList();
     }
 
     private Stream<String> articleChunks(String article) {

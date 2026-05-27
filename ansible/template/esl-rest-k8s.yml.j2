@@ -179,6 +179,21 @@ spec:
             secretKeyRef:
               name: {{ app_name }}-secrets
               key: AZURE_SPEECH_KEY
+        - name: FISH_SPEECH_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: FISH_SPEECH_URL
+        - name: FISH_SPEECH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: FISH_SPEECH_USERNAME
+        - name: FISH_SPEECH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: FISH_SPEECH_PASSWORD
         readinessProbe:
           httpGet:
             path: /actuator/health

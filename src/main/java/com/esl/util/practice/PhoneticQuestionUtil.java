@@ -20,6 +20,7 @@ public class PhoneticQuestionUtil {
 	
 	public PhoneticQuestionUtil() {}
 
+	@Deprecated
 	public void findIPA(PhoneticQuestion question) {
 		// should not be use anymore
 //		DictionaryParser parser = new CambridgeDictionaryParser(question.getWord());
@@ -30,6 +31,7 @@ public class PhoneticQuestionUtil {
 //		}
 	}
 
+	@Deprecated
 	public class FindIPAAndPronoun implements Runnable {
 		List<PhoneticQuestion> questions;
 		PhoneticQuestion question;
@@ -63,6 +65,7 @@ public class PhoneticQuestionUtil {
 		}
 	}
 	
+	@Deprecated
 	public String getText2SpeechPronounceLink(String word) {
 		String text2SpeechURL = "http://www.text2speech.org/";
 		String paramUrl = "text=" + word.replace(" ", "+") + "&voice=slt&speed=1&outname=speech";
