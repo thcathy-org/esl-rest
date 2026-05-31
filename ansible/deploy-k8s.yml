@@ -55,6 +55,8 @@
             FISH_SPEECH_URL: "{{ fish_speech_url }}"
             FISH_SPEECH_USERNAME: "{{ fish_speech_username }}"
             FISH_SPEECH_PASSWORD: "{{ fish_speech_password }}"
+            MAIL_USERNAME: "{{ mail_username }}"
+            MAIL_PASSWORD: "{{ mail_password }}"
 
     - name: apply k8s manifest
       k8s:

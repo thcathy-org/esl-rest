@@ -194,6 +194,16 @@ spec:
             secretKeyRef:
               name: {{ app_name }}-secrets
               key: FISH_SPEECH_PASSWORD
+        - name: MAIL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: MAIL_USERNAME
+        - name: MAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: MAIL_PASSWORD
         readinessProbe:
           httpGet:
             path: /actuator/health

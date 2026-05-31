@@ -49,3 +49,5 @@ jobs:
           -e fish_speech_url=${{ secrets.FISH_SPEECH_URL }}
           -e fish_speech_username=${{ secrets.FISH_SPEECH_USERNAME }}
           -e fish_speech_password=${{ secrets.FISH_SPEECH_PASSWORD }}
+          -e mail_username=${{ secrets.MAIL_USERNAME }}
+          -e mail_password=${{ secrets.MAIL_PASSWORD }}
