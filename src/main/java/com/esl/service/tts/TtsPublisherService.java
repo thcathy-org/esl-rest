@@ -32,6 +32,7 @@ public class TtsPublisherService {
     public static final String PROVIDER_INWORLD_TTS = "inworld_tts";
     public static final String PROVIDER_AZURE_TTS = "azure_tts";
     public static final String PROVIDER_FISH_SPEECH = "fish_speech";
+    public static final String PROVIDER_LOCALAI_KOKORO = "localai_kokoro";
 
     private final TransactionTemplate transactionTemplate;
     private final TtsPublishQueueRepository repository;
@@ -41,6 +42,7 @@ public class TtsPublisherService {
     private final ReplicateAIService replicateAIService;
     private final AzureTtsService azureTtsService;
     private final FishSpeechService fishSpeechService;
+    private final LocalAiService localAiService;
     private final ExecutorService executionPool;
 
     @Value("${TtsPublisherService.Provider:esl_speech_worker}")
@@ -73,6 +75,7 @@ public class TtsPublisherService {
             ReplicateAIService replicateAIService,
             AzureTtsService azureTtsService,
             FishSpeechService fishSpeechService,
+            LocalAiService localAiService,
             ExecutorService executionPool
     ) {
         this.transactionTemplate = transactionTemplate;
@@ -84,6 +87,7 @@ public class TtsPublisherService {
         this.replicateAIService = replicateAIService;
         this.azureTtsService = azureTtsService;
         this.fishSpeechService = fishSpeechService;
+        this.localAiService = localAiService;
         this.executionPool = executionPool;
     }
 
@@ -196,6 +200,7 @@ public class TtsPublisherService {
         if (PROVIDER_INWORLD_TTS.equalsIgnoreCase(provider)) return replicateAIService.isConfigured();
         if (PROVIDER_AZURE_TTS.equalsIgnoreCase(provider)) return azureTtsService.isConfigured();
         if (PROVIDER_FISH_SPEECH.equalsIgnoreCase(provider)) return fishSpeechService.isConfigured();
+        if (PROVIDER_LOCALAI_KOKORO.equalsIgnoreCase(provider)) return localAiService.isConfigured();
         return true;
     }
 
@@ -208,6 +213,8 @@ public class TtsPublisherService {
             publishViaAzureTts(processedText, audioKey);
         } else if (PROVIDER_FISH_SPEECH.equalsIgnoreCase(provider)) {
             publishViaFishSpeech(processedText, audioKey);
+        } else if (PROVIDER_LOCALAI_KOKORO.equalsIgnoreCase(provider)) {
+            publishViaLocalAiKokoro(processedText, audioKey);
         } else {
             publishViaSpeechWorker(processedText, audioKey);
         }
@@ -262,6 +269,15 @@ public class TtsPublisherService {
         var audioBytes = fishSpeechService.textToSpeech(processedText);
         if (audioBytes == null || audioBytes.length == 0) {
             throw new IllegalStateException("Fish Speech returned empty audio");
+        }
+        r2StorageService.putBytes(audioKey, audioBytes, "audio/mpeg");
+    }
+
+    private void publishViaLocalAiKokoro(String processedText, String audioKey) {
+        logger.info("Calling LocalAI Kokoro provider for text={}", processedText);
+        var audioBytes = localAiService.textToSpeech(processedText, ttsVoice);
+        if (audioBytes == null || audioBytes.length == 0) {
+            throw new IllegalStateException("LocalAI TTS returned empty audio");
         }
         r2StorageService.putBytes(audioKey, audioBytes, "audio/mpeg");
     }

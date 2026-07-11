@@ -179,6 +179,16 @@ spec:
             secretKeyRef:
               name: {{ app_name }}-secrets
               key: AZURE_SPEECH_KEY
+        - name: LOCALAI_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: LOCALAI_URL
+        - name: LOCALAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ app_name }}-secrets
+              key: LOCALAI_API_KEY
         - name: FISH_SPEECH_URL
           valueFrom:
             secretKeyRef:

@@ -46,6 +46,8 @@ jobs:
           -e cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           -e cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}
           -e azure_speech_key=${{ secrets.AZURE_SPEECH_KEY }}
+          -e localai_url=${{ secrets.LOCALAI_URL }}
+          -e localai_api_key=${{ secrets.LOCALAI_API_KEY }}
           -e fish_speech_url=${{ secrets.FISH_SPEECH_URL }}
           -e fish_speech_username=${{ secrets.FISH_SPEECH_USERNAME }}
           -e fish_speech_password=${{ secrets.FISH_SPEECH_PASSWORD }}

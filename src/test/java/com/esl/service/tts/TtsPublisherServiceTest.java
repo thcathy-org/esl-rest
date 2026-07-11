@@ -36,6 +36,7 @@ class TtsPublisherServiceTest {
     @Mock ReplicateAIService replicateAIService;
     @Mock AzureTtsService azureTtsService;
     @Mock FishSpeechService fishSpeechService;
+    @Mock LocalAiService localAiService;
 
     // Direct (same-thread) executor so publishAsync tasks run synchronously in tests
     ExecutorService directExecutor = new AbstractExecutorService() {
@@ -68,6 +69,7 @@ class TtsPublisherServiceTest {
                 replicateAIService,
                 azureTtsService,
                 fishSpeechService,
+                localAiService,
                 directExecutor
         );
         ReflectionTestUtils.setField(service, "ttsProvider", TtsPublisherService.PROVIDER_SPEECH_WORKER);
@@ -455,6 +457,61 @@ class TtsPublisherServiceTest {
 
         verify(repository, never()).findNext(any(Date.class), anyInt(), any());
         verify(fishSpeechService, never()).textToSpeech(anyString());
+    }
+
+    @Test
+    void processQueue_shouldUseLocalAiKokoroWhenQueueProviderIsLocalAiKokoro() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_LOCALAI_KOKORO);
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(localAiService.isConfigured()).thenReturn(true);
+        when(repository.findNext(any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(localAiService.textToSpeech(anyString(), eq(""))).thenReturn("audio-data".getBytes());
+
+        service.processQueue();
+
+        verify(localAiService, times(2)).textToSpeech(anyString(), eq(""));
+        verify(speechWorkerService, never()).generate(any());
+        verify(fishSpeechService, never()).textToSpeech(anyString());
+        verify(r2StorageService, times(2)).putBytes(anyString(), any(byte[].class), eq("audio/mpeg"));
+        verify(repository).deleteById(1L);
+    }
+
+    @Test
+    void processQueue_shouldMarkFailedWhenLocalAiErrors() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_LOCALAI_KOKORO);
+        var item = createItem();
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(localAiService.isConfigured()).thenReturn(true);
+        when(repository.findNext(any(Date.class), anyInt(), any()))
+                .thenReturn(List.of(item));
+        when(r2StorageService.exists(anyString())).thenReturn(false);
+        when(localAiService.textToSpeech(anyString(), any()))
+                .thenThrow(new RuntimeException("LocalAI TTS error: 503"));
+
+        service.processQueue();
+
+        assertEquals(TtsPublishQueue.STATUS_FAILED, item.getStatus());
+        assertNotNull(item.getNextAttemptAt());
+        assertTrue(item.getAttemptCount() > 0);
+        verify(repository).save(item);
+    }
+
+    @Test
+    void processQueue_shouldSkipWhenLocalAiNotConfigured() {
+        ReflectionTestUtils.setField(service, "queueTtsProvider", TtsPublisherService.PROVIDER_LOCALAI_KOKORO);
+
+        when(r2StorageService.isConfigured()).thenReturn(true);
+        when(localAiService.isConfigured()).thenReturn(false);
+
+        service.processQueue();
+
+        verify(repository, never()).findNext(any(Date.class), anyInt(), any());
+        verify(localAiService, never()).textToSpeech(anyString(), any());
     }
 
     @Test
