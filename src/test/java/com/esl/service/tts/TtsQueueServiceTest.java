@@ -1,6 +1,7 @@
 package com.esl.service.tts;
 
 import com.esl.dao.repository.TtsPublishQueueRepository;
+import com.esl.entity.TtsPublishQueue;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.dictation.Vocab;
 import org.junit.jupiter.api.Test;
@@ -18,11 +19,11 @@ import static org.mockito.Mockito.*;
 class TtsQueueServiceTest {
 
     private TtsQueueService createService(TtsPublisherService publisher) {
-        return new TtsQueueService(mock(TtsPublishQueueRepository.class), "v1", publisher, 100);
+        return new TtsQueueService(mock(TtsPublishQueueRepository.class), "v1", publisher);
     }
 
-    private TtsQueueService createService(TtsPublisherService publisher, TtsPublishQueueRepository repository, int threshold) {
-        return new TtsQueueService(repository, "v1", publisher, threshold);
+    private TtsQueueService createService(TtsPublisherService publisher, TtsPublishQueueRepository repository) {
+        return new TtsQueueService(repository, "v1", publisher);
     }
 
     @Test
@@ -43,20 +44,20 @@ class TtsQueueServiceTest {
     }
 
     @Test
-    void enqueueForDictation_shouldPublishDeduplicatedArticleChunksAcrossAllPresets() {
+    void enqueueForDictation_shouldQueueDeduplicatedArticleChunksAcrossAllPresets() {
         var publisher = mock(TtsPublisherService.class);
-        // threshold high enough that all chunks go to publishAsync
-        var service = createService(publisher, mock(TtsPublishQueueRepository.class), 1000);
+        var repository = mock(TtsPublishQueueRepository.class);
+        var service = createService(publisher, repository);
         var dictation = new Dictation();
         dictation.setVocabs(List.of());
         dictation.setArticle("The cat sat on the mat. The dog ran fast.");
 
         service.enqueueForDictation(dictation);
 
-        var captor = ArgumentCaptor.forClass(Collection.class);
-        verify(publisher).publishAsync(captor.capture());
-        var contents = List.copyOf(captor.getValue());
-
+        verify(publisher, never()).publishAsync(any());
+        var captor = ArgumentCaptor.forClass(TtsPublishQueue.class);
+        verify(repository, times(6)).save(captor.capture());
+        var contents = captor.getAllValues().stream().map(TtsPublishQueue::getContent).toList();
         assertEquals(List.of(
                 "The cat sat",
                 "on the mat.",
@@ -68,18 +69,20 @@ class TtsQueueServiceTest {
     }
 
     @Test
-    void enqueueForDictation_shouldPublishSingleChunkWhenArticleDoesNotSplit() {
+    void enqueueForDictation_shouldQueueSingleChunkWhenArticleDoesNotSplit() {
         var publisher = mock(TtsPublisherService.class);
-        var service = createService(publisher);
+        var repository = mock(TtsPublishQueueRepository.class);
+        var service = createService(publisher, repository);
         var dictation = new Dictation();
         dictation.setVocabs(List.of());
         dictation.setArticle("  Hello world  ");
 
         service.enqueueForDictation(dictation);
 
-        var captor = ArgumentCaptor.forClass(Collection.class);
-        verify(publisher).publishAsync(captor.capture());
-        assertEquals(List.of("Hello world"), List.copyOf(captor.getValue()));
+        verify(publisher, never()).publishAsync(any());
+        var captor = ArgumentCaptor.forClass(TtsPublishQueue.class);
+        verify(repository).save(captor.capture());
+        assertEquals("Hello world", captor.getValue().getContent());
     }
 
     @Test
@@ -97,11 +100,10 @@ class TtsQueueServiceTest {
     }
 
     @Test
-    void enqueueForDictation_shouldQueueAllChunksWhenArticleExceedsThreshold() {
+    void enqueueForDictation_shouldQueueAllArticleChunksRegardlessOfLength() {
         var publisher = mock(TtsPublisherService.class);
         var repository = mock(TtsPublishQueueRepository.class);
-        // article is 40 chars, threshold=30 → long article → all chunks queued
-        var service = createService(publisher, repository, 30);
+        var service = createService(publisher, repository);
         var dictation = new Dictation();
         dictation.setVocabs(List.of());
         dictation.setArticle("The cat sat on the mat. The dog ran fast.");
@@ -113,26 +115,25 @@ class TtsQueueServiceTest {
     }
 
     @Test
-    void enqueueForDictation_shouldPublishAsyncWhenArticleBelowThreshold() {
+    void enqueueForDictation_shouldQueueShortArticles() {
         var publisher = mock(TtsPublisherService.class);
         var repository = mock(TtsPublishQueueRepository.class);
-        // article is 11 chars, threshold=30 → short article → publishAsync
-        var service = createService(publisher, repository, 30);
+        var service = createService(publisher, repository);
         var dictation = new Dictation();
         dictation.setVocabs(List.of());
         dictation.setArticle("Hello world");
 
         service.enqueueForDictation(dictation);
 
-        verify(publisher).publishAsync(any());
-        verify(repository, never()).save(any());
+        verify(publisher, never()).publishAsync(any());
+        verify(repository).save(any());
     }
 
     @Test
-    void enqueueForDictation_shouldAlwaysUsePublishAsyncForVocabRegardlessOfThreshold() {
+    void enqueueForDictation_shouldUsePublishAsyncForVocab() {
         var publisher = mock(TtsPublisherService.class);
         var repository = mock(TtsPublishQueueRepository.class);
-        var service = createService(publisher, repository, 0);
+        var service = createService(publisher, repository);
         var dictation = new Dictation();
         dictation.setVocabs(List.of(new Vocab("elephant"), new Vocab("kangaroo")));
 
@@ -145,7 +146,7 @@ class TtsQueueServiceTest {
     @Test
     void enqueueContent_shouldSkipBlankContent() {
         var repository = mock(TtsPublishQueueRepository.class);
-        var service = new TtsQueueService(repository, "v1", mock(TtsPublisherService.class), 100);
+        var service = new TtsQueueService(repository, "v1", mock(TtsPublisherService.class));
 
         service.enqueueContent("   ");
 
@@ -155,7 +156,7 @@ class TtsQueueServiceTest {
     @Test
     void enqueueContent_shouldSkipWhenMissingEnglishLetterOrDigit() {
         var repository = mock(TtsPublishQueueRepository.class);
-        var service = new TtsQueueService(repository, "v1", mock(TtsPublisherService.class), 100);
+        var service = new TtsQueueService(repository, "v1", mock(TtsPublisherService.class));
 
         service.enqueueContent("。。。。");
 
@@ -165,7 +166,7 @@ class TtsQueueServiceTest {
     @Test
     void enqueueContent_shouldQueueSingleEnglishLetter() {
         var repository = mock(TtsPublishQueueRepository.class);
-        var service = new TtsQueueService(repository, "v1", mock(TtsPublisherService.class), 100);
+        var service = new TtsQueueService(repository, "v1", mock(TtsPublisherService.class));
 
         service.enqueueContent("a");
 

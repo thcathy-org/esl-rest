@@ -18,33 +18,29 @@ public class TtsQueueService {
     private final TtsPublishQueueRepository repository;
     private final String ttsVersion;
     private final TtsPublisherService ttsPublisherService;
-    private final int longContentThreshold;
 
     public TtsQueueService(
             TtsPublishQueueRepository repository,
             @Value("${TtsPublisherService.Version:v1}") String ttsVersion,
-            TtsPublisherService ttsPublisherService,
-            @Value("${TtsQueueService.LongContentThreshold:1000}") int longContentThreshold
+            TtsPublisherService ttsPublisherService
     ) {
         this.repository = repository;
         this.ttsVersion = ttsVersion;
         this.ttsPublisherService = ttsPublisherService;
-        this.longContentThreshold = longContentThreshold;
     }
 
     public void enqueueForDictation(Dictation dictation) {
         var contents = collectContents(dictation);
-        if (isLongArticle(dictation)) {
-            contents.forEach(this::enqueueContent);
-        } else {
+        if (isVocabDictation(dictation)) {
             ttsPublisherService.publishAsync(contents);
+        } else {
+            contents.forEach(this::enqueueContent);
         }
     }
 
-    private boolean isLongArticle(Dictation dictation) {
+    private boolean isVocabDictation(Dictation dictation) {
         var vocabs = dictation.getVocabs();
-        if (vocabs != null && !vocabs.isEmpty()) return false;
-        return StringUtils.length(dictation.getArticle()) > longContentThreshold;
+        return vocabs != null && !vocabs.isEmpty();
     }
 
     public void enqueueContent(String content) {
@@ -67,7 +63,7 @@ public class TtsQueueService {
 
     private List<String> collectContents(Dictation dictation) {
         var vocabs = dictation.getVocabs();
-        var strings = (vocabs != null && !vocabs.isEmpty())
+        var strings = isVocabDictation(dictation)
                 ? vocabs.stream().map(v -> StringUtils.trimToNull(v.getWord()))
                 : articleChunks(dictation.getArticle());
         return strings.filter(this::isQueueableContent).distinct().toList();
