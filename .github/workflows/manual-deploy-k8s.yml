@@ -53,3 +53,5 @@ jobs:
           -e fish_speech_password=${{ secrets.FISH_SPEECH_PASSWORD }}
           -e mail_username=${{ secrets.MAIL_USERNAME }}
           -e mail_password=${{ secrets.MAIL_PASSWORD }}
+          -e telegram_bot_token=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          -e telegram_chat_id=${{ secrets.TELEGRAM_CHAT_ID }}

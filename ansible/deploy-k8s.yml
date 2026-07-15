@@ -59,6 +59,8 @@
             FISH_SPEECH_PASSWORD: "{{ fish_speech_password }}"
             MAIL_USERNAME: "{{ mail_username }}"
             MAIL_PASSWORD: "{{ mail_password }}"
+            TELEGRAM_BOT_TOKEN: "{{ telegram_bot_token }}"
+            TELEGRAM_CHAT_ID: "{{ telegram_chat_id }}"
 
     - name: apply k8s manifest
       k8s:
