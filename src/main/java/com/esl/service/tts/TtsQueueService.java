@@ -17,21 +17,24 @@ public class TtsQueueService {
     private static final Pattern ENGLISH_OR_DIGIT_PATTERN = Pattern.compile(".*[A-Za-z0-9].*");
     private final TtsPublishQueueRepository repository;
     private final String ttsVersion;
+    private final boolean vocabPublishAsync;
     private final TtsPublisherService ttsPublisherService;
 
     public TtsQueueService(
             TtsPublishQueueRepository repository,
             @Value("${TtsPublisherService.Version:v1}") String ttsVersion,
+            @Value("${TtsQueueService.VocabPublishAsync:false}") boolean vocabPublishAsync,
             TtsPublisherService ttsPublisherService
     ) {
         this.repository = repository;
         this.ttsVersion = ttsVersion;
+        this.vocabPublishAsync = vocabPublishAsync;
         this.ttsPublisherService = ttsPublisherService;
     }
 
     public void enqueueForDictation(Dictation dictation) {
         var contents = collectContents(dictation);
-        if (isVocabDictation(dictation)) {
+        if (vocabPublishAsync && isVocabDictation(dictation)) {
             ttsPublisherService.publishAsync(contents);
         } else {
             contents.forEach(this::enqueueContent);
