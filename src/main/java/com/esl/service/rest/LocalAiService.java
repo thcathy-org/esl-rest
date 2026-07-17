@@ -29,7 +29,7 @@ public class LocalAiService {
             @Value("${LOCALAI_API_KEY:}") String apiKey,
             @Value("${LocalAiService.TtsModel:kokoro}") String ttsModel,
             @Value("${LocalAiService.TtsVoice:}") String ttsDefaultVoice,
-            @Value("${LocalAiService.TtsRequestTimeoutInSecond:120}") int ttsTimeoutSec
+            @Value("${LocalAiService.TtsRequestTimeoutInSecond:60}") int ttsTimeoutSec
     ) {
         baseUrl = StringUtils.trimToNull(baseUrl);
         apiKey = StringUtils.trimToNull(apiKey);

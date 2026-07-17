@@ -58,15 +58,34 @@ The TTS pipeline asynchronously generates and stores audio for vocabulary conten
 2. **`TtsPublisherService`** — Scheduled poller (configurable interval) that picks up pending/failed queue items and publishes audio to Cloudflare R2.
    - Each item generates two audio files: one for the plain text, one for a punctuation-spelled variant (e.g., "." → "full stop").
    - Audio keys follow the pattern: `tts/{version}/{shard}/{slug}/{sha256hash}.mp3`
-   - Supports two TTS providers, selected via `TtsPublisherService.Provider`: `esl_speech_worker` (default) or `cloudflare_aura2`.
+   - Queue publisher provider via `TtsPublisherService.QueueProvider`: `localai_kokoro` (default) or `fish_speech` (rollback).
+   - Async publish provider via `TtsPublisherService.Provider`: `azure_tts` (default), `esl_speech_worker`, or `cloudflare_aura2`.
    - Failed items are retried with backoff up to `MaxAttempts` (default 288 ≈ 1 day at 5-min intervals).
    - Items that trigger a non-retryable "invalid input" error from the speech worker are deleted immediately.
+
+**Decisions (queue / Kokoro):**
+
+- **No R2 regen** — stay on `TtsPublisherService.Version=v2`. Kokoro runs only when `r2StorageService.exists(audioKey)` is false; do not bump version, bulk-delete R2 objects, or use `forceReplaceAudio` for engine swaps.
+- **Provider split** — queue long-article path uses `QueueProvider=localai_kokoro`; short/vocab async path uses `Provider=azure_tts` (unchanged).
+- **Voice** — `af_heart` via `LocalAiService.TtsVoice` / `TtsPublisherService.Voice` for newly generated objects only.
+- **Timeout** — `LocalAiService.TtsRequestTimeoutInSecond=60`, aligned with Traefik default read timeout; timeouts mark queue rows failed and retry with 300s backoff.
+- **Rollback** — set `TtsPublisherService.QueueProvider=fish_speech` and redeploy; scale fish-speech back up if needed. Existing v2 R2 keys are skipped unless `forceReplaceAudio`.
+
+**Smoke test (LocalAI Kokoro):**
+
+```bash
+curl -sf -H "Authorization: Bearer $LOCALAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"kokoro","input":"Wednesday","response_format":"mp3","voice":"af_heart"}' \
+  "$LOCALAI_URL/v1/audio/speech" -o /tmp/wednesday-kokoro.mp3
+```
 
 ### External service integrations (`service/rest`)
 
 - **`R2StorageService`** — Cloudflare R2 (S3-compatible) for audio file storage. Gracefully disables itself if credentials are missing.
 - **`SpeechWorkerService`** — Internal ESL speech worker API for TTS generation.
 - **`CloudflareAIService`** — Cloudflare Aura2 TTS as an alternative provider.
+- **`LocalAiService`** — LocalAI Kokoro TTS for the queue publisher (`POST /v1/audio/speech`). HTTP timeout defaults to 60s (`LocalAiService.TtsRequestTimeoutInSecond`), aligned with Traefik read timeout; timeouts mark queue items failed and retry with backoff.
 - **`ReplicateAIService`** / **`ImageGenerationService`** — Image generation for vocab.
 - **`WebParserRestService`** — Web scraping via jsoup.
 
@@ -80,6 +99,7 @@ All external credentials are injected via environment variables:
 | `R2_ENDPOINT`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | Cloudflare R2 |
 | `ESL_SPEECH_WORKER_HOST`, `ESL_SPEECH_WORKER_APIKEY` | TTS speech worker |
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | Cloudflare AI TTS |
+| `LOCALAI_URL`, `LOCALAI_API_KEY` | LocalAI Kokoro TTS (public URL, e.g. `https://homeserver.funfunspell.com/local-ai`) |
 
 ### Caching
 
