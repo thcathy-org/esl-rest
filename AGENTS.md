@@ -25,7 +25,7 @@ Single test: `./gradlew test --tests "com.esl.service.tts.TtsPublisherServiceTes
 ## Cross-repo changes
 
 - **TTS provider / voice / timeout** → `TtsPublisherService`, `LocalAiService`; verify LocalAI ingress/timeouts
-- **Interpretation model** → `ReplicateAIService`; run eval scripts; record decision doc
+- **Interpretation model** → `ReplicateAIService`; see [INTERPRETATION_MODEL_DECISION.md](./INTERPRETATION_MODEL_DECISION.md); eval: [scripts/interpretation-eval/README.md](./scripts/interpretation-eval/README.md)
 - **Image generation** → `ImageGenerationService` + `image-generation-server` deploy/config
 - **Auth0 / JWT** → `SecurityConfig`, `JWTAuthorizationFilter`; also update `esl-ionic` auth client if contract changes
 
