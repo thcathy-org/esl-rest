@@ -31,6 +31,18 @@ Tests use both JUnit 5 (Java) and Spock (Groovy). The test database is H2 in-mem
 
 Do not include `Co-Authored-By: Claude` or any Claude attribution in commit messages.
 
+## Related repos
+
+| Repo | Role |
+|------|------|
+| `esl-rest` | This repo — Spring Boot API, TTS queue, interpretation, member |
+| `esl-ionic` | Angular/Ionic client — PWA, iOS, Android |
+| `image-generation-server` | Vocab image gen — Replicate/LocalAI → Firebase |
+
+TTS: queue via LocalAI Kokoro + optional async via Azure (this repo). `esl-speech-worker` is deprecated — do not use or extend.
+
+Agent entry point: [AGENTS.md](./AGENTS.md).
+
 ## Architecture
 
 ### Package layout
@@ -59,9 +71,9 @@ The TTS pipeline asynchronously generates and stores audio for vocabulary conten
    - Each item generates two audio files: one for the plain text, one for a punctuation-spelled variant (e.g., "." → "full stop").
    - Audio keys follow the pattern: `tts/{version}/{shard}/{slug}/{sha256hash}.mp3`
    - Queue publisher provider via `TtsPublisherService.QueueProvider`: `localai_kokoro` (default) or `fish_speech` (rollback).
-   - Async publish provider via `TtsPublisherService.Provider`: `azure_tts` (default), `esl_speech_worker`, or `cloudflare_aura2`.
+   - Async publish provider via `TtsPublisherService.Provider`: `azure_tts` (default) or `cloudflare_aura2`. (`esl_speech_worker` is deprecated — legacy code only.)
    - Failed items are retried with backoff up to `MaxAttempts` (default 288 ≈ 1 day at 5-min intervals).
-   - Items that trigger a non-retryable "invalid input" error from the speech worker are deleted immediately.
+   - Failed items retry with backoff; non-retryable errors are logged and marked failed.
 
 **Decisions (queue / Kokoro):**
 
@@ -83,7 +95,7 @@ curl -sf -H "Authorization: Bearer $LOCALAI_API_KEY" \
 ### External service integrations (`service/rest`)
 
 - **`R2StorageService`** — Cloudflare R2 (S3-compatible) for audio file storage. Gracefully disables itself if credentials are missing.
-- **`SpeechWorkerService`** — Internal ESL speech worker API for TTS generation.
+- **`SpeechWorkerService`** — Legacy (deprecated). Not used in production; TTS is LocalAI Kokoro + Azure.
 - **`CloudflareAIService`** — Cloudflare Aura2 TTS as an alternative provider.
 - **`LocalAiService`** — LocalAI Kokoro TTS for the queue publisher (`POST /v1/audio/speech`). HTTP timeout defaults to 60s (`LocalAiService.TtsRequestTimeoutInSecond`), aligned with Traefik read timeout; timeouts mark queue items failed and retry with backoff.
 - **`ReplicateAIService`** / **`ImageGenerationService`** — Image generation for vocab.
@@ -97,7 +109,7 @@ All external credentials are injected via environment variables:
 |---|---|
 | `MYSQL_HOST`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD` | MySQL connection |
 | `R2_ENDPOINT`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | Cloudflare R2 |
-| `ESL_SPEECH_WORKER_HOST`, `ESL_SPEECH_WORKER_APIKEY` | TTS speech worker |
+| `ESL_SPEECH_WORKER_HOST`, `ESL_SPEECH_WORKER_APIKEY` | Legacy speech worker (deprecated, unused) |
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | Cloudflare AI TTS |
 | `LOCALAI_URL`, `LOCALAI_API_KEY` | LocalAI Kokoro TTS (public URL, e.g. `https://homeserver.funfunspell.com/local-ai`) |
 
