@@ -1,0 +1,19 @@
+---
+description: Prefer var in Java
+globs: **/*.java
+alwaysApply: true
+---
+
+# Prefer `var` for Local Variables
+
+Use `var` for local variable declarations when the inferred type is clear.
+
+```java
+// ✅ preferred
+var request = new GenerateRequest();
+var response = speechWorkerService.generate(request);
+
+// ❌ avoid
+GenerateRequest request = new GenerateRequest();
+GenerateResponse response = speechWorkerService.generate(request);
+```
