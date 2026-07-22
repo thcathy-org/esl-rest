@@ -210,7 +210,6 @@ public class MemberDictationControllerTests {
 
 		Dictation updatedDictation = dictationDAO.get(dictation.getId());
 		assertThat(updatedDictation.isIncludeAIImage(), is(false));
-		// Image gen is always enqueued on save, independent of includeAIImage
 		verify(imageGenerationService, times(dictation.getVocabsSize() * 2)).submitRequest(any());
 	}
 

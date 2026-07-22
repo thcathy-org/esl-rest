@@ -127,10 +127,6 @@ public class DictationService {
 		return dictation;
 	}
 
-	/**
-	 * Always enqueue AI image generation for vocab dictations on create/amend.
-	 * {@code includeAIImage} / {@code showImage} remain client display flags only.
-	 */
 	private void SubmitAIImageRequest(Dictation d) {
 		if (Dictation.DictationType.Vocab == d.getType() && d.getVocabs() != null) {
 			d.getVocabs().forEach(v -> imageGenerationService.submitRequest(v.getWord()));
