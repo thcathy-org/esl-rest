@@ -128,10 +128,8 @@ public class DictationService {
 	}
 
 	private void SubmitAIImageRequest(Dictation d) {
-		if (d.isIncludeAIImage())
-		{
-			if (Dictation.DictationType.Vocab == d.getType() && d.getVocabs() != null)
-				d.getVocabs().forEach(v -> imageGenerationService.submitRequest(v.getWord()));
+		if (Dictation.DictationType.Vocab == d.getType() && d.getVocabs() != null) {
+			d.getVocabs().forEach(v -> imageGenerationService.submitRequest(v.getWord()));
 		}
 	}
 

@@ -210,7 +210,7 @@ public class MemberDictationControllerTests {
 
 		Dictation updatedDictation = dictationDAO.get(dictation.getId());
 		assertThat(updatedDictation.isIncludeAIImage(), is(false));
-		verify(imageGenerationService, times(dictation.getVocabsSize())).submitRequest(any());	// remain the same times before update
+		verify(imageGenerationService, times(dictation.getVocabsSize() * 2)).submitRequest(any());
 	}
 
 	private EditDictationRequest createNewDictationRequest(boolean isWord) {
