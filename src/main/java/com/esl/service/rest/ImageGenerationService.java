@@ -10,6 +10,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +25,8 @@ public class ImageGenerationService {
     final WebClient webClient;
     final Duration requestTimeout;
     private final ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<>();
+    /** Phrases currently queued or in-flight; prevents amend floods from re-enqueuing duplicates. */
+    private final Set<String> pendingPhrases = ConcurrentHashMap.newKeySet();
 
     public ImageGenerationService(
             @Value("${IMAGE_GENERATION_SERVER_HOST:test_value}") String apiHost,
@@ -42,7 +47,15 @@ public class ImageGenerationService {
     }
 
     public void submitRequest(String phrase) {
-        queue.add(phrase);
+        if (StringUtils.isBlank(phrase)) {
+            return;
+        }
+        String key = phrase.trim().toLowerCase(Locale.ROOT);
+        if (!pendingPhrases.add(key)) {
+            logger.info("Skip duplicate image request '{}'", phrase);
+            return;
+        }
+        queue.add(phrase.trim());
         logger.info("Added '{}' to queue", phrase);
     }
 
@@ -50,8 +63,12 @@ public class ImageGenerationService {
         while (true) {
             while (!queue.isEmpty()) {
                 String phrase = queue.poll();
+                String key = phrase == null ? null : phrase.trim().toLowerCase(Locale.ROOT);
                 try {
                     generate(phrase).block(requestTimeout);
+                    if (key != null) {
+                        pendingPhrases.remove(key);
+                    }
                 } catch (Exception e) {
                     sleep(5);
                     logger.warn("Exception when submitting, retry later", e);

@@ -210,7 +210,22 @@ public class MemberDictationControllerTests {
 
 		Dictation updatedDictation = dictationDAO.get(dictation.getId());
 		assertThat(updatedDictation.isIncludeAIImage(), is(false));
-		verify(imageGenerationService, times(dictation.getVocabsSize())).submitRequest(any());	// remain the same times before update
+		// Image gen is always enqueued on save, independent of includeAIImage
+		verify(imageGenerationService, times(dictation.getVocabsSize() * 2)).submitRequest(any());
+	}
+
+	@Test
+	public void createWordDictationWithoutIncludeAIImage_stillEnqueuesImageGeneration() throws Exception {
+		EditDictationRequest request = createNewDictationRequest(true);
+		request.includeAIImage = false;
+
+		this.mockMvc.perform(MockMvcUtils.postWithUserId("/member/dictation/edit", objectMapper.writeValueAsString(request)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.includeAIImage", is(false)));
+
+		Dictation dictation = dictationDAO.listNewCreated(1).get(0);
+		assertThat(dictation.isIncludeAIImage(), is(false));
+		verify(imageGenerationService, times(dictation.getVocabsSize())).submitRequest(any());
 	}
 
 	private EditDictationRequest createNewDictationRequest(boolean isWord) {
