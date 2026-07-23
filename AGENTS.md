@@ -37,7 +37,16 @@ Single test: `./gradlew test --tests "com.esl.service.tts.TtsPublisherServiceTes
 
 ## Cursor agents & rules
 
-Committed agents: [`.cursor/agents/`](./.cursor/agents/) — `esl-rest-senior-dev` (design), `esl-rest-programmer` (implement). They load stack/commands from this file, `.cursor/rules/`, and `CLAUDE.md` (do not hardcode stack in agent prompts).
+Pipeline: **architect → implementer → reviewer → tester**
+
+| Stage | Agent |
+|-------|--------|
+| Architect | `esl-rest-senior-dev` |
+| Implementer | `esl-rest-programmer` |
+| Reviewer | `esl-rest-reviewer` |
+| Tester | `esl-rest-tester` |
+
+Committed agents: [`.cursor/agents/`](./.cursor/agents/). They load stack/commands from this file, `.cursor/rules/`, and `CLAUDE.md` (do not hardcode stack in agent prompts).
 
 Committed rules: [`.cursor/rules/`](./.cursor/rules/). Workspace-level `esl-all/.cursor/` is local-only — not source of truth for cloud agents.
 
