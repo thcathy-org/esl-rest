@@ -35,9 +35,11 @@ Single test: `./gradlew test --tests "com.esl.service.tts.TtsPublisherServiceTes
 - Add or extend `esl-speech-worker` integration — deprecated
 - Include Claude attribution in commit messages
 
-## Cursor rules
+## Cursor agents & rules
 
-Committed agent hints: [`.cursor/rules/`](./.cursor/rules/) (Java `var` preference). Workspace-level `esl-all/.cursor/rules/` is local-only — not source of truth for cloud agents.
+Committed agents: [`.cursor/agents/`](./.cursor/agents/) — `esl-rest-senior-dev` (design), `esl-rest-programmer` (implement). They load stack/commands from this file, `.cursor/rules/`, and `CLAUDE.md` (do not hardcode stack in agent prompts).
+
+Committed rules: [`.cursor/rules/`](./.cursor/rules/). Workspace-level `esl-all/.cursor/` is local-only — not source of truth for cloud agents.
 
 ## Deep context
 
