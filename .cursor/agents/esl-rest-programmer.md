@@ -1,11 +1,10 @@
 ---
 name: esl-rest-programmer
 description: >-
-  esl-rest implementation specialist. Always use proactively when the user or
-  planner asks to implement, build, code, apply a plan, fix bugs, or add tests
-  in esl-rest / the Spring Boot API. Do not use for planning-only, UI client
-  work, or other repos.
-model: composer-2.5[]
+  esl-rest implementation specialist. Use when the main session delegates
+  implementation, bug fixes, or tests in esl-rest / the Spring Boot API.
+  Do not use for planning-only, UI client work, or other repos.
+model: composer-2.5[fast=false]
 readonly: false
 ---
 

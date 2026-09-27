@@ -1,11 +1,10 @@
 ---
 name: esl-rest-tester
 description: >-
-  esl-rest test specialist. Always use proactively AFTER review (or with review
-  when the user asks to verify/test backend changes). Adds/updates focused
-  tests, runs the narrowest Gradle commands, and reports gaps. Does not redesign
-  product features.
-model: composer-2.5[]
+  esl-rest test specialist. Use when the main session delegates verification
+  of backend changes. Adds/updates focused tests, runs the narrowest Gradle
+  commands, and reports gaps. Does not redesign product features.
+model: composer-2.5[fast=false]
 readonly: false
 ---
 

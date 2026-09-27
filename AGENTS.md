@@ -37,7 +37,7 @@ Single test: `./gradlew test --tests "com.esl.service.tts.TtsPublisherServiceTes
 
 ## Cursor agents & rules
 
-Pipeline: **architect → implementer → reviewer → tester**
+Available agents. The main session decides when to call them.
 
 | Stage | Agent |
 |-------|--------|

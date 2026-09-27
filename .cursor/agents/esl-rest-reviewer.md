@@ -1,11 +1,10 @@
 ---
 name: esl-rest-reviewer
 description: >-
-  esl-rest code reviewer. Always use proactively AFTER esl-rest-programmer
-  finishes implementation (or when the user asks to review a backend PR/diff).
-  Reviews correctness, security, contracts, and maintainability — does not write
-  app code. Readonly.
-model: claude-opus-4-8[effort=high]
+  esl-rest code reviewer. Use when the main session delegates a review of
+  backend changes. Reviews correctness, security, contracts, and
+  maintainability — does not write app code. Readonly.
+model: cursor-grok-4.5-high
 readonly: true
 ---
 
