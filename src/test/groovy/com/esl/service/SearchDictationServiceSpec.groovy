@@ -10,6 +10,7 @@ import spock.lang.Unroll
 
 import java.text.SimpleDateFormat
 
+import static com.esl.entity.dictation.Dictation.StudentLevel.Any
 import static com.esl.entity.dictation.Dictation.StudentLevel.JuniorPrimary
 import static com.esl.entity.dictation.Dictation.StudentLevel.SeniorSecondary
 
@@ -90,18 +91,21 @@ class SearchDictationServiceSpec extends Specification {
     }
 
     @Unroll
-    def "Search dictation by suitable student: #studentLevel"(Dictation.StudentLevel studentLevel, long[] expectDictationIds) {
+    def "Search dictation by suitable student: #studentLevel"(Dictation.StudentLevel studentLevel, long[] expectDictationIds, int expectSize) {
         when: "search dictation"
         def request = new SearchDictationRequest().setSuitableStudent(studentLevel)
         def result = service.searchDictation(request, Integer.MAX_VALUE)
 
         then:
+        result.size() == expectSize
         result.collect {it.id}.containsAll(expectDictationIds)
 
         where:
-        studentLevel    | expectDictationIds
-        JuniorPrimary   | [1, 2, 3, 5, 6, 7, 8]
-        SeniorSecondary | [1, 2, 3, 4]
+        studentLevel    | expectDictationIds        | expectSize
+        JuniorPrimary   | [1, 2, 3, 5, 6, 7, 8]    | 7
+        SeniorSecondary | [1, 2, 3, 4]             | 4
+        Any             | [1, 2, 3, 4, 5, 6, 7, 8] | 8
+        null            | [1, 2, 3, 4, 5, 6, 7, 8] | 8
     }
 
     @Unroll

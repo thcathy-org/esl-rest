@@ -40,7 +40,9 @@ public class SearchDictationService {
 		if (request.minDate != null) searchCriteria.put(MinDate, request.minDate);
 		if (request.maxDate != null) searchCriteria.put(MaxDate, request.maxDate);
 		if (StringUtils.isNotBlank(request.creator)) searchCriteria.put(CreatorName, request.creator);
-		if (request.suitableStudent != null) searchCriteria.put(SuitableStudent, request.suitableStudent);
+		if (request.suitableStudent != null && request.suitableStudent != Dictation.StudentLevel.Any) {
+			searchCriteria.put(SuitableStudent, request.suitableStudent);
+		}
 		try {
 			if (Dictation.DictationType.valueOf(request.type) != null) searchCriteria.put(Type, Dictation.DictationType.valueOf(request.type));
 		} catch (IllegalArgumentException | NullPointerException e) {} // ignore
