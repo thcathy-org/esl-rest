@@ -8,7 +8,6 @@ import com.esl.exception.IllegalParameterException;
 import com.esl.model.Member;
 import com.esl.model.group.MemberGroup;
 import jakarta.persistence.Query;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -276,14 +275,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 
 		// Student Level
 		if (searchCriteria.containsKey(SuitableStudent)) {
-			var suitableStudent = searchCriteria.get(SuitableStudent);
-			var skipSuitableFilter = suitableStudent == null
-					|| (suitableStudent instanceof Dictation.StudentLevel level && level == Dictation.StudentLevel.Any)
-					|| StringUtils.isBlank(String.valueOf(suitableStudent))
-					|| "Any".equals(String.valueOf(suitableStudent));
-			if (!skipSuitableFilter) {
-				clause.append(" AND (d.suitableStudent = 'Any' OR d.suitableStudent = '").append(suitableStudent).append("')");
-			}
+			clause.append(" AND (d.suitableStudent = 'Any' OR d.suitableStudent = '").append(searchCriteria.get(SuitableStudent)).append("')");
 		}
 
 		// Type
