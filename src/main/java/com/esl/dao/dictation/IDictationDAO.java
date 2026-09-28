@@ -41,11 +41,6 @@ public interface IDictationDAO extends IESLDao<Dictation> {
 	public List<DictationSearchSummary> searchDictationSummary(Map<DictationSearchCriteria, Object> searchCriteria, int maxResult);
 
 	/**
-	 * One summary row for a numeric keyword lookup. Does not apply the search filters.
-	 */
-	public List<DictationSearchSummary> findSearchSummaryById(long id);
-
-	/**
 	 * Random a accessible, no password dictation
 	 */
 	public Dictation randomAccessibleDictation(Member member);

@@ -43,7 +43,7 @@ public class SearchDictationService {
 		log.info("search dictation summary: {}", ReflectionToStringBuilder.toString(request));
 
 		if (StringUtils.isNumeric(request.keyword))
-			return dictationDAO.findSearchSummaryById(Long.valueOf(request.keyword));
+			return toSummaryList(getDictationByIdToList(Long.valueOf(request.keyword)));
 
 		var result = dictationDAO.searchDictationSummary(toSearchCriteria(request), maxResult);
 		log.info("dictation summary found: {}", result.size());
@@ -75,6 +75,11 @@ public class SearchDictationService {
 		} else {
 			return Collections.emptyList();
 		}
+	}
+
+	private List<DictationSearchSummary> toSummaryList(List<Dictation> dictations) {
+		if (dictations.isEmpty()) return Collections.emptyList();
+		return Collections.singletonList(DictationSearchSummary.fromDictation(dictations.get(0)));
 	}
 
 

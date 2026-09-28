@@ -6,8 +6,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DictationSearchSummaryTest {
 
@@ -17,7 +15,7 @@ class DictationSearchSummaryTest {
                 1L, "Testing 1", new Date(), Dictation.StudentLevel.Any,
                 4, 2, Dictation.Source.FillIn, "  ", 3);
 
-        assertFalse(summary.isSentenceDictation());
+        assertEquals(Dictation.DictationType.Vocab, summary.getType());
         assertEquals(3, summary.getQuestionCount());
         assertEquals(4, summary.getTotalAttempt());
         assertEquals(2, summary.getTotalRecommended());
@@ -31,7 +29,22 @@ class DictationSearchSummaryTest {
                 9L, "Long", new Date(), Dictation.StudentLevel.JuniorPrimary,
                 0, 0, Dictation.Source.FillIn, article, 99);
 
-        assertTrue(summary.isSentenceDictation());
+        assertEquals(Dictation.DictationType.Article, summary.getType());
         assertEquals(3, summary.getQuestionCount());
+    }
+
+    @Test
+    void fromDictation_matchesGetType() {
+        var dictation = new Dictation("Sentence");
+        dictation.setId(3L);
+        dictation.setArticle("One two three four five.");
+        dictation.setVocabs(null);
+
+        var summary = DictationSearchSummary.fromDictation(dictation);
+
+        assertEquals(dictation.getType(), summary.getType());
+        assertEquals(Dictation.DictationType.Article, summary.getType());
+        assertEquals(1, summary.getQuestionCount());
+        assertEquals(3L, summary.getId());
     }
 }

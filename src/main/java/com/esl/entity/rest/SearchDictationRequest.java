@@ -18,7 +18,8 @@ public class SearchDictationRequest implements Serializable {
 	/**
 	 * When true, {@code POST /dictation/search} returns {@link DictationSearchSummary} rows
 	 * (id, title, createdDate, suitableStudent, totalAttempt, totalRecommended, source,
-	 * questionCount, sentenceDictation) and omits vocabs, article, and creator.
+	 * questionCount, type) and omits vocabs, article, and creator.
+	 * {@code type} is Vocab or Article, the same value as {@link Dictation#getType()}.
 	 * Default false keeps the full {@code Dictation} payload for installed apps.
 	 */
 	public boolean shortPayload = false;
