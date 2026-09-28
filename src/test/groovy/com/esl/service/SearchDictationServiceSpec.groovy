@@ -166,7 +166,7 @@ class SearchDictationServiceSpec extends Specification {
         full.size() > 1
         full.every { it instanceof Dictation && it.article }
         (summaries*.id as Set) == (full*.id as Set)
-        summaries.every { it.sentenceDictation && it.questionCount == 1 }
+        summaries.every { it.type == Dictation.DictationType.Article && it.questionCount == 1 }
 
         when: "same type filter"
         def vocabFull = service.searchDictation(new SearchDictationRequest().setType("Vocab"), Integer.MAX_VALUE)
@@ -174,7 +174,7 @@ class SearchDictationServiceSpec extends Specification {
 
         then:
         (vocabShort*.id as Set) == (vocabFull*.id as Set)
-        vocabShort.every { !it.sentenceDictation }
+        vocabShort.every { it.type == Dictation.DictationType.Vocab }
         vocabShort.find { it.id == 1 }.questionCount == 2
         vocabShort.find { it.id == 2 }.questionCount == 2
 
@@ -221,7 +221,8 @@ class SearchDictationServiceSpec extends Specification {
         full.size() == 1
         summaries.size() == 1
         summaries[0].id == full[0].id
-        !summaries[0].sentenceDictation
+        summaries[0].type == Dictation.DictationType.Vocab
+        summaries[0].type == full[0].type
         summaries[0].questionCount == full[0].vocabs.size()
         summaries[0].title == full[0].title
         summaries[0].suitableStudent == full[0].suitableStudent
@@ -252,7 +253,7 @@ class SearchDictationServiceSpec extends Specification {
         then:
         summaries.size() == 1
         summaries[0].id == savedId
-        summaries[0].sentenceDictation
+        summaries[0].type == Dictation.DictationType.Article
         summaries[0].questionCount == DictationSentenceChunker.divideToSentences(article, DictationSentenceChunker.WORDS_NORMAL).size()
         summaries[0].questionCount != DictationSentenceChunker.divideToSentences(article, DictationSentenceChunker.WORDS_LONG).size()
         summaries[0].questionCount == 3
