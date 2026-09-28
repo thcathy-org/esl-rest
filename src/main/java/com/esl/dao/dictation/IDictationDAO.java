@@ -3,6 +3,7 @@ package com.esl.dao.dictation;
 import com.esl.dao.IESLDao;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.dictation.DictationSearchCriteria;
+import com.esl.entity.rest.DictationSearchSummary;
 import com.esl.model.Member;
 import com.esl.model.group.MemberGroup;
 
@@ -33,6 +34,16 @@ public interface IDictationDAO extends IESLDao<Dictation> {
 	 * Search dictations
 	 */
 	public List<Dictation> searchDictation(Map<DictationSearchCriteria, Object> searchCriteria, int maxResult);
+
+	/**
+	 * Same filters, order, and cap as {@link #searchDictation}, selecting summary columns only.
+	 */
+	public List<DictationSearchSummary> searchDictationSummary(Map<DictationSearchCriteria, Object> searchCriteria, int maxResult);
+
+	/**
+	 * One summary row for a numeric keyword lookup. Does not apply the search filters.
+	 */
+	public List<DictationSearchSummary> findSearchSummaryById(long id);
 
 	/**
 	 * Random a accessible, no password dictation

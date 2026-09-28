@@ -1,7 +1,5 @@
 package com.esl.controller;
 
-import java.util.List;
-
 import javax.cache.annotation.CacheResult;
 
 import org.slf4j.Logger;
@@ -82,7 +80,10 @@ public class DictationController implements MemberAware {
 	}
 
 	@PostMapping(value = "/search")
-	public ResponseEntity<List<Dictation>> createHistory(@RequestBody SearchDictationRequest request) {
+	public ResponseEntity<?> search(@RequestBody SearchDictationRequest request) {
+		if (request.shortPayload) {
+			return ResponseEntity.ok(searchDictationService.searchDictationSummary(request, maxDictationSearchResult));
+		}
 		return ResponseEntity.ok(searchDictationService.searchDictation(request, maxDictationSearchResult));
 	}
 

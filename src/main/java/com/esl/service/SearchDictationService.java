@@ -3,6 +3,7 @@ package com.esl.service;
 import com.esl.dao.dictation.DictationDAO;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.dictation.DictationSearchCriteria;
+import com.esl.entity.rest.DictationSearchSummary;
 import com.esl.entity.rest.SearchDictationRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -32,7 +33,25 @@ public class SearchDictationService {
 		if (StringUtils.isNumeric(request.keyword))
 			return getDictationByIdToList(Long.valueOf(request.keyword));
 
-		Map<DictationSearchCriteria, Object> searchCriteria = new HashMap<>();
+		var result = dictationDAO.searchDictation(toSearchCriteria(request), maxResult);
+
+		log.info("dictation found: {}", result.size());
+		return result;
+	}
+
+	public List<DictationSearchSummary> searchDictationSummary(SearchDictationRequest request, int maxResult) {
+		log.info("search dictation summary: {}", ReflectionToStringBuilder.toString(request));
+
+		if (StringUtils.isNumeric(request.keyword))
+			return dictationDAO.findSearchSummaryById(Long.valueOf(request.keyword));
+
+		var result = dictationDAO.searchDictationSummary(toSearchCriteria(request), maxResult);
+		log.info("dictation summary found: {}", result.size());
+		return result;
+	}
+
+	private Map<DictationSearchCriteria, Object> toSearchCriteria(SearchDictationRequest request) {
+		var searchCriteria = new HashMap<DictationSearchCriteria, Object>();
 		if (StringUtils.isNotBlank(request.keyword)) {
 			if (request.searchTitle) searchCriteria.put(Title, request.keyword);
 			if (request.searchDescription) searchCriteria.put(Description, request.keyword);
@@ -46,15 +65,11 @@ public class SearchDictationService {
 		try {
 			if (Dictation.DictationType.valueOf(request.type) != null) searchCriteria.put(Type, Dictation.DictationType.valueOf(request.type));
 		} catch (IllegalArgumentException | NullPointerException e) {} // ignore
-
-		List<Dictation> result = dictationDAO.searchDictation(searchCriteria, maxResult);
-
-		log.info("dictation found: {}", result.size());
-		return result;
+		return searchCriteria;
 	}
 
 	private List<Dictation> getDictationByIdToList(Long id) {
-		Dictation dictation = dictationDAO.get(id);
+		var dictation = dictationDAO.get(id);
 		if (dictation != null) {
 			return Collections.singletonList(dictation);
 		} else {

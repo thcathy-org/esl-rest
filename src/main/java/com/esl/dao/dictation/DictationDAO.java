@@ -4,6 +4,7 @@ import com.esl.dao.ESLDao;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.dictation.DictationSearchCriteria;
 import com.esl.entity.dictation.Vocab;
+import com.esl.entity.rest.DictationSearchSummary;
 import com.esl.exception.IllegalParameterException;
 import com.esl.model.Member;
 import com.esl.model.group.MemberGroup;
@@ -14,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +26,16 @@ import static com.esl.entity.dictation.DictationSearchCriteria.*;
 @Repository("dictationDAO")
 public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 	private static Logger logger = LoggerFactory.getLogger(DictationDAO.class);
+
+	/**
+	 * Scalar select so the Dictation entity and its eager vocabs are not loaded.
+	 * Order columns are selected so DISTINCT stays valid under the SQL standard.
+	 * Article is selected only to compute questionCount; it is not returned.
+	 */
+	private static final String SUMMARY_SELECT =
+			"SELECT DISTINCT d.id, d.title, d.createdDate, d.suitableStudent, d.totalAttempt, d.totalRecommended, d.source, d.article, SIZE(d.vocabs), d.lastModifyDate, d.rating, d.totalRated FROM Dictation d ";
+	private static final String FILL_IN_SOURCE =
+			"d.source=com.esl.entity.dictation.Dictation$Source.FillIn ";
 
 	@Autowired
 	private IVocabDAO vocabDAO;
@@ -115,7 +128,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 
 		// construct query string
 		StringBuilder querySB = new StringBuilder();
-		querySB.append("SELECT DISTINCT d FROM Dictation d WHERE d.source=com.esl.entity.dictation.Dictation$Source.FillIn ");
+		querySB.append("SELECT DISTINCT d FROM Dictation d WHERE ").append(FILL_IN_SOURCE);
 		querySB.append(getSearchDictationWhereClause(searchCriteria));
 		querySB.append(" ORDER BY d.lastModifyDate DESC, d.rating DESC, d.totalRated DESC");
 		logger.info(logPrefix + "queryStr[" + querySB.toString() + "]");
@@ -124,6 +137,33 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 		putSearchDictationParams(query, searchCriteria);
 		if (maxResult > 0) query.setMaxResults(maxResult);
 		return query.getResultList();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<DictationSearchSummary> searchDictationSummary(Map<DictationSearchCriteria, Object> searchCriteria, int maxResult) {
+		final String logPrefix = "searchDictationSummary: ";
+		logger.info(logPrefix + "START");
+
+		var querySB = new StringBuilder();
+		querySB.append(SUMMARY_SELECT);
+		querySB.append("WHERE ").append(FILL_IN_SOURCE);
+		querySB.append(getSearchDictationWhereClause(searchCriteria));
+		querySB.append(" ORDER BY d.lastModifyDate DESC, d.rating DESC, d.totalRated DESC");
+		logger.info(logPrefix + "queryStr[" + querySB.toString() + "]");
+
+		var query = em.createQuery(querySB.toString());
+		putSearchDictationParams(query, searchCriteria);
+		if (maxResult > 0) query.setMaxResults(maxResult);
+		return toSummaries(query.getResultList());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<DictationSearchSummary> findSearchSummaryById(long id) {
+		var query = em.createQuery(SUMMARY_SELECT + "WHERE d.id = :id");
+		query.setParameter("id", id);
+		return toSummaries(query.getResultList());
 	}
 
 	@Transactional(readOnly = true)
@@ -239,6 +279,35 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 	}
 	
 	// ---------------- supporting function -------------- //
+	private List<DictationSearchSummary> toSummaries(List<?> rows) {
+		var summaries = new ArrayList<DictationSearchSummary>(rows.size());
+		for (var row : rows) {
+			var columns = (Object[]) row;
+			summaries.add(DictationSearchSummary.fromSearchRow(
+					(Long) columns[0],
+					(String) columns[1],
+					(Date) columns[2],
+					(Dictation.StudentLevel) columns[3],
+					toInt(columns[4]),
+					toInt(columns[5]),
+					(Dictation.Source) columns[6],
+					(String) columns[7],
+					toLong(columns[8])
+			));
+		}
+		return summaries;
+	}
+
+	private static int toInt(Object value) {
+		if (value == null) return 0;
+		return ((Number) value).intValue();
+	}
+
+	private static long toLong(Object value) {
+		if (value == null) return 0L;
+		return ((Number) value).longValue();
+	}
+
 	private String getSearchDictationWhereClause(Map<DictationSearchCriteria, Object> searchCriteria) {
 		StringBuilder clause = new StringBuilder();
 		// Age

@@ -15,6 +15,14 @@ public class SearchDictationRequest implements Serializable {
 	public Dictation.StudentLevel suitableStudent;
 	public String type;
 
+	/**
+	 * When true, {@code POST /dictation/search} returns {@link DictationSearchSummary} rows
+	 * (id, title, createdDate, suitableStudent, totalAttempt, totalRecommended, source,
+	 * questionCount, sentenceDictation) and omits vocabs, article, and creator.
+	 * Default false keeps the full {@code Dictation} payload for installed apps.
+	 */
+	public boolean shortPayload = false;
+
 	public SearchDictationRequest setKeyword(String keyword) {
 		this.keyword = keyword;
 		return this;
@@ -52,6 +60,11 @@ public class SearchDictationRequest implements Serializable {
 
     public SearchDictationRequest setType(String type) {
 		this.type = type;
+		return this;
+	}
+
+	public SearchDictationRequest setShortPayload(boolean shortPayload) {
+		this.shortPayload = shortPayload;
 		return this;
 	}
 }
