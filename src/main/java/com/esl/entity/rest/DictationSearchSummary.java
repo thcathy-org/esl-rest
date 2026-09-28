@@ -36,14 +36,18 @@ public class DictationSearchSummary {
 	}
 
 	/**
-	 * @param article used only to compute {@code questionCount} and {@code sentenceDictation}; not stored
+	 * Builds one short search hit for a word list or a sentence dictation.
+	 * {@code article} chooses the label and the count, then is dropped.
+	 * Blank article: {@code sentenceDictation} is false and {@code questionCount} is {@code vocabCount}.
+	 * Non-blank article: {@code sentenceDictation} is true and {@code questionCount} is a 5-word split
+	 * (Ionic divideToSentences default), not Dictation.sentenceLength.
+	 *
 	 * @param vocabCount vocab rows for this dictation
 	 */
 	public static DictationSearchSummary fromSearchRow(Long id, String title, Date createdDate,
 			Dictation.StudentLevel suitableStudent, int totalAttempt, int totalRecommended, Dictation.Source source,
 			String article, long vocabCount) {
 		var sentenceDictation = StringUtils.isNotBlank(article);
-		// List label uses a 5-word split (Ionic divideToSentences default), not Dictation.sentenceLength.
 		var questionCount = sentenceDictation
 				? DictationSentenceChunker.divideToSentences(article, DictationSentenceChunker.WORDS_NORMAL).size()
 				: (int) vocabCount;
