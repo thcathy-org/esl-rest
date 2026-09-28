@@ -35,33 +35,40 @@ public class DictationSearchSummary {
 	}
 
 	/**
-	 * One loaded dictation, for a numeric keyword. Same fields as {@link #fromSearchRow}.
+	 * One loaded dictation, for a numeric keyword. {@code type} is {@link Dictation#getType()}.
 	 */
 	public static DictationSearchSummary fromDictation(Dictation dictation) {
 		var vocabs = dictation.getVocabs();
-		return fromSearchRow(dictation.getId(), dictation.getTitle(), dictation.getCreatedDate(),
+		return build(dictation.getId(), dictation.getTitle(), dictation.getCreatedDate(),
 				dictation.getSuitableStudent(), dictation.getTotalAttempt(), dictation.getTotalRecommended(),
-				dictation.getSource(), dictation.getArticle(), vocabs == null ? 0 : vocabs.size());
+				dictation.getSource(), dictation.getArticle(), vocabs == null ? 0 : vocabs.size(),
+				dictation.getType());
 	}
 
 	/**
 	 * Builds one short search hit for a word list or a sentence dictation.
 	 * {@code article} chooses {@code type} and the count, then is dropped.
-	 * Blank article: {@code type} is Vocab and {@code questionCount} is {@code vocabCount}.
+	 * Blank article, same rule as {@link Dictation#getType()}: {@code type} is Vocab and
+	 * {@code questionCount} is {@code vocabCount}.
 	 * Non-blank article: {@code type} is Article and {@code questionCount} is a 5-word split
 	 * (Ionic divideToSentences default), not Dictation.sentenceLength.
-	 * {@code type} matches {@link Dictation#getType()}.
 	 *
 	 * @param vocabCount vocab rows for this dictation
 	 */
 	public static DictationSearchSummary fromSearchRow(Long id, String title, Date createdDate,
 			Dictation.StudentLevel suitableStudent, int totalAttempt, int totalRecommended, Dictation.Source source,
 			String article, long vocabCount) {
-		var articleDictation = StringUtils.isNotBlank(article);
-		var questionCount = articleDictation
+		var type = StringUtils.isBlank(article) ? Dictation.DictationType.Vocab : Dictation.DictationType.Article;
+		return build(id, title, createdDate, suitableStudent, totalAttempt, totalRecommended, source, article,
+				vocabCount, type);
+	}
+
+	private static DictationSearchSummary build(Long id, String title, Date createdDate,
+			Dictation.StudentLevel suitableStudent, int totalAttempt, int totalRecommended, Dictation.Source source,
+			String article, long vocabCount, Dictation.DictationType type) {
+		var questionCount = type == Dictation.DictationType.Article
 				? DictationSentenceChunker.divideToSentences(article, DictationSentenceChunker.WORDS_NORMAL).size()
 				: (int) vocabCount;
-		var type = articleDictation ? Dictation.DictationType.Article : Dictation.DictationType.Vocab;
 		return new DictationSearchSummary(id, title, createdDate, suitableStudent, totalAttempt, totalRecommended,
 				source, questionCount, type);
 	}
