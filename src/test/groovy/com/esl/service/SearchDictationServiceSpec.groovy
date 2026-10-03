@@ -4,9 +4,6 @@ import com.esl.TestService
 import com.esl.dao.dictation.DictationDAO
 import com.esl.entity.dictation.Dictation
 import com.esl.entity.rest.SearchDictationRequest
-import com.esl.service.tts.DictationSentenceChunker
-import jakarta.persistence.EntityManager
-import org.hibernate.SessionFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.TestPropertySource
@@ -26,7 +23,6 @@ class SearchDictationServiceSpec extends Specification {
     @Autowired DictationService dictationService
     @Autowired DictationDAO dictationDAO
     @Autowired TestService testService
-    @Autowired EntityManager entityManager
 
     @Unroll
     def "Search dictation by creator: query=#query"(String query, long[] expectDictationIds) {
@@ -156,110 +152,21 @@ class SearchDictationServiceSpec extends Specification {
         "Article" | [3, 4, 5, 6, 7, 8]
     }
 
-    def "default search stays full and shortPayload matches filters order and cap"() {
-        when:
-        def keyword = new SearchDictationRequest().setKeyword("tam")
-        def full = service.searchDictation(keyword, 50)
-        def summaries = service.searchDictationSummary(new SearchDictationRequest().setKeyword("tam").setShortPayload(true), 50)
-
-        then:
-        full.size() > 1
-        full.every { it instanceof Dictation && it.article }
-        (summaries*.id as Set) == (full*.id as Set)
-        summaries.every { it.type == Dictation.DictationType.Article && it.questionCount == 1 }
-
-        when: "same type filter"
-        def vocabFull = service.searchDictation(new SearchDictationRequest().setType("Vocab"), Integer.MAX_VALUE)
-        def vocabShort = service.searchDictationSummary(new SearchDictationRequest().setType("Vocab").setShortPayload(true), Integer.MAX_VALUE)
-
-        then:
-        (vocabShort*.id as Set) == (vocabFull*.id as Set)
-        vocabShort.every { it.type == Dictation.DictationType.Vocab }
-        vocabShort.find { it.id == 1 }.questionCount == 2
-        vocabShort.find { it.id == 2 }.questionCount == 2
-
-        when: "same cap and the same rows when every hit is returned"
-        def cappedFull = service.searchDictation(new SearchDictationRequest(), 3)
-        def cappedShort = service.searchDictationSummary(new SearchDictationRequest().setShortPayload(true), 3)
-        def allFull = service.searchDictation(new SearchDictationRequest(), Integer.MAX_VALUE)
-        def allShort = service.searchDictationSummary(new SearchDictationRequest().setShortPayload(true), Integer.MAX_VALUE)
-
-        then:
-        cappedFull.size() == 3
-        cappedShort.size() == 3
-        (allShort*.id as Set) == (allFull*.id as Set)
-    }
-
-    def "short search keeps lastModifyDate rating and totalRated order"() {
+    def "search orders by lastModifyDate then rating then totalRated"() {
         given:
         def older = persistedDictation("order older unique", "order-key-older", dateFrom("2010-01-01"), 1d, 1)
         def newer = persistedDictation("order newer unique", "order-key-newer", dateFrom("2020-01-01"), 5d, 9)
 
         when:
-        def full = service.searchDictation(new SearchDictationRequest().setKeyword("order-key").setSearchTitle(false), 50)
-        def summaries = service.searchDictationSummary(
-                new SearchDictationRequest().setKeyword("order-key").setSearchTitle(false).setShortPayload(true), 50)
+        def result = service.searchDictation(new SearchDictationRequest().setKeyword("order-key").setSearchTitle(false), 50)
 
         then:
-        full*.id == [newer.id, older.id]
-        summaries*.id == full*.id
+        result*.id == [newer.id, older.id]
+        result.every { it.description && it.creator && it.vocabs != null }
 
         cleanup:
         deleteDictation(newer?.id)
         deleteDictation(older?.id)
-    }
-
-    def "numeric keyword short search returns one summary and skips other filters"() {
-        when:
-        def full = service.searchDictation(new SearchDictationRequest().setKeyword("1").setType("Article"), 50)
-        def summaries = service.searchDictationSummary(
-                new SearchDictationRequest().setKeyword("1").setType("Article").setShortPayload(true), 50)
-        def missing = service.searchDictationSummary(
-                new SearchDictationRequest().setKeyword("9999999").setShortPayload(true), 50)
-
-        then:
-        full.size() == 1
-        summaries.size() == 1
-        summaries[0].id == full[0].id
-        summaries[0].type == Dictation.DictationType.Vocab
-        summaries[0].type == full[0].type
-        summaries[0].questionCount == full[0].vocabs.size()
-        summaries[0].title == full[0].title
-        summaries[0].suitableStudent == full[0].suitableStudent
-        summaries[0].source == full[0].source
-        summaries[0].totalAttempt == full[0].totalAttempt
-        summaries[0].totalRecommended == full[0].totalRecommended
-        missing.isEmpty()
-    }
-
-    def "short search questionCount splits article sentences at five words"() {
-        given:
-        def article = "Victim Jane Tweddle-Taylor a receptionist at South Shore Academy School in Blackpool"
-        def dictation = new Dictation("five word split search")
-        dictation.article = article
-        dictation.description = ""
-        dictation.sentenceLength = "Long"
-        dictation.creator = testService.tester1
-        dictation.source = Dictation.Source.FillIn
-        dictation.suitableStudent = Any
-        dictationDAO.persist(dictation)
-        dictationDAO.flush()
-        def savedId = dictation.id
-
-        when:
-        def summaries = service.searchDictationSummary(
-                new SearchDictationRequest().setKeyword("five word split search").setSearchDescription(false).setShortPayload(true), 50)
-
-        then:
-        summaries.size() == 1
-        summaries[0].id == savedId
-        summaries[0].type == Dictation.DictationType.Article
-        summaries[0].questionCount == DictationSentenceChunker.divideToSentences(article, DictationSentenceChunker.WORDS_NORMAL).size()
-        summaries[0].questionCount != DictationSentenceChunker.divideToSentences(article, DictationSentenceChunker.WORDS_LONG).size()
-        summaries[0].questionCount == 3
-
-        cleanup:
-        deleteDictation(savedId)
     }
 
     private Dictation persistedDictation(String title, String description, Date lastModifyDate, double rating, int totalRated) {
@@ -282,22 +189,6 @@ class SearchDictationServiceSpec extends Specification {
             dictationService.deleteDictation(testService.tester1.emailAddress, id)
         } catch (UnsupportedOperationException ignored) {
         }
-    }
-
-    def "short search does not load dictation entities or vocabs"() {
-        given:
-        def statistics = entityManager.entityManagerFactory.unwrap(SessionFactory).statistics
-        statistics.statisticsEnabled = true
-        statistics.clear()
-
-        when:
-        def summaries = service.searchDictationSummary(new SearchDictationRequest().setKeyword("tam").setShortPayload(true), 50)
-
-        then:
-        summaries.size() > 1
-        statistics.entityLoadCount == 0
-        statistics.collectionFetchCount == 0
-        statistics.collectionLoadCount == 0
     }
 
     def dateFrom(String date) {
