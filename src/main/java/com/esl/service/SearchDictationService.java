@@ -3,7 +3,6 @@ package com.esl.service;
 import com.esl.dao.dictation.DictationDAO;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.dictation.DictationSearchCriteria;
-import com.esl.entity.rest.DictationSearchSummary;
 import com.esl.entity.rest.SearchDictationRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -39,17 +38,6 @@ public class SearchDictationService {
 		return result;
 	}
 
-	public List<DictationSearchSummary> searchDictationSummary(SearchDictationRequest request, int maxResult) {
-		log.info("search dictation summary: {}", ReflectionToStringBuilder.toString(request));
-
-		if (StringUtils.isNumeric(request.keyword))
-			return toSummaryList(getDictationByIdToList(Long.valueOf(request.keyword)));
-
-		var result = dictationDAO.searchDictationSummary(toSearchCriteria(request), maxResult);
-		log.info("dictation summary found: {}", result.size());
-		return result;
-	}
-
 	private Map<DictationSearchCriteria, Object> toSearchCriteria(SearchDictationRequest request) {
 		var searchCriteria = new HashMap<DictationSearchCriteria, Object>();
 		if (StringUtils.isNotBlank(request.keyword)) {
@@ -76,11 +64,4 @@ public class SearchDictationService {
 			return Collections.emptyList();
 		}
 	}
-
-	private List<DictationSearchSummary> toSummaryList(List<Dictation> dictations) {
-		if (dictations.isEmpty()) return Collections.emptyList();
-		return Collections.singletonList(DictationSearchSummary.fromDictation(dictations.get(0)));
-	}
-
-
 }
