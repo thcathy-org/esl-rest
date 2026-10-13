@@ -1,6 +1,7 @@
 package com.esl.entity.rest;
 
 import com.esl.entity.dictation.Dictation;
+import com.esl.entity.dictation.DictationSearchSort;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -23,6 +24,7 @@ public class SearchDictationRequest implements Serializable {
 	 * Default false keeps the full {@code Dictation} payload for installed apps.
 	 */
 	public boolean shortPayload = false;
+	public DictationSearchSort sort;
 
 	public SearchDictationRequest setKeyword(String keyword) {
 		this.keyword = keyword;
@@ -66,6 +68,11 @@ public class SearchDictationRequest implements Serializable {
 
 	public SearchDictationRequest setShortPayload(boolean shortPayload) {
 		this.shortPayload = shortPayload;
+		return this;
+	}
+
+	public SearchDictationRequest setSort(DictationSearchSort sort) {
+		this.sort = sort;
 		return this;
 	}
 }

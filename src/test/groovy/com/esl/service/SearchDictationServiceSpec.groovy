@@ -3,8 +3,10 @@ package com.esl.service
 import com.esl.TestService
 import com.esl.dao.dictation.DictationDAO
 import com.esl.entity.dictation.Dictation
+import com.esl.entity.dictation.DictationSearchSort
 import com.esl.entity.rest.SearchDictationRequest
 import com.esl.service.tts.DictationSentenceChunker
+import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.persistence.EntityManager
 import org.hibernate.SessionFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,6 +29,7 @@ class SearchDictationServiceSpec extends Specification {
     @Autowired DictationDAO dictationDAO
     @Autowired TestService testService
     @Autowired EntityManager entityManager
+    @Autowired ObjectMapper objectMapper
 
     @Unroll
     def "Search dictation by creator: query=#query"(String query, long[] expectDictationIds) {
@@ -190,23 +193,103 @@ class SearchDictationServiceSpec extends Specification {
         (allShort*.id as Set) == (allFull*.id as Set)
     }
 
-    def "short search keeps lastModifyDate rating and totalRated order"() {
+    def "null sort orders full and short search by createdDate"() {
         given:
-        def older = persistedDictation("order older unique", "order-key-older", dateFrom("2010-01-01"), 1d, 1)
-        def newer = persistedDictation("order newer unique", "order-key-newer", dateFrom("2020-01-01"), 5d, 9)
+        def createdEarlier = saveSortRow("sort-created-earlier", dateFrom("2010-01-01"), dateFrom("2020-01-01"), 50, 50)
+        def createdLater = saveSortRow("sort-created-later", dateFrom("2020-01-01"), dateFrom("2010-01-01"), 1, 1)
 
         when:
-        def full = service.searchDictation(new SearchDictationRequest().setKeyword("order-key").setSearchTitle(false), 50)
-        def summaries = service.searchDictationSummary(
-                new SearchDictationRequest().setKeyword("order-key").setSearchTitle(false).setShortPayload(true), 50)
+        def ids = searchIds(new SearchDictationRequest().setKeyword("sort-created").setSearchTitle(false))
 
         then:
-        full*.id == [newer.id, older.id]
-        summaries*.id == full*.id
+        ids == [createdLater.id, createdEarlier.id]
 
         cleanup:
-        deleteDictation(newer?.id)
-        deleteDictation(older?.id)
+        deleteDictation(createdLater?.id)
+        deleteDictation(createdEarlier?.id)
+    }
+
+    def "mostPracticed orders by totalAttempt"() {
+        given:
+        def fewer = saveSortRow("sort-attempt-fewer", dateFrom("2020-01-01"), dateFrom("2020-01-01"), 1, 9)
+        def more = saveSortRow("sort-attempt-more", dateFrom("2010-01-01"), dateFrom("2010-01-01"), 9, 1)
+
+        when:
+        def ids = searchIds(new SearchDictationRequest().setKeyword("sort-attempt").setSearchTitle(false).setSort(DictationSearchSort.mostPracticed))
+
+        then:
+        ids == [more.id, fewer.id]
+
+        cleanup:
+        deleteDictation(fewer?.id)
+        deleteDictation(more?.id)
+    }
+
+    def "mostRecommended orders by totalRecommended"() {
+        given:
+        def fewer = saveSortRow("sort-recommend-fewer", dateFrom("2020-01-01"), dateFrom("2020-01-01"), 9, 1)
+        def more = saveSortRow("sort-recommend-more", dateFrom("2010-01-01"), dateFrom("2010-01-01"), 1, 9)
+
+        when:
+        def ids = searchIds(new SearchDictationRequest().setKeyword("sort-recommend").setSearchTitle(false).setSort(DictationSearchSort.mostRecommended))
+
+        then:
+        ids == [more.id, fewer.id]
+
+        cleanup:
+        deleteDictation(fewer?.id)
+        deleteDictation(more?.id)
+    }
+
+    def "lastModified orders by lastModifyDate"() {
+        given:
+        def editedEarlier = saveSortRow("sort-edited-earlier", dateFrom("2020-01-01"), dateFrom("2010-01-01"), 9, 9)
+        def editedLater = saveSortRow("sort-edited-later", dateFrom("2010-01-01"), dateFrom("2020-01-01"), 1, 1)
+
+        when:
+        def ids = searchIds(new SearchDictationRequest().setKeyword("sort-edited").setSearchTitle(false).setSort(DictationSearchSort.lastModified))
+
+        then:
+        ids == [editedLater.id, editedEarlier.id]
+
+        cleanup:
+        deleteDictation(editedEarlier?.id)
+        deleteDictation(editedLater?.id)
+    }
+
+    def "keyword plus mostPracticed filters then orders by totalAttempt"() {
+        given:
+        def fewer = saveSortRow("sort-filter-fewer", dateFrom("2020-01-01"), dateFrom("2020-01-01"), 2, 0)
+        def more = saveSortRow("sort-filter-more", dateFrom("2010-01-01"), dateFrom("2010-01-01"), 8, 0)
+        def other = saveSortRow("unrelated-attempt-row", dateFrom("2021-01-01"), dateFrom("2021-01-01"), 100, 0)
+
+        when:
+        def ids = searchIds(new SearchDictationRequest().setKeyword("sort-filter").setSearchTitle(false).setSort(DictationSearchSort.mostPracticed))
+
+        then:
+        ids == [more.id, fewer.id]
+
+        cleanup:
+        deleteDictation(fewer?.id)
+        deleteDictation(more?.id)
+        deleteDictation(other?.id)
+    }
+
+    def "numeric keyword ignores sort"() {
+        when:
+        def result = service.searchDictation(new SearchDictationRequest().setKeyword("1").setSort(DictationSearchSort.mostPracticed), 50)
+
+        then:
+        result.size() == 1
+        result[0].id == 1L
+    }
+
+    def "unknown and blank sort json become newest"() {
+        expect:
+        objectMapper.readValue('{"sort":"nope"}', SearchDictationRequest).sort == DictationSearchSort.newest
+        objectMapper.readValue('{"sort":""}', SearchDictationRequest).sort == DictationSearchSort.newest
+        objectMapper.readValue('{"sort":"lastModified"}', SearchDictationRequest).sort == DictationSearchSort.lastModified
+        objectMapper.readValue('{}', SearchDictationRequest).sort == null
     }
 
     def "numeric keyword short search returns one summary and skips other filters"() {
@@ -262,15 +345,23 @@ class SearchDictationServiceSpec extends Specification {
         deleteDictation(savedId)
     }
 
-    private Dictation persistedDictation(String title, String description, Date lastModifyDate, double rating, int totalRated) {
-        def dictation = new Dictation(title)
+    private List<Long> searchIds(SearchDictationRequest request) {
+        def full = service.searchDictation(request, 50)
+        def summaries = service.searchDictationSummary(request, 50)
+        assert summaries*.id == full*.id
+        return full*.id
+    }
+
+    private Dictation saveSortRow(String description, Date createdDate, Date lastModifyDate, int totalAttempt, int totalRecommended) {
+        def dictation = new Dictation("sort " + description)
         dictation.description = description
         dictation.creator = testService.tester1
         dictation.source = Dictation.Source.FillIn
         dictation.suitableStudent = Any
+        dictation.createdDate = createdDate
         dictation.lastModifyDate = lastModifyDate
-        dictation.rating = rating
-        dictation.totalRated = totalRated
+        dictation.totalAttempt = totalAttempt
+        dictation.totalRecommended = totalRecommended
         dictationDAO.persist(dictation)
         dictationDAO.flush()
         return dictation

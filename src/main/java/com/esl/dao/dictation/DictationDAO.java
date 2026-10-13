@@ -3,6 +3,7 @@ package com.esl.dao.dictation;
 import com.esl.dao.ESLDao;
 import com.esl.entity.dictation.Dictation;
 import com.esl.entity.dictation.DictationSearchCriteria;
+import com.esl.entity.dictation.DictationSearchSort;
 import com.esl.entity.dictation.Vocab;
 import com.esl.entity.rest.DictationSearchSummary;
 import com.esl.exception.IllegalParameterException;
@@ -33,7 +34,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 	 * The article column is read on every row, word or sentence, to set questionCount and type. The text is not returned.
 	 */
 	private static final String SUMMARY_SELECT =
-			"SELECT DISTINCT d.id, d.title, d.createdDate, d.suitableStudent, d.totalAttempt, d.totalRecommended, d.source, d.article, SIZE(d.vocabs), d.lastModifyDate, d.rating, d.totalRated FROM Dictation d ";
+			"SELECT DISTINCT d.id, d.title, d.createdDate, d.suitableStudent, d.totalAttempt, d.totalRecommended, d.source, d.article, SIZE(d.vocabs), d.lastModifyDate FROM Dictation d ";
 	private static final String FILL_IN_SOURCE =
 			"d.source=com.esl.entity.dictation.Dictation$Source.FillIn ";
 
@@ -121,8 +122,9 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 		}
 	}
 
+	@Override
 	@Transactional(readOnly = true)
-	public List<Dictation> searchDictation(Map<DictationSearchCriteria, Object> searchCriteria, int maxResult) {
+	public List<Dictation> searchDictation(Map<DictationSearchCriteria, Object> searchCriteria, DictationSearchSort sort, int maxResult) {
 		final String logPrefix = "searchDictation: ";
 		logger.info(logPrefix + "START");
 
@@ -130,7 +132,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 		StringBuilder querySB = new StringBuilder();
 		querySB.append("SELECT DISTINCT d FROM Dictation d WHERE ").append(FILL_IN_SOURCE);
 		querySB.append(getSearchDictationWhereClause(searchCriteria));
-		querySB.append(" ORDER BY d.lastModifyDate DESC, d.rating DESC, d.totalRated DESC");
+		querySB.append(searchOrder(sort));
 		logger.info(logPrefix + "queryStr[" + querySB.toString() + "]");
 
 		Query query = em.createQuery(querySB.toString());
@@ -141,7 +143,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<DictationSearchSummary> searchDictationSummary(Map<DictationSearchCriteria, Object> searchCriteria, int maxResult) {
+	public List<DictationSearchSummary> searchDictationSummary(Map<DictationSearchCriteria, Object> searchCriteria, DictationSearchSort sort, int maxResult) {
 		final String logPrefix = "searchDictationSummary: ";
 		logger.info(logPrefix + "START");
 
@@ -149,7 +151,7 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 		querySB.append(SUMMARY_SELECT);
 		querySB.append("WHERE ").append(FILL_IN_SOURCE);
 		querySB.append(getSearchDictationWhereClause(searchCriteria));
-		querySB.append(" ORDER BY d.lastModifyDate DESC, d.rating DESC, d.totalRated DESC");
+		querySB.append(searchOrder(sort));
 		logger.info(logPrefix + "queryStr[" + querySB.toString() + "]");
 
 		var query = em.createQuery(querySB.toString());
@@ -271,6 +273,16 @@ public class DictationDAO extends ESLDao<Dictation> implements IDictationDAO {
 	}
 	
 	// ---------------- supporting function -------------- //
+	private static String searchOrder(DictationSearchSort sort) {
+		var resolved = sort == null ? DictationSearchSort.newest : sort;
+		return switch (resolved) {
+			case newest -> " ORDER BY d.createdDate DESC, d.id DESC";
+			case mostPracticed -> " ORDER BY d.totalAttempt DESC, d.createdDate DESC, d.id DESC";
+			case mostRecommended -> " ORDER BY d.totalRecommended DESC, d.createdDate DESC, d.id DESC";
+			case lastModified -> " ORDER BY d.lastModifyDate DESC, d.id DESC";
+		};
+	}
+
 	private List<DictationSearchSummary> toSummaries(List<?> rows) {
 		var summaries = new ArrayList<DictationSearchSummary>(rows.size());
 		for (var row : rows) {

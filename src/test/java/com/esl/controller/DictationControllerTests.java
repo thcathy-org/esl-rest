@@ -137,6 +137,13 @@ public class DictationControllerTests {
 		assertThat(body, not(containsString("It is a sentence dictation")));
 	}
 
+	@Test
+	public void unknownSortStillReturnsResults() throws Exception {
+		postSearch("{\"keyword\":\"tam\",\"sort\":\"nope\"}")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))));
+	}
+
 	private ResultActions postSearch(String json) throws Exception {
 		return this.mockMvc.perform(post("/dictation/search")
 				.contentType(MediaType.APPLICATION_JSON)
