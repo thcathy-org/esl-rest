@@ -1,6 +1,7 @@
 package com.esl.entity.rest;
 
 import com.esl.entity.dictation.Dictation;
+import com.esl.entity.dictation.DictationSearchSort;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -14,6 +15,8 @@ public class SearchDictationRequest implements Serializable {
 	public String creator;
 	public Dictation.StudentLevel suitableStudent;
 	public String type;
+
+	public DictationSearchSort sort;
 
 	public SearchDictationRequest setKeyword(String keyword) {
 		this.keyword = keyword;
@@ -52,6 +55,11 @@ public class SearchDictationRequest implements Serializable {
 
     public SearchDictationRequest setType(String type) {
 		this.type = type;
+		return this;
+	}
+
+	public SearchDictationRequest setSort(DictationSearchSort sort) {
+		this.sort = sort;
 		return this;
 	}
 }

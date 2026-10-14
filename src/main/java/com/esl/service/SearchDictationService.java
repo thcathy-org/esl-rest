@@ -32,7 +32,7 @@ public class SearchDictationService {
 		if (StringUtils.isNumeric(request.keyword))
 			return getDictationByIdToList(Long.valueOf(request.keyword));
 
-		var result = dictationDAO.searchDictation(toSearchCriteria(request), maxResult);
+		var result = dictationDAO.searchDictation(toSearchCriteria(request), request.sort, maxResult);
 
 		log.info("dictation found: {}", result.size());
 		return result;

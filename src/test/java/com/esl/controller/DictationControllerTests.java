@@ -23,6 +23,7 @@ import java.util.Collections;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -122,6 +123,13 @@ public class DictationControllerTests {
 				.andExpect(jsonPath("$[0].article", is("It is a sentence dictation")))
 				.andExpect(jsonPath("$[0].vocabs", hasSize(0)))
 				.andExpect(jsonPath("$[0].creator.emailAddress", is("tester@esl.com")));
+	}
+
+	@Test
+	public void unknownSortStillReturnsResults() throws Exception {
+		postSearch("{\"keyword\":\"tam\",\"sort\":\"nope\"}")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))));
 	}
 
 	private ResultActions postSearch(String json) throws Exception {
