@@ -24,6 +24,8 @@ import com.esl.service.DictationService;
 import com.esl.service.DictationStatService;
 import com.esl.service.SearchDictationService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(value = "/dictation")
 public class DictationController implements MemberAware {
@@ -80,10 +82,7 @@ public class DictationController implements MemberAware {
 	}
 
 	@PostMapping(value = "/search")
-	public ResponseEntity<?> search(@RequestBody SearchDictationRequest request) {
-		if (request.shortPayload) {
-			return ResponseEntity.ok(searchDictationService.searchDictationSummary(request, maxDictationSearchResult));
-		}
+	public ResponseEntity<List<Dictation>> search(@RequestBody SearchDictationRequest request) {
 		return ResponseEntity.ok(searchDictationService.searchDictation(request, maxDictationSearchResult));
 	}
 
