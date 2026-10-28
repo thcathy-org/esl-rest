@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -75,6 +76,33 @@ class PracticeHistoryRetentionJobTest {
 
         assertEquals(0L, estimate.rowCount());
         assertEquals(0L, estimate.jsonBytes());
+    }
+
+    @Test
+    void scheduledRun_skipsWorkDuringStartupDelay() {
+        var clock = mock(Clock.class);
+        when(clock.instant()).thenReturn(NOW);
+        var job = new PracticeHistoryRetentionJob(repository, clock, 12, 500, true);
+
+        job.scheduledRun();
+
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void scheduledRun_runsAfterStartupDelay() {
+        var started = NOW.plus(PracticeHistoryRetentionJob.STARTUP_DELAY);
+        var clock = mock(Clock.class);
+        when(clock.instant()).thenReturn(NOW, started, started);
+        var cutoff = PracticeHistoryRetentionJob.cutoff(started, 12);
+        when(repository.summarizeCreatedBefore(cutoff)).thenReturn(estimate(0L, 0L));
+        when(repository.findIdsByCreatedDateBefore(eq(cutoff), any())).thenReturn(List.of());
+        var job = new PracticeHistoryRetentionJob(repository, clock, 12, 500, true);
+
+        job.scheduledRun();
+
+        verify(repository).summarizeCreatedBefore(cutoff);
+        verify(repository, never()).deleteByIdIn(any());
     }
 
     @Test

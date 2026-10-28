@@ -11,18 +11,22 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class PracticeHistoryRetentionJob {
+    static final String DAILY_CRON = "0 15 3 * * *";
+    static final Duration STARTUP_DELAY = Duration.ofMinutes(2);
+
     private static final Logger logger = LoggerFactory.getLogger(PracticeHistoryRetentionJob.class);
 
     private final PracticeHistoryRepository repository;
     private final Clock clock;
+    private final Instant acceptWorkAt;
     private final int retentionMonths;
     private final int batchSize;
     private final boolean enabled;
@@ -46,6 +50,7 @@ public class PracticeHistoryRetentionJob {
     ) {
         this.repository = repository;
         this.clock = clock;
+        this.acceptWorkAt = clock.instant().plus(STARTUP_DELAY);
         this.retentionMonths = retentionMonths;
         this.batchSize = batchSize;
         this.enabled = enabled;
@@ -58,11 +63,15 @@ public class PracticeHistoryRetentionJob {
         return Date.from(now.atOffset(ZoneOffset.UTC).minusMonths(retentionMonths).toInstant());
     }
 
-    @Scheduled(
-            fixedDelayString = "${PracticeHistory.RetentionIntervalSeconds:86400}",
-            initialDelayString = "${PracticeHistory.RetentionInitialDelaySeconds:120}",
-            timeUnit = TimeUnit.SECONDS
-    )
+    @Scheduled(cron = DAILY_CRON, zone = "UTC")
+    public void scheduledRun() {
+        if (clock.instant().isBefore(acceptWorkAt)) {
+            logger.info("Practice history retention skipped during startup delay");
+            return;
+        }
+        run();
+    }
+
     public void run() {
         if (retentionMonths < 1 || batchSize < 1) {
             logger.error(
