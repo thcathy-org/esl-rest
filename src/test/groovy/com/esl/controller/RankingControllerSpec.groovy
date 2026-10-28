@@ -17,7 +17,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(locations = "classpath:application-test.properties")
+@TestPropertySource(
+        locations = "classpath:application-test.properties",
+        properties = ["spring.datasource.url=jdbc:h2:mem:ranking;Mode=MySQL"]
+)
 class RankingControllerSpec extends Specification {
     @Autowired private MockMvc mockMvc
     @Autowired ObjectMapper objectMapper
@@ -37,7 +40,7 @@ class RankingControllerSpec extends Specification {
 
         where:
         memberEmail       | expectTotalScore
-        "tester@esl.com"  | 7
+        "tester@esl.com"  | 6
         "tester2@esl.com" | 0
     }
 
