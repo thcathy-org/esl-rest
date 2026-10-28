@@ -24,6 +24,8 @@ public interface PracticeHistoryRepository extends CrudRepository<PracticeHistor
 
     void deleteByMember(Member member);
 
+    long countByCreatedDateBefore(Date cutoff);
+
     @Query("select h.id from PracticeHistory h where h.createdDate < ?1")
     List<Long> findIdsByCreatedDateBefore(Date cutoff, Pageable pageable);
 

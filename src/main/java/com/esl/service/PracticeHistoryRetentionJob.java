@@ -47,10 +47,6 @@ public class PracticeHistoryRetentionJob {
 
     @Scheduled(cron = DAILY_CRON, zone = "UTC")
     public void run() {
-        if (!enabled) {
-            logger.info("Practice history retention skipped: PracticeHistory.RetentionEnabled=false");
-            return;
-        }
         if (retentionMonths < 1 || batchSize < 1) {
             logger.error(
                     "Practice history retention skipped: retentionMonths={} batchSize={}",
@@ -61,6 +57,16 @@ public class PracticeHistoryRetentionJob {
         }
 
         var cutoff = cutoff(Instant.now(), retentionMonths);
+        if (!enabled) {
+            var matched = repository.countByCreatedDateBefore(cutoff);
+            logger.info(
+                    "Practice history retention dry-run: {} rows older than {} would be deleted. PracticeHistory.RetentionEnabled=false",
+                    matched,
+                    cutoff
+            );
+            return;
+        }
+
         var deleted = deleteOlderThan(cutoff);
         logger.info("Practice history retention deleted {} rows older than {}", deleted, cutoff);
     }

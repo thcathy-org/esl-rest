@@ -56,12 +56,15 @@ class PracticeHistoryRetentionJobTest {
     }
 
     @Test
-    void run_whenDisabled_doesNotQuery() {
+    void run_whenDisabled_countsWithoutDeleting() {
+        when(repository.countByCreatedDateBefore(any())).thenReturn(5978L);
         var job = job(false, 12, 500);
 
         job.run();
 
-        verifyNoInteractions(repository);
+        verify(repository).countByCreatedDateBefore(any());
+        verify(repository, never()).findIdsByCreatedDateBefore(any(), any());
+        verify(repository, never()).deleteByIdIn(any());
     }
 
     @Test
