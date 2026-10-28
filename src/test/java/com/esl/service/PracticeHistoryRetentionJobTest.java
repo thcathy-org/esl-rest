@@ -59,24 +59,23 @@ class PracticeHistoryRetentionJobTest {
     void run_whenDisabled_doesNotQuery() {
         var job = job(false, 12, 500);
 
-        job.runAt(NOW);
+        job.run();
 
         verifyNoInteractions(repository);
     }
 
     @Test
     void run_whenEnabled_deletesFullBatchThenPartialBatch() {
-        var cutoff = PracticeHistoryRetentionJob.cutoff(NOW, 12);
         var page = PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "id"));
-        when(repository.findIdsByCreatedDateBefore(cutoff, page))
+        when(repository.findIdsByCreatedDateBefore(any(), eq(page)))
                 .thenReturn(List.of(1L, 2L))
                 .thenReturn(List.of(3L));
         when(repository.deleteByIdIn(any())).thenAnswer(invocation -> ((List<?>) invocation.getArgument(0)).size());
         var job = job(true, 12, 2);
 
-        job.runAt(NOW);
+        job.run();
 
-        verify(repository, times(2)).findIdsByCreatedDateBefore(eq(cutoff), eq(page));
+        verify(repository, times(2)).findIdsByCreatedDateBefore(any(), eq(page));
         verify(repository).deleteByIdIn(List.of(1L, 2L));
         verify(repository).deleteByIdIn(List.of(3L));
         verify(repository, times(2)).deleteByIdIn(any());
@@ -84,43 +83,40 @@ class PracticeHistoryRetentionJobTest {
 
     @Test
     void run_whenEnabled_stopsAfterEmptyPage() {
-        var cutoff = PracticeHistoryRetentionJob.cutoff(NOW, 12);
         var page = PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "id"));
-        when(repository.findIdsByCreatedDateBefore(cutoff, page))
+        when(repository.findIdsByCreatedDateBefore(any(), eq(page)))
                 .thenReturn(List.of(8L, 9L))
                 .thenReturn(List.of());
         when(repository.deleteByIdIn(List.of(8L, 9L))).thenReturn(2);
         var job = job(true, 12, 2);
 
-        job.runAt(NOW);
+        job.run();
 
-        verify(repository, times(2)).findIdsByCreatedDateBefore(eq(cutoff), eq(page));
+        verify(repository, times(2)).findIdsByCreatedDateBefore(any(), eq(page));
         verify(repository, times(1)).deleteByIdIn(any());
     }
 
     @Test
     void run_whenEnabled_secondRunWithNoRowsDoesNotDelete() {
-        var cutoff = PracticeHistoryRetentionJob.cutoff(NOW, 12);
-        when(repository.findIdsByCreatedDateBefore(eq(cutoff), any())).thenReturn(List.of());
+        when(repository.findIdsByCreatedDateBefore(any(), any())).thenReturn(List.of());
         var job = job(true, 12, 500);
 
-        job.runAt(NOW);
-        job.runAt(NOW);
+        job.run();
+        job.run();
 
-        verify(repository, times(2)).findIdsByCreatedDateBefore(eq(cutoff), any());
+        verify(repository, times(2)).findIdsByCreatedDateBefore(any(), any());
         verify(repository, never()).deleteByIdIn(any());
     }
 
     @Test
     void run_whenDeleteRemovesNothing_stopsInsteadOfLooping() {
-        var cutoff = PracticeHistoryRetentionJob.cutoff(NOW, 12);
-        when(repository.findIdsByCreatedDateBefore(eq(cutoff), any())).thenReturn(List.of(4L, 5L));
+        when(repository.findIdsByCreatedDateBefore(any(), any())).thenReturn(List.of(4L, 5L));
         when(repository.deleteByIdIn(any())).thenReturn(0);
         var job = job(true, 12, 2);
 
-        job.runAt(NOW);
+        job.run();
 
-        verify(repository, times(1)).findIdsByCreatedDateBefore(eq(cutoff), any());
+        verify(repository, times(1)).findIdsByCreatedDateBefore(any(), any());
         verify(repository, times(1)).deleteByIdIn(List.of(4L, 5L));
     }
 
@@ -128,7 +124,7 @@ class PracticeHistoryRetentionJobTest {
     void run_skipsQueriesWhenRetentionMonthsAreNotPositive() {
         var job = job(true, 0, 500);
 
-        job.runAt(NOW);
+        job.run();
 
         verifyNoInteractions(repository);
     }
@@ -137,7 +133,7 @@ class PracticeHistoryRetentionJobTest {
     void run_skipsQueriesWhenBatchSizeIsNotPositive() {
         var job = job(true, 12, 0);
 
-        job.runAt(NOW);
+        job.run();
 
         verifyNoInteractions(repository);
     }

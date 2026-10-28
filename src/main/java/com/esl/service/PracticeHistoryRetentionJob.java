@@ -47,10 +47,6 @@ public class PracticeHistoryRetentionJob {
 
     @Scheduled(cron = DAILY_CRON, zone = "UTC")
     public void run() {
-        runAt(Instant.now());
-    }
-
-    void runAt(Instant now) {
         if (!enabled) {
             logger.info("Practice history retention skipped: PracticeHistory.RetentionEnabled=false");
             return;
@@ -64,7 +60,7 @@ public class PracticeHistoryRetentionJob {
             return;
         }
 
-        var cutoff = cutoff(now, retentionMonths);
+        var cutoff = cutoff(Instant.now(), retentionMonths);
         var deleted = deleteOlderThan(cutoff);
         logger.info("Practice history retention deleted {} rows older than {}", deleted, cutoff);
     }
