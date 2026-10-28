@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(locations = "classpath:application-test.properties")
+@TestPropertySource(locations = "classpath:application-test.properties", properties = ["PracticeHistory.MaxPerMember=10"])
 class CreatePracticeHistorySpec extends Specification {
     @Autowired private MockMvc mockMvc
     @Autowired ObjectMapper objectMapper
@@ -54,7 +54,7 @@ class CreatePracticeHistorySpec extends Specification {
     }
 
     @Unroll
-    def "Always maintain 10 dictation history at max"() {
+    def "Drops the oldest dictation history once MaxPerMember is reached"() {
         when: "create 11 dictation history"
         CreateDictationHistoryRequest request = new CreateDictationHistoryRequest()
         request.dictationId = 1
@@ -74,7 +74,7 @@ class CreatePracticeHistorySpec extends Specification {
         }
         def result = practiceHistoryRepository.findByMember(testService.tester1, Sort.by("createdDate")).get()
 
-        then: "only 10 is storing last 10 history"
+        then: "only the configured cap is stored, and the oldest history is gone"
         result.size() == 10
         result.collect {it.dictationId}.contains(1) == false
     }
