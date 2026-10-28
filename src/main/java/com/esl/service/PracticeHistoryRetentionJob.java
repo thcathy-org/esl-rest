@@ -15,7 +15,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Date;
-import java.util.List;
 
 @Service
 public class PracticeHistoryRetentionJob {
@@ -73,6 +72,10 @@ public class PracticeHistoryRetentionJob {
     }
 
     public void run() {
+        if (!enabled) {
+            logger.info("Practice history retention skipped: PracticeHistory.RetentionEnabled=false");
+            return;
+        }
         if (retentionMonths < 1 || batchSize < 1) {
             logger.error(
                     "Practice history retention skipped: retentionMonths={} batchSize={}",
@@ -83,25 +86,8 @@ public class PracticeHistoryRetentionJob {
         }
 
         var cutoff = cutoff(clock.instant(), retentionMonths);
-        var estimate = toEstimate(repository.summarizeCreatedBefore(cutoff));
-        if (!enabled) {
-            logger.info(
-                    "Practice history retention dry-run: cutoff={} rows={} historyJsonBytes={}. PracticeHistory.RetentionEnabled=false",
-                    cutoff,
-                    estimate.rowCount(),
-                    estimate.jsonBytes()
-            );
-            return;
-        }
-
         var deleted = deleteOlderThan(cutoff);
-        logger.info(
-                "Practice history retention deleted {} rows older than {} (estimate before delete: rows={} historyJsonBytes={})",
-                deleted,
-                cutoff,
-                estimate.rowCount(),
-                estimate.jsonBytes()
-        );
+        logger.info("Practice history retention deleted {} rows older than {}", deleted, cutoff);
     }
 
     private long deleteOlderThan(Date cutoff) {
@@ -127,24 +113,4 @@ public class PracticeHistoryRetentionJob {
             }
         }
     }
-
-    static PracticeHistoryRetentionEstimate toEstimate(List<Object[]> rows) {
-        if (rows == null || rows.isEmpty() || rows.get(0) == null || rows.get(0).length < 2) {
-            return new PracticeHistoryRetentionEstimate(0, 0);
-        }
-        var row = rows.get(0);
-        return new PracticeHistoryRetentionEstimate(toLong(row[0]), toLong(row[1]));
-    }
-
-    private static long toLong(Object value) {
-        if (value == null) {
-            return 0;
-        }
-        if (value instanceof Number number) {
-            return number.longValue();
-        }
-        return Long.parseLong(value.toString());
-    }
-
-    record PracticeHistoryRetentionEstimate(long rowCount, long jsonBytes) {}
 }

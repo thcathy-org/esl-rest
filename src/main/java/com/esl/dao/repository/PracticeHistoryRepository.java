@@ -31,8 +31,4 @@ public interface PracticeHistoryRepository extends CrudRepository<PracticeHistor
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from PracticeHistory h where h.id in ?1")
     int deleteByIdIn(Collection<Long> ids);
-
-    // MySQL LENGTH is bytes, matching the retention inventory. JPA length() is characters.
-    @Query(value = "SELECT COUNT(*), COALESCE(SUM(LENGTH(HISTORY_JSON)), 0) FROM PRACTICE_HISTORY WHERE CREATED_DATE < ?1", nativeQuery = true)
-    List<Object[]> summarizeCreatedBefore(Date cutoff);
 }
