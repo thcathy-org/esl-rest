@@ -8,9 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.List;
 
@@ -18,7 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -59,36 +56,10 @@ class PracticeHistoryRetentionJobTest {
     }
 
     @Test
-    void scheduledRun_skipsWorkDuringStartupDelay() {
-        var clock = mock(Clock.class);
-        when(clock.instant()).thenReturn(NOW);
-        var job = new PracticeHistoryRetentionJob(repository, clock, 12, 500, true);
-
-        job.scheduledRun();
-
-        verifyNoInteractions(repository);
-    }
-
-    @Test
-    void scheduledRun_runsAfterStartupDelay() {
-        var started = NOW.plus(PracticeHistoryRetentionJob.STARTUP_DELAY);
-        var clock = mock(Clock.class);
-        when(clock.instant()).thenReturn(NOW, started, started);
-        var cutoff = PracticeHistoryRetentionJob.cutoff(started, 12);
-        when(repository.findIdsByCreatedDateBefore(eq(cutoff), any())).thenReturn(List.of());
-        var job = new PracticeHistoryRetentionJob(repository, clock, 12, 500, true);
-
-        job.scheduledRun();
-
-        verify(repository).findIdsByCreatedDateBefore(eq(cutoff), any());
-        verify(repository, never()).deleteByIdIn(any());
-    }
-
-    @Test
     void run_whenDisabled_doesNotQuery() {
         var job = job(false, 12, 500);
 
-        job.run();
+        job.runAt(NOW);
 
         verifyNoInteractions(repository);
     }
@@ -103,7 +74,7 @@ class PracticeHistoryRetentionJobTest {
         when(repository.deleteByIdIn(any())).thenAnswer(invocation -> ((List<?>) invocation.getArgument(0)).size());
         var job = job(true, 12, 2);
 
-        job.run();
+        job.runAt(NOW);
 
         verify(repository, times(2)).findIdsByCreatedDateBefore(eq(cutoff), eq(page));
         verify(repository).deleteByIdIn(List.of(1L, 2L));
@@ -121,7 +92,7 @@ class PracticeHistoryRetentionJobTest {
         when(repository.deleteByIdIn(List.of(8L, 9L))).thenReturn(2);
         var job = job(true, 12, 2);
 
-        job.run();
+        job.runAt(NOW);
 
         verify(repository, times(2)).findIdsByCreatedDateBefore(eq(cutoff), eq(page));
         verify(repository, times(1)).deleteByIdIn(any());
@@ -133,8 +104,8 @@ class PracticeHistoryRetentionJobTest {
         when(repository.findIdsByCreatedDateBefore(eq(cutoff), any())).thenReturn(List.of());
         var job = job(true, 12, 500);
 
-        job.run();
-        job.run();
+        job.runAt(NOW);
+        job.runAt(NOW);
 
         verify(repository, times(2)).findIdsByCreatedDateBefore(eq(cutoff), any());
         verify(repository, never()).deleteByIdIn(any());
@@ -147,7 +118,7 @@ class PracticeHistoryRetentionJobTest {
         when(repository.deleteByIdIn(any())).thenReturn(0);
         var job = job(true, 12, 2);
 
-        job.run();
+        job.runAt(NOW);
 
         verify(repository, times(1)).findIdsByCreatedDateBefore(eq(cutoff), any());
         verify(repository, times(1)).deleteByIdIn(List.of(4L, 5L));
@@ -157,7 +128,7 @@ class PracticeHistoryRetentionJobTest {
     void run_skipsQueriesWhenRetentionMonthsAreNotPositive() {
         var job = job(true, 0, 500);
 
-        job.run();
+        job.runAt(NOW);
 
         verifyNoInteractions(repository);
     }
@@ -166,18 +137,12 @@ class PracticeHistoryRetentionJobTest {
     void run_skipsQueriesWhenBatchSizeIsNotPositive() {
         var job = job(true, 12, 0);
 
-        job.run();
+        job.runAt(NOW);
 
         verifyNoInteractions(repository);
     }
 
     private PracticeHistoryRetentionJob job(boolean enabled, int months, int batchSize) {
-        return new PracticeHistoryRetentionJob(
-                repository,
-                Clock.fixed(NOW, ZoneOffset.UTC),
-                months,
-                batchSize,
-                enabled
-        );
+        return new PracticeHistoryRetentionJob(repository, months, batchSize, enabled);
     }
 }

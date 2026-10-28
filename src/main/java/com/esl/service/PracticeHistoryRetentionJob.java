@@ -10,22 +10,17 @@ import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Date;
 
 @Service
 public class PracticeHistoryRetentionJob {
-    static final String DAILY_CRON = "0 15 3 * * *";
-    static final Duration STARTUP_DELAY = Duration.ofMinutes(2);
+    private static final String DAILY_CRON = "0 15 3 * * *";
 
     private static final Logger logger = LoggerFactory.getLogger(PracticeHistoryRetentionJob.class);
 
     private final PracticeHistoryRepository repository;
-    private final Clock clock;
-    private final Instant acceptWorkAt;
     private final int retentionMonths;
     private final int batchSize;
     private final boolean enabled;
@@ -37,19 +32,7 @@ public class PracticeHistoryRetentionJob {
             @Value("${PracticeHistory.RetentionBatchSize:500}") int batchSize,
             @Value("${PracticeHistory.RetentionEnabled:false}") boolean enabled
     ) {
-        this(repository, Clock.systemUTC(), retentionMonths, batchSize, enabled);
-    }
-
-    PracticeHistoryRetentionJob(
-            PracticeHistoryRepository repository,
-            Clock clock,
-            int retentionMonths,
-            int batchSize,
-            boolean enabled
-    ) {
         this.repository = repository;
-        this.clock = clock;
-        this.acceptWorkAt = clock.instant().plus(STARTUP_DELAY);
         this.retentionMonths = retentionMonths;
         this.batchSize = batchSize;
         this.enabled = enabled;
@@ -63,15 +46,11 @@ public class PracticeHistoryRetentionJob {
     }
 
     @Scheduled(cron = DAILY_CRON, zone = "UTC")
-    public void scheduledRun() {
-        if (clock.instant().isBefore(acceptWorkAt)) {
-            logger.info("Practice history retention skipped during startup delay");
-            return;
-        }
-        run();
+    public void run() {
+        runAt(Instant.now());
     }
 
-    public void run() {
+    void runAt(Instant now) {
         if (!enabled) {
             logger.info("Practice history retention skipped: PracticeHistory.RetentionEnabled=false");
             return;
@@ -85,7 +64,7 @@ public class PracticeHistoryRetentionJob {
             return;
         }
 
-        var cutoff = cutoff(clock.instant(), retentionMonths);
+        var cutoff = cutoff(now, retentionMonths);
         var deleted = deleteOlderThan(cutoff);
         logger.info("Practice history retention deleted {} rows older than {}", deleted, cutoff);
     }
