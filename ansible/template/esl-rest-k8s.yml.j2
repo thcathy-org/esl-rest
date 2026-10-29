@@ -224,6 +224,10 @@ spec:
             secretKeyRef:
               name: {{ app_name }}-secrets
               key: TELEGRAM_CHAT_ID
+{% if practice_history_retention_enabled | default(false) | bool %}
+        - name: "PracticeHistory.RetentionEnabled"
+          value: "true"
+{% endif %}
         readinessProbe:
           httpGet:
             path: /actuator/health
