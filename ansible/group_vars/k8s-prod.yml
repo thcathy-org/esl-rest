@@ -6,3 +6,4 @@ volume_root: "{{ ansible_env.HOME }}/k3s/volumes"
 kubeconfig: "{{ ansible_env.HOME }}/.kube/config"
 ingress_hosts:
   - esl-rest.funfunspell.com
+practice_history_retention_enabled: true
