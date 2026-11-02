@@ -28,11 +28,7 @@ public class CachedVocabService {
                 .build();
     }
 
-    public PhoneticQuestion createQuestion(String word, boolean showImage) {
-        return cache.get(key(word, showImage), (k) -> vocabService.createQuestion(word, showImage));
-    }
-
-    String key(String word, boolean showImage) {
-        return String.format("%s:%s", word, showImage);
+    public PhoneticQuestion createQuestion(String word) {
+        return cache.get(word, (k) -> vocabService.createQuestion(word));
     }
 }
