@@ -183,35 +183,6 @@ public class ReplicateAIService {
                 "'''" + text + "'''";
     }
 
-    public List<String> getDefinition(String term) {
-        String prompt = "Provide a definition of the text within triple quote. Output less than 30 words but you can return as less as possible. Do not use any word within triple quote in the definition. Output the definition in one line. '''" + term + "'''";
-
-        PredictionInput input = new PredictionInput();
-        input.prompt = prompt;
-        input.maxTokens = 128;
-        input.systemPrompt = "You are an English dictionary";
-        input.maxNewTokens = 128;
-
-        PredictionRequest request = new PredictionRequest();
-        request.setInput(input);
-
-        PredictionResponse response = webClient.post()
-                .uri("/models/meta/meta-llama-3-8b-instruct/predictions")
-                .header("Prefer", "wait")
-                .bodyValue(request)
-                .retrieve()
-                .onStatus(status -> status.value() >= 400, this::handleErrorResponse)
-                .bodyToMono(PredictionResponse.class)
-                .timeout(requestTimeout)
-                .block();
-        
-        if (response != null && response.output != null) {
-            return response.output;
-        } else {
-            throw new RuntimeException("Empty response from API");
-        }
-    }
-    
     private Mono<? extends Throwable> handleErrorResponse(ClientResponse clientResponse) {
         return clientResponse.bodyToMono(String.class)
                 .flatMap(errorBody -> Mono.error(new RuntimeException(
