@@ -34,7 +34,7 @@ public class VocabService {
     public PhoneticQuestion createQuestion(String word, boolean showImage) {
         log.info("create practice showImage[{}] for vocab: {}", showImage, word);
 
-        return phoneticQuestionService.getQuestionFromDBWithImage(word)
+        return phoneticQuestionService.getQuestionFromDB(word)
                 .orElseGet(() -> phoneticQuestionService.buildQuestionByWebAPI(word, showImage));
     }
 
