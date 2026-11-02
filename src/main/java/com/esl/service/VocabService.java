@@ -6,7 +6,6 @@ import com.esl.entity.dictation.Vocab;
 import com.esl.enumeration.VocabDifficulty;
 import com.esl.model.PhoneticPractice;
 import com.esl.model.PhoneticQuestion;
-import com.esl.service.rest.ReplicateAIService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,12 +22,10 @@ public class VocabService {
 
     final PhoneticQuestionService phoneticQuestionService;
     final PhoneticQuestionDAO phoneticQuestionDAO;
-    final ReplicateAIService replicateAIService;
 
-    public VocabService(PhoneticQuestionService phoneticQuestionService, PhoneticQuestionDAO phoneticQuestionDAO, ReplicateAIService replicateAIService) {
+    public VocabService(PhoneticQuestionService phoneticQuestionService, PhoneticQuestionDAO phoneticQuestionDAO) {
         this.phoneticQuestionService = phoneticQuestionService;
         this.phoneticQuestionDAO = phoneticQuestionDAO;
-        this.replicateAIService = replicateAIService;
     }
 
     public PhoneticQuestion createQuestion(String word) {
@@ -44,27 +41,5 @@ public class VocabService {
 
         var vocabs = questions.stream().map(q -> new Vocab(q.getWord())).collect(Collectors.toList());
         return Dictation.vocabPractice(vocabs, difficulty);
-    }
-
-    public String getMeaning(String word) {
-        log.info("get meaning for '{}' using AI", word);
-        var aiResponse = replicateAIService.getDefinition(word);
-        String definition = aiResponse.stream()
-                .map(s -> s.replaceAll("[\n\r]", " "))
-                .filter(s -> !s.trim().isEmpty())
-                .collect(Collectors.joining(""));;
-
-        String[] wordParts = word.toLowerCase().replaceAll("[^a-zA-Z\\s-]", "").split("[-\\s]+");
-
-        String maskedDefinition = definition;
-        for (String part : wordParts) {
-            if (part.length() > 2) { // Only mask words with more than 2 characters
-                String pattern = "(?i)" + part;
-                maskedDefinition = maskedDefinition.replaceAll(pattern, "***");
-            }
-        }
-        
-        log.debug("Original definition: '{}', masked: '{}'", definition, maskedDefinition);
-        return maskedDefinition;
     }
 }

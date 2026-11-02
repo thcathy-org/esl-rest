@@ -33,9 +33,6 @@ public class CacheConfig {
             cacheManager.createCache("member", new MutableConfiguration<>()
                     .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 1)))
                     .setStoreByValue(false));
-            cacheManager.createCache("meanings", new MutableConfiguration<>()
-                    .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 14)))
-                    .setStoreByValue(false));
         }
     }
 

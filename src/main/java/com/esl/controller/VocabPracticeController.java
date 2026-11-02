@@ -9,7 +9,6 @@ import com.esl.service.VocabService;
 import com.esl.util.ValidationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,30 +51,6 @@ public class VocabPracticeController {
 		} catch (Exception e) {
     		log.error("error in generate practice", e);
 			return ResponseEntity.badRequest().body(null);
-		}
-	}
-
-	/**
-	 * @deprecated Use {@code GET /interpretation?text=&lang=en} instead. This endpoint is preserved
-	 * for old client app installs that have not yet updated. Track usage via the WARN log line
-	 * below; only remove the endpoint once the warning shows zero traffic for a long observation
-	 * window.
-	 */
-	@Deprecated
-	@Cacheable("meanings")
-	@RequestMapping(value = "/meaning/{word}")
-	public ResponseEntity<String> meaning(@PathVariable String word) {
-		log.warn("Deprecated /vocab/meaning called for word={}", word);
-		try {
-			if (ValidationUtil.isValidWord(word)) {
-				return ResponseEntity.ok(vocabService.getMeaning(word));
-			} else {
-				log.warn("Invalid word requested for meaning: {}", word);
-				return ResponseEntity.badRequest().body("Invalid word");
-			}
-		} catch (Exception e) {
-			log.error("Error getting meaning for word: {}", word, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving meaning");
 		}
 	}
 }
