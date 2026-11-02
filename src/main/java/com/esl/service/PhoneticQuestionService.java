@@ -28,8 +28,9 @@ public class PhoneticQuestionService {
     @Autowired private WebParserRestService webService;
     @Autowired private RestTemplate restTemplate;
 
-    public Optional<PhoneticQuestion> getQuestionFromDBWithImage(String word) {
-        Optional<PhoneticQuestion> question = Optional.ofNullable(phoneticQuestionDAO.getPhoneticQuestionByWord(word));
+    public Optional<PhoneticQuestion> getQuestionFromDB(String word) {
+        var question = Optional.ofNullable(phoneticQuestionDAO.getPhoneticQuestionByWord(word));
+        // Empty path hides the legacy PIC_FILE_NAME. The client loads images separately.
         question.ifPresent(q -> q.setPicsFullPaths(new String[] { "" }));
         return question;
     }
