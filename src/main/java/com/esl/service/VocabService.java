@@ -31,11 +31,11 @@ public class VocabService {
         this.replicateAIService = replicateAIService;
     }
 
-    public PhoneticQuestion createQuestion(String word, boolean showImage) {
-        log.info("create practice showImage[{}] for vocab: {}", showImage, word);
+    public PhoneticQuestion createQuestion(String word) {
+        log.info("create practice for vocab: {}", word);
 
         return phoneticQuestionService.getQuestionFromDB(word)
-                .orElseGet(() -> phoneticQuestionService.buildQuestionByWebAPI(word, showImage));
+                .orElseGet(() -> phoneticQuestionService.buildQuestionByWebAPI(word));
     }
 
     public Dictation generatePractice(VocabDifficulty difficulty) {

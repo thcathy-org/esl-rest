@@ -36,7 +36,7 @@ class PhoneticQuestionServiceTest {
         setField(service, "restTemplate", restTemplate);
 
         // When
-        var question = service.buildQuestionByWebAPI("learning", false);
+        var question = service.buildQuestionByWebAPI("learning");
 
         // Then
         assertEquals("learning", question.getWord());
@@ -66,7 +66,7 @@ class PhoneticQuestionServiceTest {
         setField(service, "restTemplate", restTemplate);
 
         // When
-        var question = service.buildQuestionByWebAPI("learning", false);
+        var question = service.buildQuestionByWebAPI("learning");
 
         // Then
         assertEquals("learning", question.getWord());

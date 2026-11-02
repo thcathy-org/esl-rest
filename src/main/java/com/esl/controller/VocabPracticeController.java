@@ -14,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -33,12 +32,10 @@ public class VocabPracticeController {
 	}
 
 	@RequestMapping(value = "/get/question/{word}")
-    public ResponseEntity<PhoneticQuestion> getQuestion(
-    		@PathVariable String word,
-			@RequestParam(value="image", defaultValue = "1") boolean showImage) {
+    public ResponseEntity<PhoneticQuestion> getQuestion(@PathVariable String word) {
 		try {
 			if (ValidationUtil.isValidWord(word))
-				return ResponseEntity.ok(cachedVocabService.createQuestion(word, showImage));
+				return ResponseEntity.ok(cachedVocabService.createQuestion(word));
 			else
 				return ResponseEntity.badRequest().body(null);
 		} catch (Exception e) {

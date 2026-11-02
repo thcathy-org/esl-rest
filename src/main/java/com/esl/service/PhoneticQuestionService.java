@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,39 +34,14 @@ public class PhoneticQuestionService {
         return question;
     }
 
-    public PhoneticQuestion buildQuestionByWebAPI(String word, boolean showImage) {
-        log.info("buildQuestionByWebAPI for word: {}, showImage={}", word, showImage);
-        PhoneticQuestion question = new PhoneticQuestion();
+    public PhoneticQuestion buildQuestionByWebAPI(String word) {
+        log.info("buildQuestionByWebAPI for word: {}", word);
+        var question = new PhoneticQuestion();
         question.setWord(word);
+        question.setPicsFullPaths(new String[] { "" });
 
-        CompletableFuture<WebItem[]> imagesResult;
-        if (showImage)
-            imagesResult = webService.searchGoogleImage(word + " clipart", 1);
-        else
-            imagesResult = CompletableFuture.completedFuture(new WebItem[0]);
-
-        CompletableFuture<Optional<DictionaryResult>> dictionaryResult = webService.queryDictionary(word);
-
-        fillQuestionByDictionaryResult(question, dictionaryResult.join());
-        setPicsFullPaths(question, imagesResult.join());
-
+        fillQuestionByDictionaryResult(question, webService.queryDictionary(word).join());
         return question;
-    }
-
-    private void setPicsFullPaths(PhoneticQuestion question, WebItem[] items) {
-        if (items.length < 1) {
-            question.setPicsFullPaths(new String[] { "" });
-            return;
-        }
-
-        List<String> images = Arrays.stream(items)
-                .map(i -> i.thumbnailUrl)
-                .limit(5)
-                .collect(Collectors.toList());
-
-        log.debug("images: {}", images);
-
-        question.setPicsFullPaths(images.toArray(new String[0]));
     }
 
     private void fillQuestionByDictionaryResult(PhoneticQuestion question, Optional<DictionaryResult> r) {

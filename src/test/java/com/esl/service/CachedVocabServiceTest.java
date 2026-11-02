@@ -20,25 +20,24 @@ class CachedVocabServiceTest {
 
         mockVocabService = mock(VocabService.class);
         service.vocabService = mockVocabService;
-        Mockito.when(mockVocabService.createQuestion(any(), anyBoolean())).thenReturn(new PhoneticQuestion());
+        Mockito.when(mockVocabService.createQuestion(any())).thenReturn(new PhoneticQuestion());
 
         service.init();
     }
 
     @Test
     void createQuestion_willCacheResult() {
-        service.createQuestion("word", true);
-        service.createQuestion("word", true);
-        service.createQuestion("word", false);
-        verify(mockVocabService, times(2)).createQuestion(any(), anyBoolean());
+        service.createQuestion("word");
+        service.createQuestion("word");
+        verify(mockVocabService, times(1)).createQuestion(any());
     }
 
     @Test
     void createQuestion_cacheSizeIsLimited() {
         for (int i=0; i<12; i++) {
-            service.createQuestion("word" + i, true);
+            service.createQuestion("word" + i);
         }
-        verify(mockVocabService, times(12)).createQuestion(any(), anyBoolean());
+        verify(mockVocabService, times(12)).createQuestion(any());
         service.cache.cleanUp();
         assertEquals(10, service.cache.estimatedSize());
     }
