@@ -9,6 +9,7 @@ import org.apache.commons.codec.binary.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -41,7 +42,22 @@ public class PhoneticQuestionService {
         question.setPicsFullPaths(new String[] { "" });
 
         fillQuestionByDictionaryResult(question, webService.queryDictionary(word).join());
+        writeBackSlimQuestion(question);
         return question;
+    }
+
+    private void writeBackSlimQuestion(PhoneticQuestion question) {
+        if (!question.enriched()) {
+            return;
+        }
+        // Rank 0 sits below every VocabDifficulty range, so random practice never selects write-backs.
+        question.setRank(0);
+        try {
+            phoneticQuestionDAO.insertIfAbsent(question);
+        } catch (DataIntegrityViolationException e) {
+            log.info("Skipped slim phonetic_question write-back for '{}': {}",
+                    question.getWord(), e.getMostSpecificCause().getMessage());
+        }
     }
 
     private void fillQuestionByDictionaryResult(PhoneticQuestion question, Optional<DictionaryResult> r) {

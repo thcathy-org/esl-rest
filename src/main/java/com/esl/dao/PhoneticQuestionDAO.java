@@ -33,6 +33,19 @@ public class PhoneticQuestionDAO extends ESLDao<PhoneticQuestion> {
 		}
 	}
 
+	public long countByWord(String word) {
+		return em.createQuery("select count(q) from PhoneticQuestion q where q.word = :word", Long.class)
+				.setParameter("word", word)
+				.getSingleResult();
+	}
+
+	public void insertIfAbsent(PhoneticQuestion question) {
+		if (countByWord(question.getWord()) > 0) {
+			return;
+		}
+		persist(question);
+	}
+
 	@Deprecated
 	public List<PhoneticQuestion> getNotEnrichedQuestions() {
 		return em.createQuery(GET_NOT_ENRICHED_QUESTIONS).setMaxResults(300).getResultList();
