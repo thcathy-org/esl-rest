@@ -12,7 +12,7 @@ import java.util.*;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
-@Table(name = "phonetic_question")
+@Table(name = "phonetic_question", uniqueConstraints = @UniqueConstraint(name = "UK_PHONETIC_QUESTION_WORD", columnNames = "WORD"))
 public class PhoneticQuestion implements Serializable {
 	private static Logger logger = LoggerFactory.getLogger(PhoneticQuestion.class);
 
