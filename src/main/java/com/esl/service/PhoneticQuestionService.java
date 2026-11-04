@@ -42,11 +42,11 @@ public class PhoneticQuestionService {
         question.setPicsFullPaths(new String[] { "" });
 
         fillQuestionByDictionaryResult(question, webService.queryDictionary(word).join());
-        writeBackSlimQuestion(question);
+        persistEnrichedQuestion(question);
         return question;
     }
 
-    private void writeBackSlimQuestion(PhoneticQuestion question) {
+    private void persistEnrichedQuestion(PhoneticQuestion question) {
         if (!question.enriched()) {
             return;
         }
@@ -55,7 +55,7 @@ public class PhoneticQuestionService {
         try {
             phoneticQuestionDAO.insertIfAbsent(question);
         } catch (DataIntegrityViolationException e) {
-            log.info("Skipped slim phonetic_question write-back for '{}': {}",
+            log.info("Skipped phonetic_question insert for '{}': {}",
                     question.getWord(), e.getMostSpecificCause().getMessage());
         }
     }
