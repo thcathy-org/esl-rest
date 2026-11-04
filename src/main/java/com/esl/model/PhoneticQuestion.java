@@ -44,7 +44,7 @@ public class PhoneticQuestion implements Serializable {
 	@Column(name = "FREQUENCY")
 	private double frequency;
 
-	@Column(name = "RANK")
+	@Column(name = "\"RANK\"")
 	private int rank;
 
 	@ManyToMany(fetch = FetchType.EAGER)
