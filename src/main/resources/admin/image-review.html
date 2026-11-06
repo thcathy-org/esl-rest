@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Image review</title>
+  <style>
+    body { font-family: sans-serif; margin: 1.5rem; color: #1c1c1c; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { border-bottom: 1px solid #ccc; padding: 0.6rem 0.4rem; vertical-align: top; text-align: left; }
+    img { max-width: 240px; max-height: 240px; display: block; }
+    button { font: inherit; }
+    #token { width: 28rem; max-width: 100%; }
+    .missing { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Reported images</h1>
+  <p>Paste an admin Bearer token (Auth0 role admin). It stays in this tab. Image removal runs on the server.</p>
+  <p>
+    <input id="token" type="password" autocomplete="off" aria-label="Admin token">
+    <button id="load" type="button">Load</button>
+  </p>
+  <p id="status"></p>
+  <table>
+    <thead>
+      <tr><th>Phrase</th><th>Index</th><th>Reports</th><th>Preview</th><th></th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <script>
+    const imagesHost = __IMAGES_HOST__;
+    const tokenInput = document.getElementById('token');
+    const statusLine = document.getElementById('status');
+    const rows = document.getElementById('rows');
+    const storedTokenKey = 'imageReviewAdminToken';
+
+    tokenInput.value = sessionStorage.getItem(storedTokenKey) || '';
+
+    document.getElementById('load').addEventListener('click', load);
+    tokenInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') load();
+    });
+
+    if (tokenInput.value) load();
+
+    function apiPath(suffix) {
+      const page = window.location.pathname.replace(/\/$/, '');
+      return page + suffix;
+    }
+
+    function authHeaders() {
+      const token = tokenInput.value.trim();
+      sessionStorage.setItem(storedTokenKey, token);
+      const value = token.toLowerCase().startsWith('bearer ') ? token : 'Bearer ' + token;
+      return { 'Authorization': value, 'Content-Type': 'application/json' };
+    }
+
+    async function load() {
+      statusLine.textContent = '';
+      rows.replaceChildren();
+      if (!tokenInput.value.trim()) {
+        statusLine.textContent = 'Admin token required.';
+        return;
+      }
+      try {
+        const response = await fetch(apiPath('/reports'), { headers: authHeaders() });
+        if (!response.ok) {
+          statusLine.textContent = 'Could not load reports (' + response.status + ').';
+          return;
+        }
+        const groups = await response.json();
+        if (groups.length === 0) {
+          statusLine.textContent = 'No open reports.';
+          return;
+        }
+        groups.forEach(renderRow);
+      } catch (error) {
+        statusLine.textContent = 'Could not load reports.';
+      }
+    }
+
+    function renderRow(group) {
+      const row = document.createElement('tr');
+      row.append(cell(group.phrase));
+      row.append(cell(String(group.imageIndex)));
+      row.append(cell(group.count > 1 ? String(group.count) : ''));
+
+      const preview = document.createElement('td');
+      const missing = document.createElement('span');
+      missing.className = 'missing';
+      missing.textContent = 'Loading preview…';
+      preview.append(missing);
+      row.append(preview);
+
+      const action = document.createElement('td');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = 'Remove';
+      button.addEventListener('click', () => remove(group, button));
+      action.append(button);
+      row.append(action);
+      rows.append(row);
+      showPreview(group, preview, missing);
+    }
+
+    function cell(text) {
+      const td = document.createElement('td');
+      td.textContent = text;
+      return td;
+    }
+
+    async function showPreview(group, preview, missing) {
+      try {
+        const response = await fetch(imageUrl(group.phrase));
+        if (!response.ok) throw new Error('preview');
+        const payload = await response.json();
+        const src = previewSrc(payload.images && payload.images[group.imageIndex]);
+        if (!src) {
+          missing.textContent = 'Preview unavailable';
+          return;
+        }
+        const image = document.createElement('img');
+        image.alt = group.phrase + ' ' + group.imageIndex;
+        image.src = src;
+        missing.replaceWith(image);
+      } catch (error) {
+        missing.textContent = 'Preview unavailable';
+      }
+    }
+
+    function previewSrc(value) {
+      if (typeof value !== 'string' || value.length === 0) return '';
+      if (value.startsWith('data:image/')) return value;
+      if (value.includes('://') || value.includes('<')) return '';
+      return 'data:image/png;base64,' + value;
+    }
+
+    function imageUrl(phrase) {
+      let filename = phrase.toLowerCase().replace(/[^a-zA-Z]/g, '-') + '.json';
+      const folder = filename.length < 2 ? filename : filename.slice(0, 2);
+      const host = imagesHost.endsWith('/') ? imagesHost.slice(0, -1) : imagesHost;
+      return host + '%2F' + folder + '%2F' + filename + '?alt=media';
+    }
+
+    async function remove(group, button) {
+      button.disabled = true;
+      try {
+        const response = await fetch(apiPath('/remove'), {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ phrase: group.phrase, imageIndex: group.imageIndex })
+        });
+        if (!response.ok) {
+          button.disabled = false;
+          statusLine.textContent = 'Remove failed (' + response.status + ').';
+          return;
+        }
+        await load();
+      } catch (error) {
+        button.disabled = false;
+        statusLine.textContent = 'Remove failed.';
+      }
+    }
+  </script>
+</body>
+</html>

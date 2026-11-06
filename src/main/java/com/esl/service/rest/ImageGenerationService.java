@@ -4,11 +4,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
@@ -73,6 +75,16 @@ public class ImageGenerationService {
     public Mono<ResponseEntity<Void>> generate(String phrase) {
         logger.info("submit request: {}", phrase);
         return webClient.post().uri("/image/generate/" + phrase).retrieve().toBodilessEntity();
+    }
+
+    public void postJson(String uriPath, String json) {
+        webClient.post()
+                .uri(uriPath)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(json.getBytes(StandardCharsets.UTF_8))
+                .retrieve()
+                .toBodilessEntity()
+                .block(requestTimeout);
     }
 
 }
