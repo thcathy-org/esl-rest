@@ -54,7 +54,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class FlagImageControllerTests {
 
     private static final List<Hit> hits = new CopyOnWriteArrayList<>();
-    private static final AtomicInteger imageCount = new AtomicInteger(2);
     private static final AtomicInteger postStatus = new AtomicInteger(200);
     private static HttpServer server;
 
@@ -75,7 +74,6 @@ public class FlagImageControllerTests {
     public void clean() {
         repository.deleteAll();
         hits.clear();
-        imageCount.set(2);
         postStatus.set(200);
     }
 
@@ -142,8 +140,7 @@ public class FlagImageControllerTests {
     }
 
     @Test
-    public void remove_callsIndexRemoveAndDeletesTheRow() throws Exception {
-        imageCount.set(3);
+    public void remove_callsImageRemoveAndDeletesTheRow() throws Exception {
         postFlag("apple", 1, null);
         postFlag("apple", 1, null);
         postFlag("zoo", 0, null);
@@ -174,49 +171,7 @@ public class FlagImageControllerTests {
     }
 
     @Test
-    public void remove_sendsThatIndexOnOneUrl() throws Exception {
-        imageCount.set(2);
-        postFlag("apple", 0, null);
-
-        mockMvc.perform(asAdmin(post("/admin/review-flagged-image/remove")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phrase\":\"apple\",\"imageIndex\":0}")))
-                .andExpect(status().isNoContent());
-
-        var removed = postsTo("/image/remove");
-        assertThat(removed, hasSize(1));
-        JsonNode body = objectMapper.readTree(removed.get(0).body());
-        assertThat(body.get("phrase").asText(), is("apple"));
-        assertThat(body.get("imageIndex").asInt(), is(0));
-        assertThat(postsTo("/verify/remove"), hasSize(0));
-        assertThat(postsTo("/verify/verified"), hasSize(0));
-        assertThat(rows(), hasSize(0));
-    }
-
-    @Test
-    public void remove_sendsTheSameUrlForTheLastImage() throws Exception {
-        imageCount.set(1);
-        postFlag("banana", 0, null);
-
-        mockMvc.perform(asAdmin(post("/admin/review-flagged-image/remove")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phrase\":\"banana\",\"imageIndex\":0}")))
-                .andExpect(status().isNoContent());
-
-        var removed = postsTo("/image/remove");
-        assertThat(removed, hasSize(1));
-        assertThat(removed.get(0).apiKey(), is("test-key"));
-        JsonNode body = objectMapper.readTree(removed.get(0).body());
-        assertThat(body.get("phrase").asText(), is("banana"));
-        assertThat(body.get("imageIndex").asInt(), is(0));
-        assertThat(postsTo("/verify/remove"), hasSize(0));
-        assertThat(postsTo("/verify/verified"), hasSize(0));
-        assertThat(rows(), hasSize(0));
-    }
-
-    @Test
     public void remove_keepsTheRowWhenImageGenerationFails() throws Exception {
-        imageCount.set(2);
         postStatus.set(500);
         postFlag("apple", 0, null);
 
@@ -300,13 +255,7 @@ public class FlagImageControllerTests {
                     var body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                     var apiKey = exchange.getRequestHeaders().getFirst("X-API-KEY");
                     if ("POST".equals(method)) hits.add(new Hit(path, body, apiKey));
-                    var count = Math.max(imageCount.get(), 0);
-                    var images = new StringBuilder();
-                    for (var i = 0; i < count; i++) {
-                        if (i > 0) images.append(',');
-                        images.append("\"img").append(i).append('"');
-                    }
-                    var response = ("{\"images\":[" + images + "],\"isVerify\":false}").getBytes(StandardCharsets.UTF_8);
+                    var response = "{}".getBytes(StandardCharsets.UTF_8);
                     var status = "POST".equals(method) ? postStatus.get() : 200;
                     exchange.getResponseHeaders().add("Content-Type", "application/json");
                     exchange.sendResponseHeaders(status, response.length);

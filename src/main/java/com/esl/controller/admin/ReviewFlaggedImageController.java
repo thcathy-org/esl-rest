@@ -46,10 +46,8 @@ public class ReviewFlaggedImageController {
 
     @PostMapping("/remove")
     public ResponseEntity<Void> remove(@RequestBody FlagImageRequest request) {
-        if (request == null || request.imageIndex() == null) {
-            throw new IllegalArgumentException("imageIndex is required");
-        }
-        flagImageService.remove(request.phrase(), request.imageIndex());
+        var flagImageRequest = FlagImageRequest.require(request);
+        flagImageService.remove(flagImageRequest.phrase(), flagImageRequest.imageIndex());
         return ResponseEntity.noContent().build();
     }
 }

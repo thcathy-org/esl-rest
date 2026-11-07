@@ -14,24 +14,29 @@ public class FlagImageController {
         this.flagImageService = flagImageService;
     }
 
-    public record FlagImageRequest(String phrase, Integer imageIndex) {}
+    public record FlagImageRequest(String phrase, Integer imageIndex) {
+        public static FlagImageRequest require(FlagImageRequest request) {
+            if (request == null || request.imageIndex == null) {
+                throw new IllegalArgumentException("imageIndex is required");
+            }
+            return request;
+        }
+    }
 
     public record FlagImageResponse(long id, String phrase, int imageIndex, int count) {
-        static FlagImageResponse from(FlagImage flaggedImage) {
+        static FlagImageResponse from(FlagImage flagImage) {
             return new FlagImageResponse(
-                    flaggedImage.getId(),
-                    flaggedImage.getPhrase(),
-                    flaggedImage.getImageIndex(),
-                    flaggedImage.getFlagCount());
+                    flagImage.getId(),
+                    flagImage.getPhrase(),
+                    flagImage.getImageIndex(),
+                    flagImage.getFlagCount());
         }
     }
 
     @PostMapping("/flag-image")
     public FlagImageResponse flag(@RequestBody FlagImageRequest request) {
-        if (request == null || request.imageIndex() == null) {
-            throw new IllegalArgumentException("imageIndex is required");
-        }
-        var saved = flagImageService.flag(request.phrase(), request.imageIndex());
-        return FlagImageResponse.from(saved);
+        var flagImageRequest = FlagImageRequest.require(request);
+        var flagImage = flagImageService.flag(flagImageRequest.phrase(), flagImageRequest.imageIndex());
+        return FlagImageResponse.from(flagImage);
     }
 }

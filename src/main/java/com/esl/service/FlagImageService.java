@@ -3,8 +3,6 @@ package com.esl.service;
 import com.esl.dao.repository.FlagImageRepository;
 import com.esl.entity.FlagImage;
 import com.esl.service.rest.ImageGenerationService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class FlagImageService {
@@ -24,17 +21,14 @@ public class FlagImageService {
 
     private final FlagImageRepository repository;
     private final ImageGenerationService imageGenerationService;
-    private final ObjectMapper objectMapper;
     private final String imagesHost;
 
     public FlagImageService(
             FlagImageRepository repository,
             ImageGenerationService imageGenerationService,
-            ObjectMapper objectMapper,
             @Value("${FlagImage.ImagesHost:https://firebasestorage.googleapis.com/v0/b/friendlyeats-7fa2f.appspot.com/o/images}") String imagesHost) {
         this.repository = repository;
         this.imageGenerationService = imageGenerationService;
-        this.objectMapper = objectMapper;
         this.imagesHost = imagesHost;
     }
 
@@ -61,23 +55,12 @@ public class FlagImageService {
         var cleanedPhrase = requirePhrase(phrase);
         requireIndex(imageIndex);
         logger.info("Removing image phrase='{}' index={}", cleanedPhrase, imageIndex);
-        imageGenerationService.postJson("/image/remove", json(Map.of(
-                "phrase", cleanedPhrase,
-                "imageIndex", imageIndex
-        )));
+        imageGenerationService.removeImage(cleanedPhrase, imageIndex);
         repository.deleteByPhraseAndImageIndex(cleanedPhrase, imageIndex);
     }
 
     public String imagesHost() {
         return imagesHost;
-    }
-
-    private String json(Object value) {
-        try {
-            return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Could not encode image-generation request", e);
-        }
     }
 
     static String requirePhrase(String phrase) {
