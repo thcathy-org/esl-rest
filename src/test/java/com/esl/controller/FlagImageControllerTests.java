@@ -36,11 +36,9 @@ import java.util.stream.Collectors;
 import static com.esl.security.JWTAuthorizationFilter.TESTING_HEADER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -82,43 +80,48 @@ public class FlagImageControllerTests {
     }
 
     @Test
-    public void anonymousFlag_storesNullMemberId() throws Exception {
+    public void anonymousFlag_storesCountOne() throws Exception {
         mockMvc.perform(post("/flag-image")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"phrase\":\"apple\",\"imageIndex\":0}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phrase", is("apple")))
                 .andExpect(jsonPath("$.imageIndex", is(0)))
-                .andExpect(jsonPath("$.memberId", nullValue()));
+                .andExpect(jsonPath("$.count", is(1)));
 
         var rows = rows();
         assertThat(rows, hasSize(1));
-        assertThat(rows.get(0).getMemberId(), nullValue());
-        assertThat(rows.get(0).isDone(), is(false));
+        assertThat(rows.get(0).getFlagCount(), is(1));
     }
 
     @Test
-    public void loggedInFlag_storesMemberId() throws Exception {
+    public void loggedInFlag_addsToTheSameCount() throws Exception {
+        postFlag("apple", 2, null);
         mockMvc.perform(post("/flag-image")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(TESTING_HEADER, "tester@esl.com")
                         .content("{\"phrase\":\"apple\",\"imageIndex\":2}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.memberId", is(1)));
+                .andExpect(jsonPath("$.count", is(2)));
 
-        assertThat(rows().get(0).getMemberId(), is(1L));
+        var rows = rows();
+        assertThat(rows, hasSize(1));
+        assertThat(rows.get(0).getFlagCount(), is(2));
     }
 
     @Test
-    public void secondFlag_insertsAnotherRowForSamePhraseAndIndex() throws Exception {
+    public void secondFlag_addsToTheCountForSamePhraseAndIndex() throws Exception {
         postFlag("apple", 1, null);
         postFlag("apple", 1, null);
+        postFlag("apple", 2, null);
 
         var rows = rows();
         assertThat(rows, hasSize(2));
-        assertThat(rows.stream().map(FlagImage::getPhrase).collect(Collectors.toList()), everyItem(is("apple")));
-        assertThat(rows.stream().map(FlagImage::getImageIndex).collect(Collectors.toList()), everyItem(is(1)));
-        assertThat(rows.get(0).getId().equals(rows.get(1).getId()), is(false));
+        var indexOne = rows.stream().filter(row -> row.getImageIndex() == 1).findFirst().orElseThrow();
+        var indexTwo = rows.stream().filter(row -> row.getImageIndex() == 2).findFirst().orElseThrow();
+        assertThat(indexOne.getPhrase(), is("apple"));
+        assertThat(indexOne.getFlagCount(), is(2));
+        assertThat(indexTwo.getFlagCount(), is(1));
     }
 
     @Test
@@ -126,10 +129,6 @@ public class FlagImageControllerTests {
         postFlag("apple", 0, null);
         postFlag("apple", 0, null);
         postFlag("zoo", 1, null);
-        postFlag("banana", 0, null);
-        var finished = rows().stream().filter(row -> row.getPhrase().equals("banana")).findFirst().orElseThrow();
-        finished.setDone(true);
-        repository.save(finished);
 
         mockMvc.perform(asAdmin(get("/admin/review-flagged-image/list")))
                 .andExpect(status().isOk())
@@ -143,7 +142,7 @@ public class FlagImageControllerTests {
     }
 
     @Test
-    public void remove_callsIndexRemoveAndMarksThoseRowsDone() throws Exception {
+    public void remove_callsIndexRemoveAndDeletesTheRow() throws Exception {
         imageCount.set(3);
         postFlag("apple", 1, null);
         postFlag("apple", 1, null);
@@ -164,11 +163,9 @@ public class FlagImageControllerTests {
         assertThat(body.get(0).get("removeImageIndex").get(0).asInt(), is(1));
         assertThat(postsTo("/verify/remove"), hasSize(0));
 
-        var apple = rows().stream().filter(row -> row.getPhrase().equals("apple")).toList();
-        assertThat(apple, hasSize(2));
-        assertThat(apple.stream().map(FlagImage::isDone).collect(Collectors.toList()), everyItem(is(true)));
+        assertThat(rows().stream().filter(row -> row.getPhrase().equals("apple")).toList(), hasSize(0));
         var zoo = rows().stream().filter(row -> row.getPhrase().equals("zoo")).findFirst().orElseThrow();
-        assertThat(zoo.isDone(), is(false));
+        assertThat(zoo.getFlagCount(), is(1));
 
         mockMvc.perform(asAdmin(get("/admin/review-flagged-image/list")))
                 .andExpect(status().isOk())
@@ -192,7 +189,7 @@ public class FlagImageControllerTests {
         assertThat(verified, hasSize(1));
         JsonNode body = objectMapper.readTree(verified.get(0).body());
         assertThat(body.get(0).get("removeImageIndex").toString(), is("[0]"));
-        assertThat(rows().get(0).isDone(), is(true));
+        assertThat(rows(), hasSize(0));
     }
 
     @Test
@@ -210,11 +207,11 @@ public class FlagImageControllerTests {
         assertThat(removed, hasSize(1));
         assertThat(removed.get(0).apiKey(), is("test-key"));
         assertThat(objectMapper.readTree(removed.get(0).body()).get("phrase").asText(), is("banana"));
-        assertThat(rows().get(0).isDone(), is(true));
+        assertThat(rows(), hasSize(0));
     }
 
     @Test
-    public void remove_keepsRowsOpenWhenImageGenerationFails() throws Exception {
+    public void remove_keepsTheRowWhenImageGenerationFails() throws Exception {
         imageCount.set(2);
         postStatus.set(500);
         postFlag("apple", 0, null);
@@ -226,7 +223,8 @@ public class FlagImageControllerTests {
 
         assertThat(postsTo("/verify/verified"), hasSize(1));
         assertThat(postsTo("/verify/remove"), hasSize(0));
-        assertThat(rows().get(0).isDone(), is(false));
+        assertThat(rows(), hasSize(1));
+        assertThat(rows().get(0).getFlagCount(), is(1));
     }
 
     @Test

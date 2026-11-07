@@ -11,10 +11,10 @@ public class FlagImageSchema {
                 ID BIGINT NOT NULL AUTO_INCREMENT,
                 PHRASE VARCHAR(500) NOT NULL,
                 IMAGE_INDEX INT NOT NULL,
-                MEMBER_ID BIGINT NULL,
+                FLAG_COUNT INT NOT NULL,
                 CREATED_DATE DATETIME(6) NOT NULL,
-                DONE BIT(1) NOT NULL,
-                PRIMARY KEY (ID)
+                PRIMARY KEY (ID),
+                CONSTRAINT UK_FLAG_IMAGE_PHRASE_INDEX UNIQUE (PHRASE, IMAGE_INDEX)
             )
             """;
 

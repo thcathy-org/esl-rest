@@ -10,13 +10,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -46,31 +47,23 @@ public class FlagImageService {
         this.publicWebClient = WebClient.builder().build();
     }
 
-    public FlagImage flag(String phrase, int imageIndex, Long memberId) {
+    @Transactional
+    public FlagImage flag(String phrase, int imageIndex) {
         var cleaned = requirePhrase(phrase);
         requireIndex(imageIndex);
-        var row = new FlagImage();
-        row.setPhrase(cleaned);
-        row.setImageIndex(imageIndex);
-        row.setMemberId(memberId);
-        row.setCreatedDate(new Date());
-        row.setDone(false);
-        var saved = repository.save(row);
-        logger.info("Stored flagged image id={} phrase='{}' index={} member={}", saved.getId(), cleaned, imageIndex, memberId);
+        repository.addFlag(cleaned, imageIndex, new Date());
+        var saved = repository.findByPhraseAndImageIndex(cleaned, imageIndex).orElseThrow();
+        logger.info("Flagged image id={} phrase='{}' index={} count={}", saved.getId(), cleaned, imageIndex, saved.getFlagCount());
         return saved;
     }
 
     public List<FlagImageGroup> openGroups() {
-        var counts = new LinkedHashMap<GroupKey, Integer>();
-        for (var flaggedImage : repository.findByDoneFalse()) {
-            counts.merge(new GroupKey(flaggedImage.getPhrase(), flaggedImage.getImageIndex()), 1, Integer::sum);
-        }
-        return counts.entrySet().stream()
-                .map(entry -> new FlagImageGroup(entry.getKey().phrase(), entry.getKey().imageIndex(), entry.getValue()))
-                .sorted(Comparator.comparingInt(FlagImageGroup::count).reversed()
-                        .thenComparing(FlagImageGroup::phrase)
-                        .thenComparingInt(FlagImageGroup::imageIndex))
-                .toList();
+        var groups = new ArrayList<FlagImageGroup>();
+        repository.findAll().forEach(row -> groups.add(new FlagImageGroup(row.getPhrase(), row.getImageIndex(), row.getFlagCount())));
+        groups.sort(Comparator.comparingInt(FlagImageGroup::count).reversed()
+                .thenComparing(FlagImageGroup::phrase)
+                .thenComparingInt(FlagImageGroup::imageIndex));
+        return groups;
     }
 
     public void remove(String phrase, int imageIndex) {
@@ -87,7 +80,7 @@ public class FlagImageService {
                     "removeImageIndex", List.of(imageIndex)
             ))));
         }
-        repository.markDone(cleaned, imageIndex);
+        repository.deleteByPhraseAndImageIndex(cleaned, imageIndex);
     }
 
     public String imagesHost() {
@@ -136,8 +129,6 @@ public class FlagImageService {
             throw new IllegalArgumentException("imageIndex must be >= 0");
         }
     }
-
-    private record GroupKey(String phrase, int imageIndex) {}
 
     public record FlagImageGroup(String phrase, int imageIndex, int count) {}
 }

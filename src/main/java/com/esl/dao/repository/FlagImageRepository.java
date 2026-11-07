@@ -8,14 +8,22 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.Date;
+import java.util.Optional;
 
 @Repository
 public interface FlagImageRepository extends CrudRepository<FlagImage, Long> {
-    List<FlagImage> findByDoneFalse();
+    Optional<FlagImage> findByPhraseAndImageIndex(String phrase, int imageIndex);
+
+    @Transactional
+    long deleteByPhraseAndImageIndex(String phrase, int imageIndex);
 
     @Transactional
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("update FlagImage r set r.done = true where r.phrase = :phrase and r.imageIndex = :imageIndex and r.done = false")
-    int markDone(@Param("phrase") String phrase, @Param("imageIndex") int imageIndex);
+    @Query(value = """
+            INSERT INTO flag_image (PHRASE, IMAGE_INDEX, FLAG_COUNT, CREATED_DATE)
+            VALUES (:phrase, :imageIndex, 1, :createdDate)
+            ON DUPLICATE KEY UPDATE FLAG_COUNT = FLAG_COUNT + 1
+            """, nativeQuery = true)
+    int addFlag(@Param("phrase") String phrase, @Param("imageIndex") int imageIndex, @Param("createdDate") Date createdDate);
 }
