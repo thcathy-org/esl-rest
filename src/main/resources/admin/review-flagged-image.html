@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Image review</title>
+  <title>Flagged image</title>
   <style>
     body { font-family: sans-serif; margin: 1.5rem; color: #1c1c1c; }
     table { border-collapse: collapse; width: 100%; }
@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Image flaggings</h1>
+  <h1>Flagged image</h1>
   <p>Paste an admin Bearer token (Auth0 role admin). It stays in this tab. Image removal runs on the server.</p>
   <p>
     <input id="token" type="password" autocomplete="off" aria-label="Admin token">
@@ -23,7 +23,7 @@
   <p id="status"></p>
   <table>
     <thead>
-      <tr><th>Phrase</th><th>Index</th><th>Flaggings</th><th>Preview</th><th></th></tr>
+      <tr><th>Phrase</th><th>Index</th><th>Count</th><th>Preview</th><th></th></tr>
     </thead>
     <tbody id="rows"></tbody>
   </table>
@@ -63,19 +63,19 @@
         return;
       }
       try {
-        const response = await fetch(apiPath('/flaggings'), { headers: authHeaders() });
+        const response = await fetch(apiPath('/list'), { headers: authHeaders() });
         if (!response.ok) {
-          statusLine.textContent = 'Could not load flaggings (' + response.status + ').';
+          statusLine.textContent = 'Could not load flagged images (' + response.status + ').';
           return;
         }
         const groups = await response.json();
         if (groups.length === 0) {
-          statusLine.textContent = 'No open flaggings.';
+          statusLine.textContent = 'No open flagged images.';
           return;
         }
         groups.forEach(renderRow);
       } catch (error) {
-        statusLine.textContent = 'Could not load flaggings.';
+        statusLine.textContent = 'Could not load flagged images.';
       }
     }
 

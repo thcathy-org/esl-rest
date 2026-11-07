@@ -1,7 +1,7 @@
 package com.esl.controller;
 
-import com.esl.dao.repository.ImageFlaggingRepository;
-import com.esl.entity.ImageFlagging;
+import com.esl.dao.repository.FlagImageRepository;
+import com.esl.entity.FlagImage;
 import com.esl.service.JWTService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,7 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(locations = "classpath:application-test.properties")
-public class ImageFlaggingControllerTests {
+public class FlagImageControllerTests {
 
     private static final List<Hit> hits = new CopyOnWriteArrayList<>();
     private static final AtomicInteger imageCount = new AtomicInteger(2);
@@ -65,12 +65,12 @@ public class ImageFlaggingControllerTests {
         var port = ensureServer();
         registry.add("IMAGE_GENERATION_SERVER_HOST", () -> "http://127.0.0.1:" + port);
         registry.add("IMAGE_GENERATION_SERVER_APIKEY", () -> "test-key");
-        registry.add("ImageFlagging.ImagesHost", () -> "http://127.0.0.1:" + port + "/images");
+        registry.add("FlagImage.ImagesHost", () -> "http://127.0.0.1:" + port + "/images");
     }
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
-    @Autowired ImageFlaggingRepository repository;
+    @Autowired FlagImageRepository repository;
     @MockBean JWTService jwtService;
 
     @Before
@@ -82,8 +82,8 @@ public class ImageFlaggingControllerTests {
     }
 
     @Test
-    public void anonymousFlagging_storesNullMemberId() throws Exception {
-        mockMvc.perform(post("/image-flagging")
+    public void anonymousFlag_storesNullMemberId() throws Exception {
+        mockMvc.perform(post("/flag-image")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"phrase\":\"apple\",\"imageIndex\":0}"))
                 .andExpect(status().isOk())
@@ -98,8 +98,8 @@ public class ImageFlaggingControllerTests {
     }
 
     @Test
-    public void loggedInFlagging_storesMemberId() throws Exception {
-        mockMvc.perform(post("/image-flagging")
+    public void loggedInFlag_storesMemberId() throws Exception {
+        mockMvc.perform(post("/flag-image")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(TESTING_HEADER, "tester@esl.com")
                         .content("{\"phrase\":\"apple\",\"imageIndex\":2}"))
@@ -110,28 +110,28 @@ public class ImageFlaggingControllerTests {
     }
 
     @Test
-    public void secondFlagging_insertsAnotherRowForSamePhraseAndIndex() throws Exception {
-        postFlagging("apple", 1, null);
-        postFlagging("apple", 1, null);
+    public void secondFlag_insertsAnotherRowForSamePhraseAndIndex() throws Exception {
+        postFlag("apple", 1, null);
+        postFlag("apple", 1, null);
 
         var rows = rows();
         assertThat(rows, hasSize(2));
-        assertThat(rows.stream().map(ImageFlagging::getPhrase).collect(Collectors.toList()), everyItem(is("apple")));
-        assertThat(rows.stream().map(ImageFlagging::getImageIndex).collect(Collectors.toList()), everyItem(is(1)));
+        assertThat(rows.stream().map(FlagImage::getPhrase).collect(Collectors.toList()), everyItem(is("apple")));
+        assertThat(rows.stream().map(FlagImage::getImageIndex).collect(Collectors.toList()), everyItem(is(1)));
         assertThat(rows.get(0).getId().equals(rows.get(1).getId()), is(false));
     }
 
     @Test
     public void adminList_groupsByPhraseAndIndexWithCount() throws Exception {
-        postFlagging("apple", 0, null);
-        postFlagging("apple", 0, null);
-        postFlagging("zoo", 1, null);
-        postFlagging("banana", 0, null);
+        postFlag("apple", 0, null);
+        postFlag("apple", 0, null);
+        postFlag("zoo", 1, null);
+        postFlag("banana", 0, null);
         var finished = rows().stream().filter(row -> row.getPhrase().equals("banana")).findFirst().orElseThrow();
         finished.setDone(true);
         repository.save(finished);
 
-        mockMvc.perform(asAdmin(get("/admin/image-review/flaggings")))
+        mockMvc.perform(asAdmin(get("/admin/review-flagged-image/list")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].phrase", is("apple")))
@@ -143,13 +143,13 @@ public class ImageFlaggingControllerTests {
     }
 
     @Test
-    public void remove_callsIndexRemoveAndMarksThoseFlaggingsDone() throws Exception {
+    public void remove_callsIndexRemoveAndMarksThoseRowsDone() throws Exception {
         imageCount.set(3);
-        postFlagging("apple", 1, null);
-        postFlagging("apple", 1, null);
-        postFlagging("zoo", 0, null);
+        postFlag("apple", 1, null);
+        postFlag("apple", 1, null);
+        postFlag("zoo", 0, null);
 
-        mockMvc.perform(asAdmin(post("/admin/image-review/remove")
+        mockMvc.perform(asAdmin(post("/admin/review-flagged-image/remove")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"phrase\":\"apple\",\"imageIndex\":1}")))
                 .andExpect(status().isNoContent());
@@ -166,11 +166,11 @@ public class ImageFlaggingControllerTests {
 
         var apple = rows().stream().filter(row -> row.getPhrase().equals("apple")).toList();
         assertThat(apple, hasSize(2));
-        assertThat(apple.stream().map(ImageFlagging::isDone).collect(Collectors.toList()), everyItem(is(true)));
+        assertThat(apple.stream().map(FlagImage::isDone).collect(Collectors.toList()), everyItem(is(true)));
         var zoo = rows().stream().filter(row -> row.getPhrase().equals("zoo")).findFirst().orElseThrow();
         assertThat(zoo.isDone(), is(false));
 
-        mockMvc.perform(asAdmin(get("/admin/image-review/flaggings")))
+        mockMvc.perform(asAdmin(get("/admin/review-flagged-image/list")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].phrase", is("zoo")))
@@ -180,9 +180,9 @@ public class ImageFlaggingControllerTests {
     @Test
     public void remove_doesNotWipeRemainingImagesWhenMoreThanOneExists() throws Exception {
         imageCount.set(2);
-        postFlagging("apple", 0, null);
+        postFlag("apple", 0, null);
 
-        mockMvc.perform(asAdmin(post("/admin/image-review/remove")
+        mockMvc.perform(asAdmin(post("/admin/review-flagged-image/remove")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"phrase\":\"apple\",\"imageIndex\":0}")))
                 .andExpect(status().isNoContent());
@@ -198,9 +198,9 @@ public class ImageFlaggingControllerTests {
     @Test
     public void remove_wipesPhraseOnlyWhenItIsTheLastImage() throws Exception {
         imageCount.set(1);
-        postFlagging("banana", 0, null);
+        postFlag("banana", 0, null);
 
-        mockMvc.perform(asAdmin(post("/admin/image-review/remove")
+        mockMvc.perform(asAdmin(post("/admin/review-flagged-image/remove")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"phrase\":\"banana\",\"imageIndex\":0}")))
                 .andExpect(status().isNoContent());
@@ -214,12 +214,12 @@ public class ImageFlaggingControllerTests {
     }
 
     @Test
-    public void remove_keepsFlaggingsOpenWhenImageGenerationFails() throws Exception {
+    public void remove_keepsRowsOpenWhenImageGenerationFails() throws Exception {
         imageCount.set(2);
         postStatus.set(500);
-        postFlagging("apple", 0, null);
+        postFlag("apple", 0, null);
 
-        mockMvc.perform(asAdmin(post("/admin/image-review/remove")
+        mockMvc.perform(asAdmin(post("/admin/review-flagged-image/remove")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"phrase\":\"apple\",\"imageIndex\":0}")))
                 .andExpect(status().isInternalServerError());
@@ -231,7 +231,7 @@ public class ImageFlaggingControllerTests {
 
     @Test
     public void adminPage_isHtmlWithoutImageGenerationKey() throws Exception {
-        mockMvc.perform(get("/admin/image-review"))
+        mockMvc.perform(get("/admin/review-flagged-image"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
                 .andExpect(content().string(containsString("Remove")))
@@ -242,12 +242,12 @@ public class ImageFlaggingControllerTests {
     }
 
     @Test
-    public void adminFlaggings_requireAdminRole() throws Exception {
-        mockMvc.perform(get("/admin/image-review/flaggings"))
+    public void adminList_requiresAdminRole() throws Exception {
+        mockMvc.perform(get("/admin/review-flagged-image/list"))
                 .andExpect(status().isUnauthorized());
 
         given(jwtService.parseClaims(any())).willReturn(Optional.of(claims("user")));
-        mockMvc.perform(post("/admin/image-review/remove")
+        mockMvc.perform(post("/admin/review-flagged-image/remove")
                         .header("Authorization", "Bearer test-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"phrase\":\"apple\",\"imageIndex\":0}"))
@@ -267,16 +267,16 @@ public class ImageFlaggingControllerTests {
         return claims;
     }
 
-    private void postFlagging(String phrase, int imageIndex, String email) throws Exception {
-        var request = post("/image-flagging")
+    private void postFlag(String phrase, int imageIndex, String email) throws Exception {
+        var request = post("/flag-image")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"phrase\":\"" + phrase + "\",\"imageIndex\":" + imageIndex + "}");
         if (email != null) request.header(TESTING_HEADER, email);
         mockMvc.perform(request).andExpect(status().isOk());
     }
 
-    private List<ImageFlagging> rows() {
-        var list = new ArrayList<ImageFlagging>();
+    private List<FlagImage> rows() {
+        var list = new ArrayList<FlagImage>();
         repository.findAll().forEach(list::add);
         return list;
     }
@@ -287,7 +287,7 @@ public class ImageFlaggingControllerTests {
 
     private static int ensureServer() {
         if (server != null) return server.getAddress().getPort();
-        synchronized (ImageFlaggingControllerTests.class) {
+        synchronized (FlagImageControllerTests.class) {
             if (server != null) return server.getAddress().getPort();
             try {
                 var created = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -311,7 +311,7 @@ public class ImageFlaggingControllerTests {
                     exchange.close();
                 });
                 var executor = Executors.newCachedThreadPool(runnable -> {
-                    var thread = new Thread(runnable, "image-flagging-stub");
+                    var thread = new Thread(runnable, "flag-image-stub");
                     thread.setDaemon(true);
                     return thread;
                 });

@@ -1,8 +1,8 @@
 package com.esl.controller.admin;
 
-import com.esl.controller.ImageFlaggingController.ImageFlaggingRequest;
-import com.esl.service.ImageFlaggingService;
-import com.esl.service.ImageFlaggingService.ImageFlaggingGroup;
+import com.esl.controller.FlagImageController.FlagImageRequest;
+import com.esl.service.FlagImageService;
+import com.esl.service.FlagImageService.FlagImageGroup;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
@@ -18,38 +18,38 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
-@RequestMapping("/admin/image-review")
-public class ImageReviewAdminController {
-    private final ImageFlaggingService imageFlaggingService;
+@RequestMapping("/admin/review-flagged-image")
+public class ReviewFlaggedImageController {
+    private final FlagImageService flagImageService;
     private final ObjectMapper objectMapper;
     private final String htmlTemplate;
 
-    public ImageReviewAdminController(ImageFlaggingService imageFlaggingService, ObjectMapper objectMapper) throws IOException {
-        this.imageFlaggingService = imageFlaggingService;
+    public ReviewFlaggedImageController(FlagImageService flagImageService, ObjectMapper objectMapper) throws IOException {
+        this.flagImageService = flagImageService;
         this.objectMapper = objectMapper;
-        try (var in = getClass().getResourceAsStream("/admin/image-review.html")) {
-            if (in == null) throw new IllegalStateException("Missing admin/image-review.html");
+        try (var in = getClass().getResourceAsStream("/admin/review-flagged-image.html")) {
+            if (in == null) throw new IllegalStateException("Missing admin/review-flagged-image.html");
             this.htmlTemplate = new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 
     @GetMapping(produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> page() throws JsonProcessingException {
-        var html = htmlTemplate.replace("__IMAGES_HOST__", objectMapper.writeValueAsString(imageFlaggingService.imagesHost()));
+        var html = htmlTemplate.replace("__IMAGES_HOST__", objectMapper.writeValueAsString(flagImageService.imagesHost()));
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
     }
 
-    @GetMapping("/flaggings")
-    public List<ImageFlaggingGroup> flaggings() {
-        return imageFlaggingService.openGroups();
+    @GetMapping("/list")
+    public List<FlagImageGroup> list() {
+        return flagImageService.openGroups();
     }
 
     @PostMapping("/remove")
-    public ResponseEntity<Void> remove(@RequestBody ImageFlaggingRequest request) {
+    public ResponseEntity<Void> remove(@RequestBody FlagImageRequest request) {
         if (request == null || request.imageIndex() == null) {
             throw new IllegalArgumentException("imageIndex is required");
         }
-        imageFlaggingService.remove(request.phrase(), request.imageIndex());
+        flagImageService.remove(request.phrase(), request.imageIndex());
         return ResponseEntity.noContent().build();
     }
 }

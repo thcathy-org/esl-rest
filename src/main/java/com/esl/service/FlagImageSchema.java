@@ -5,9 +5,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ImageFlaggingSchema {
+public class FlagImageSchema {
     static final String CREATE_TABLE = """
-            CREATE TABLE IF NOT EXISTS image_flagging (
+            CREATE TABLE IF NOT EXISTS flag_image (
                 ID BIGINT NOT NULL AUTO_INCREMENT,
                 PHRASE VARCHAR(500) NOT NULL,
                 IMAGE_INDEX INT NOT NULL,
@@ -20,7 +20,7 @@ public class ImageFlaggingSchema {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public ImageFlaggingSchema(JdbcTemplate jdbcTemplate) {
+    public FlagImageSchema(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 

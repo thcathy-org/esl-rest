@@ -34,8 +34,8 @@ public class SecurityConfig {
 			.authorizeHttpRequests((authz) -> authz
 					.requestMatchers(HttpMethod.GET, "/member/**").authenticated()
 					.requestMatchers(HttpMethod.POST, "/member/**").authenticated()
-					// The review shell has no flagging rows. Browser navigation cannot attach a Bearer token.
-					.requestMatchers(HttpMethod.GET, "/admin/image-review").permitAll()
+					// The review shell has no flagged-image rows. Browser navigation cannot attach a Bearer token.
+					.requestMatchers(HttpMethod.GET, "/admin/review-flagged-image").permitAll()
 					.requestMatchers(HttpMethod.GET, "/admin/**").hasRole("admin")
 					.requestMatchers(HttpMethod.POST, "/admin/**").hasRole("admin")
 					.anyRequest().permitAll()

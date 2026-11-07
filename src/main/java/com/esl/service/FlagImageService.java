@@ -1,7 +1,7 @@
 package com.esl.service;
 
-import com.esl.dao.repository.ImageFlaggingRepository;
-import com.esl.entity.ImageFlagging;
+import com.esl.dao.repository.FlagImageRepository;
+import com.esl.entity.FlagImage;
 import com.esl.service.rest.ImageGenerationService;
 import com.esl.service.rest.ImageJsonUrl;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,22 +21,22 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class ImageFlaggingService {
-    private static final Logger logger = LoggerFactory.getLogger(ImageFlaggingService.class);
+public class FlagImageService {
+    private static final Logger logger = LoggerFactory.getLogger(FlagImageService.class);
     private static final int MAX_PHRASE_LENGTH = 500;
 
-    private final ImageFlaggingRepository repository;
+    private final FlagImageRepository repository;
     private final ImageGenerationService imageGenerationService;
     private final ObjectMapper objectMapper;
     private final WebClient publicWebClient;
     private final String imagesHost;
     private final Duration timeout;
 
-    public ImageFlaggingService(
-            ImageFlaggingRepository repository,
+    public FlagImageService(
+            FlagImageRepository repository,
             ImageGenerationService imageGenerationService,
             ObjectMapper objectMapper,
-            @Value("${ImageFlagging.ImagesHost:https://firebasestorage.googleapis.com/v0/b/friendlyeats-7fa2f.appspot.com/o/images}") String imagesHost,
+            @Value("${FlagImage.ImagesHost:https://firebasestorage.googleapis.com/v0/b/friendlyeats-7fa2f.appspot.com/o/images}") String imagesHost,
             @Value("${ImageGenerationService.RequestTimeoutInSecond}") int timeoutSeconds) {
         this.repository = repository;
         this.imageGenerationService = imageGenerationService;
@@ -46,30 +46,30 @@ public class ImageFlaggingService {
         this.publicWebClient = WebClient.builder().build();
     }
 
-    public ImageFlagging flag(String phrase, int imageIndex, Long memberId) {
+    public FlagImage flag(String phrase, int imageIndex, Long memberId) {
         var cleaned = requirePhrase(phrase);
         requireIndex(imageIndex);
-        var row = new ImageFlagging();
+        var row = new FlagImage();
         row.setPhrase(cleaned);
         row.setImageIndex(imageIndex);
         row.setMemberId(memberId);
         row.setCreatedDate(new Date());
         row.setDone(false);
         var saved = repository.save(row);
-        logger.info("Stored image flagging id={} phrase='{}' index={} member={}", saved.getId(), cleaned, imageIndex, memberId);
+        logger.info("Stored flagged image id={} phrase='{}' index={} member={}", saved.getId(), cleaned, imageIndex, memberId);
         return saved;
     }
 
-    public List<ImageFlaggingGroup> openGroups() {
+    public List<FlagImageGroup> openGroups() {
         var counts = new LinkedHashMap<GroupKey, Integer>();
-        for (var flagging : repository.findByDoneFalse()) {
-            counts.merge(new GroupKey(flagging.getPhrase(), flagging.getImageIndex()), 1, Integer::sum);
+        for (var flaggedImage : repository.findByDoneFalse()) {
+            counts.merge(new GroupKey(flaggedImage.getPhrase(), flaggedImage.getImageIndex()), 1, Integer::sum);
         }
         return counts.entrySet().stream()
-                .map(entry -> new ImageFlaggingGroup(entry.getKey().phrase(), entry.getKey().imageIndex(), entry.getValue()))
-                .sorted(Comparator.comparingInt(ImageFlaggingGroup::count).reversed()
-                        .thenComparing(ImageFlaggingGroup::phrase)
-                        .thenComparingInt(ImageFlaggingGroup::imageIndex))
+                .map(entry -> new FlagImageGroup(entry.getKey().phrase(), entry.getKey().imageIndex(), entry.getValue()))
+                .sorted(Comparator.comparingInt(FlagImageGroup::count).reversed()
+                        .thenComparing(FlagImageGroup::phrase)
+                        .thenComparingInt(FlagImageGroup::imageIndex))
                 .toList();
     }
 
@@ -139,5 +139,5 @@ public class ImageFlaggingService {
 
     private record GroupKey(String phrase, int imageIndex) {}
 
-    public record ImageFlaggingGroup(String phrase, int imageIndex, int count) {}
+    public record FlagImageGroup(String phrase, int imageIndex, int count) {}
 }
