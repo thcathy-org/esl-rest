@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "image_report")
-public class ImageReport {
+@Table(name = "image_flagging")
+public class ImageFlagging {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")

@@ -1,8 +1,8 @@
 package com.esl.controller.admin;
 
-import com.esl.controller.ImageReportController.ImageReportRequest;
-import com.esl.service.ImageReportService;
-import com.esl.service.ImageReportService.ImageReportGroup;
+import com.esl.controller.ImageFlaggingController.ImageFlaggingRequest;
+import com.esl.service.ImageFlaggingService;
+import com.esl.service.ImageFlaggingService.ImageFlaggingGroup;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
@@ -20,12 +20,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/admin/image-review")
 public class ImageReviewAdminController {
-    private final ImageReportService imageReportService;
+    private final ImageFlaggingService imageFlaggingService;
     private final ObjectMapper objectMapper;
     private final String htmlTemplate;
 
-    public ImageReviewAdminController(ImageReportService imageReportService, ObjectMapper objectMapper) throws IOException {
-        this.imageReportService = imageReportService;
+    public ImageReviewAdminController(ImageFlaggingService imageFlaggingService, ObjectMapper objectMapper) throws IOException {
+        this.imageFlaggingService = imageFlaggingService;
         this.objectMapper = objectMapper;
         try (var in = getClass().getResourceAsStream("/admin/image-review.html")) {
             if (in == null) throw new IllegalStateException("Missing admin/image-review.html");
@@ -35,21 +35,21 @@ public class ImageReviewAdminController {
 
     @GetMapping(produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> page() throws JsonProcessingException {
-        var html = htmlTemplate.replace("__IMAGES_HOST__", objectMapper.writeValueAsString(imageReportService.imagesHost()));
+        var html = htmlTemplate.replace("__IMAGES_HOST__", objectMapper.writeValueAsString(imageFlaggingService.imagesHost()));
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
     }
 
-    @GetMapping("/reports")
-    public List<ImageReportGroup> reports() {
-        return imageReportService.openGroups();
+    @GetMapping("/flaggings")
+    public List<ImageFlaggingGroup> flaggings() {
+        return imageFlaggingService.openGroups();
     }
 
     @PostMapping("/remove")
-    public ResponseEntity<Void> remove(@RequestBody ImageReportRequest request) {
+    public ResponseEntity<Void> remove(@RequestBody ImageFlaggingRequest request) {
         if (request == null || request.imageIndex() == null) {
             throw new IllegalArgumentException("imageIndex is required");
         }
-        imageReportService.remove(request.phrase(), request.imageIndex());
+        imageFlaggingService.remove(request.phrase(), request.imageIndex());
         return ResponseEntity.noContent().build();
     }
 }

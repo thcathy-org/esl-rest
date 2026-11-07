@@ -1,8 +1,8 @@
 package com.esl.controller;
 
 import com.esl.dao.MemberDAO;
-import com.esl.entity.ImageReport;
-import com.esl.service.ImageReportService;
+import com.esl.entity.ImageFlagging;
+import com.esl.service.ImageFlaggingService;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,30 +11,30 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class ImageReportController {
-    private final ImageReportService imageReportService;
+public class ImageFlaggingController {
+    private final ImageFlaggingService imageFlaggingService;
     private final MemberDAO memberDAO;
 
-    public ImageReportController(ImageReportService imageReportService, MemberDAO memberDAO) {
-        this.imageReportService = imageReportService;
+    public ImageFlaggingController(ImageFlaggingService imageFlaggingService, MemberDAO memberDAO) {
+        this.imageFlaggingService = imageFlaggingService;
         this.memberDAO = memberDAO;
     }
 
-    public record ImageReportRequest(String phrase, Integer imageIndex) {}
+    public record ImageFlaggingRequest(String phrase, Integer imageIndex) {}
 
-    public record ImageReportResponse(long id, String phrase, int imageIndex, Long memberId) {
-        static ImageReportResponse from(ImageReport report) {
-            return new ImageReportResponse(report.getId(), report.getPhrase(), report.getImageIndex(), report.getMemberId());
+    public record ImageFlaggingResponse(long id, String phrase, int imageIndex, Long memberId) {
+        static ImageFlaggingResponse from(ImageFlagging flagging) {
+            return new ImageFlaggingResponse(flagging.getId(), flagging.getPhrase(), flagging.getImageIndex(), flagging.getMemberId());
         }
     }
 
-    @PostMapping("/image-report")
-    public ImageReportResponse report(@RequestBody ImageReportRequest request) {
+    @PostMapping("/image-flagging")
+    public ImageFlaggingResponse flag(@RequestBody ImageFlaggingRequest request) {
         if (request == null || request.imageIndex() == null) {
             throw new IllegalArgumentException("imageIndex is required");
         }
-        var saved = imageReportService.report(request.phrase(), request.imageIndex(), currentMemberId());
-        return ImageReportResponse.from(saved);
+        var saved = imageFlaggingService.flag(request.phrase(), request.imageIndex(), currentMemberId());
+        return ImageFlaggingResponse.from(saved);
     }
 
     private Long currentMemberId() {

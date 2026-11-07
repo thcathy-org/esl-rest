@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Reported images</h1>
+  <h1>Image flaggings</h1>
   <p>Paste an admin Bearer token (Auth0 role admin). It stays in this tab. Image removal runs on the server.</p>
   <p>
     <input id="token" type="password" autocomplete="off" aria-label="Admin token">
@@ -23,7 +23,7 @@
   <p id="status"></p>
   <table>
     <thead>
-      <tr><th>Phrase</th><th>Index</th><th>Reports</th><th>Preview</th><th></th></tr>
+      <tr><th>Phrase</th><th>Index</th><th>Flaggings</th><th>Preview</th><th></th></tr>
     </thead>
     <tbody id="rows"></tbody>
   </table>
@@ -63,19 +63,19 @@
         return;
       }
       try {
-        const response = await fetch(apiPath('/reports'), { headers: authHeaders() });
+        const response = await fetch(apiPath('/flaggings'), { headers: authHeaders() });
         if (!response.ok) {
-          statusLine.textContent = 'Could not load reports (' + response.status + ').';
+          statusLine.textContent = 'Could not load flaggings (' + response.status + ').';
           return;
         }
         const groups = await response.json();
         if (groups.length === 0) {
-          statusLine.textContent = 'No open reports.';
+          statusLine.textContent = 'No open flaggings.';
           return;
         }
         groups.forEach(renderRow);
       } catch (error) {
-        statusLine.textContent = 'Could not load reports.';
+        statusLine.textContent = 'Could not load flaggings.';
       }
     }
 
