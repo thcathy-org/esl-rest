@@ -1,0 +1,281 @@
+package com.esl.controller;
+
+import com.esl.dao.repository.FlagImageRepository;
+import com.esl.entity.FlagImage;
+import com.esl.service.JWTService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.net.httpserver.HttpServer;
+import io.jsonwebtoken.impl.DefaultClaims;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import static com.esl.security.JWTAuthorizationFilter.TESTING_HEADER;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+@TestPropertySource(locations = "classpath:application-test.properties")
+public class FlagImageControllerTests {
+
+    private static final List<Hit> hits = new CopyOnWriteArrayList<>();
+    private static final AtomicInteger postStatus = new AtomicInteger(200);
+    private static HttpServer server;
+
+    @DynamicPropertySource
+    static void imageServer(DynamicPropertyRegistry registry) {
+        var port = ensureServer();
+        registry.add("IMAGE_GENERATION_SERVER_HOST", () -> "http://127.0.0.1:" + port);
+        registry.add("IMAGE_GENERATION_SERVER_APIKEY", () -> "test-key");
+        registry.add("FlagImage.ImagesHost", () -> "http://127.0.0.1:" + port + "/images");
+    }
+
+    @Autowired MockMvc mockMvc;
+    @Autowired ObjectMapper objectMapper;
+    @Autowired FlagImageRepository repository;
+    @MockBean JWTService jwtService;
+
+    @Before
+    public void clean() {
+        repository.deleteAll();
+        hits.clear();
+        postStatus.set(200);
+    }
+
+    @Test
+    public void anonymousFlag_storesCountOne() throws Exception {
+        mockMvc.perform(post("/flag-image")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phrase\":\"apple\",\"imageIndex\":0}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phrase", is("apple")))
+                .andExpect(jsonPath("$.imageIndex", is(0)))
+                .andExpect(jsonPath("$.count", is(1)));
+
+        var rows = rows();
+        assertThat(rows, hasSize(1));
+        assertThat(rows.get(0).getFlagCount(), is(1));
+    }
+
+    @Test
+    public void loggedInFlag_addsToTheSameCount() throws Exception {
+        postFlag("apple", 2, null);
+        mockMvc.perform(post("/flag-image")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(TESTING_HEADER, "tester@esl.com")
+                        .content("{\"phrase\":\"apple\",\"imageIndex\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.count", is(2)));
+
+        var rows = rows();
+        assertThat(rows, hasSize(1));
+        assertThat(rows.get(0).getFlagCount(), is(2));
+    }
+
+    @Test
+    public void secondFlag_addsToTheCountForSamePhraseAndIndex() throws Exception {
+        postFlag("apple", 1, null);
+        postFlag("apple", 1, null);
+        postFlag("apple", 2, null);
+
+        var rows = rows();
+        assertThat(rows, hasSize(2));
+        var indexOne = rows.stream().filter(row -> row.getImageIndex() == 1).findFirst().orElseThrow();
+        var indexTwo = rows.stream().filter(row -> row.getImageIndex() == 2).findFirst().orElseThrow();
+        assertThat(indexOne.getPhrase(), is("apple"));
+        assertThat(indexOne.getFlagCount(), is(2));
+        assertThat(indexTwo.getFlagCount(), is(1));
+    }
+
+    @Test
+    public void adminList_returnsEachFlaggedImageWithCount() throws Exception {
+        postFlag("apple", 0, null);
+        postFlag("apple", 0, null);
+        postFlag("zoo", 1, null);
+
+        mockMvc.perform(asAdmin(get("/admin/review-flagged-image/list")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].phrase", is("apple")))
+                .andExpect(jsonPath("$[0].imageIndex", is(0)))
+                .andExpect(jsonPath("$[0].count", is(2)))
+                .andExpect(jsonPath("$[1].phrase", is("zoo")))
+                .andExpect(jsonPath("$[1].imageIndex", is(1)))
+                .andExpect(jsonPath("$[1].count", is(1)));
+    }
+
+    @Test
+    public void remove_callsImageRemoveAndDeletesTheRow() throws Exception {
+        postFlag("apple", 1, null);
+        postFlag("apple", 1, null);
+        postFlag("zoo", 0, null);
+
+        mockMvc.perform(asAdmin(post("/admin/review-flagged-image/remove")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phrase\":\"apple\",\"imageIndex\":1}")))
+                .andExpect(status().isNoContent());
+
+        var removed = postsTo("/image/remove");
+        assertThat(removed, hasSize(1));
+        assertThat(removed.get(0).apiKey(), is("test-key"));
+        JsonNode body = objectMapper.readTree(removed.get(0).body());
+        assertThat(body.get("phrase").asText(), is("apple"));
+        assertThat(body.get("imageIndex").asInt(), is(1));
+        assertThat(postsTo("/verify/remove"), hasSize(0));
+        assertThat(postsTo("/verify/verified"), hasSize(0));
+
+        assertThat(rows().stream().filter(row -> row.getPhrase().equals("apple")).toList(), hasSize(0));
+        var zoo = rows().stream().filter(row -> row.getPhrase().equals("zoo")).findFirst().orElseThrow();
+        assertThat(zoo.getFlagCount(), is(1));
+
+        mockMvc.perform(asAdmin(get("/admin/review-flagged-image/list")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].phrase", is("zoo")))
+                .andExpect(jsonPath("$[0].imageIndex", is(0)));
+    }
+
+    @Test
+    public void remove_keepsTheRowWhenImageGenerationFails() throws Exception {
+        postStatus.set(500);
+        postFlag("apple", 0, null);
+
+        mockMvc.perform(asAdmin(post("/admin/review-flagged-image/remove")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phrase\":\"apple\",\"imageIndex\":0}")))
+                .andExpect(status().isInternalServerError());
+
+        assertThat(postsTo("/image/remove"), hasSize(1));
+        assertThat(postsTo("/verify/remove"), hasSize(0));
+        assertThat(postsTo("/verify/verified"), hasSize(0));
+        assertThat(rows(), hasSize(1));
+        assertThat(rows().get(0).getFlagCount(), is(1));
+    }
+
+    @Test
+    public void adminPage_isHtmlWithoutImageGenerationKey() throws Exception {
+        mockMvc.perform(get("/admin/review-flagged-image"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+                .andExpect(content().string(containsString("Remove")))
+                .andExpect(content().string(containsString("Preview")))
+                .andExpect(content().string(containsString("count > 1")))
+                .andExpect(content().string(not(containsString("test-key"))))
+                .andExpect(content().string(not(containsString("X-API-KEY"))));
+    }
+
+    @Test
+    public void adminList_requiresAdminRole() throws Exception {
+        mockMvc.perform(get("/admin/review-flagged-image/list"))
+                .andExpect(status().isUnauthorized());
+
+        given(jwtService.parseClaims(any())).willReturn(Optional.of(claims("user")));
+        mockMvc.perform(post("/admin/review-flagged-image/remove")
+                        .header("Authorization", "Bearer test-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phrase\":\"apple\",\"imageIndex\":0}"))
+                .andExpect(status().isForbidden());
+        assertThat(hits, hasSize(0));
+    }
+
+    private MockHttpServletRequestBuilder asAdmin(MockHttpServletRequestBuilder builder) {
+        given(jwtService.parseClaims(any())).willReturn(Optional.of(claims("admin")));
+        return builder.header("Authorization", "Bearer test-token");
+    }
+
+    private DefaultClaims claims(String role) {
+        var claims = new DefaultClaims();
+        claims.put("email", "tester@esl.com");
+        claims.put("https://funfunspell.com/roles", new ArrayList<>(List.of(role)));
+        return claims;
+    }
+
+    private void postFlag(String phrase, int imageIndex, String email) throws Exception {
+        var request = post("/flag-image")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"phrase\":\"" + phrase + "\",\"imageIndex\":" + imageIndex + "}");
+        if (email != null) request.header(TESTING_HEADER, email);
+        mockMvc.perform(request).andExpect(status().isOk());
+    }
+
+    private List<FlagImage> rows() {
+        var list = new ArrayList<FlagImage>();
+        repository.findAll().forEach(list::add);
+        return list;
+    }
+
+    private List<Hit> postsTo(String path) {
+        return hits.stream().filter(hit -> hit.path().equals(path)).collect(Collectors.toList());
+    }
+
+    private static int ensureServer() {
+        if (server != null) return server.getAddress().getPort();
+        synchronized (FlagImageControllerTests.class) {
+            if (server != null) return server.getAddress().getPort();
+            try {
+                var created = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+                created.createContext("/", exchange -> {
+                    var method = exchange.getRequestMethod();
+                    var path = exchange.getRequestURI().getPath();
+                    var body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                    var apiKey = exchange.getRequestHeaders().getFirst("X-API-KEY");
+                    if ("POST".equals(method)) hits.add(new Hit(path, body, apiKey));
+                    var response = "{}".getBytes(StandardCharsets.UTF_8);
+                    var status = "POST".equals(method) ? postStatus.get() : 200;
+                    exchange.getResponseHeaders().add("Content-Type", "application/json");
+                    exchange.sendResponseHeaders(status, response.length);
+                    exchange.getResponseBody().write(response);
+                    exchange.close();
+                });
+                var executor = Executors.newCachedThreadPool(runnable -> {
+                    var thread = new Thread(runnable, "flag-image-stub");
+                    thread.setDaemon(true);
+                    return thread;
+                });
+                created.setExecutor(executor);
+                created.start();
+                server = created;
+                return created.getAddress().getPort();
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    private record Hit(String path, String body, String apiKey) {}
+}

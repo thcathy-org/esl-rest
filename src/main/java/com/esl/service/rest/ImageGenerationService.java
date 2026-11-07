@@ -1,15 +1,20 @@
 package com.esl.service.rest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -21,6 +26,7 @@ public class ImageGenerationService {
 
     final WebClient webClient;
     final Duration requestTimeout;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<>();
 
     public ImageGenerationService(
@@ -73,6 +79,21 @@ public class ImageGenerationService {
     public Mono<ResponseEntity<Void>> generate(String phrase) {
         logger.info("submit request: {}", phrase);
         return webClient.post().uri("/image/generate/" + phrase).retrieve().toBodilessEntity();
+    }
+
+    public void removeImage(String phrase, int imageIndex) {
+        try {
+            var json = objectMapper.writeValueAsString(Map.of("phrase", phrase, "imageIndex", imageIndex));
+            webClient.post()
+                    .uri("/image/remove")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(json.getBytes(StandardCharsets.UTF_8))
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block(requestTimeout);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Could not encode image-generation request", e);
+        }
     }
 
 }
