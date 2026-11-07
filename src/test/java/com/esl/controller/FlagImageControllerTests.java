@@ -153,15 +153,14 @@ public class FlagImageControllerTests {
                         .content("{\"phrase\":\"apple\",\"imageIndex\":1}")))
                 .andExpect(status().isNoContent());
 
-        var verified = postsTo("/verify/verified");
-        assertThat(verified, hasSize(1));
-        assertThat(verified.get(0).apiKey(), is("test-key"));
-        JsonNode body = objectMapper.readTree(verified.get(0).body());
-        assertThat(body.size(), is(1));
-        assertThat(body.get(0).get("phrase").asText(), is("apple"));
-        assertThat(body.get(0).get("removeImageIndex").size(), is(1));
-        assertThat(body.get(0).get("removeImageIndex").get(0).asInt(), is(1));
+        var removed = postsTo("/image/remove");
+        assertThat(removed, hasSize(1));
+        assertThat(removed.get(0).apiKey(), is("test-key"));
+        JsonNode body = objectMapper.readTree(removed.get(0).body());
+        assertThat(body.get("phrase").asText(), is("apple"));
+        assertThat(body.get("imageIndex").asInt(), is(1));
         assertThat(postsTo("/verify/remove"), hasSize(0));
+        assertThat(postsTo("/verify/verified"), hasSize(0));
 
         assertThat(rows().stream().filter(row -> row.getPhrase().equals("apple")).toList(), hasSize(0));
         var zoo = rows().stream().filter(row -> row.getPhrase().equals("zoo")).findFirst().orElseThrow();
@@ -175,7 +174,7 @@ public class FlagImageControllerTests {
     }
 
     @Test
-    public void remove_doesNotWipeRemainingImagesWhenMoreThanOneExists() throws Exception {
+    public void remove_sendsThatIndexOnOneUrl() throws Exception {
         imageCount.set(2);
         postFlag("apple", 0, null);
 
@@ -184,16 +183,18 @@ public class FlagImageControllerTests {
                         .content("{\"phrase\":\"apple\",\"imageIndex\":0}")))
                 .andExpect(status().isNoContent());
 
+        var removed = postsTo("/image/remove");
+        assertThat(removed, hasSize(1));
+        JsonNode body = objectMapper.readTree(removed.get(0).body());
+        assertThat(body.get("phrase").asText(), is("apple"));
+        assertThat(body.get("imageIndex").asInt(), is(0));
         assertThat(postsTo("/verify/remove"), hasSize(0));
-        var verified = postsTo("/verify/verified");
-        assertThat(verified, hasSize(1));
-        JsonNode body = objectMapper.readTree(verified.get(0).body());
-        assertThat(body.get(0).get("removeImageIndex").toString(), is("[0]"));
+        assertThat(postsTo("/verify/verified"), hasSize(0));
         assertThat(rows(), hasSize(0));
     }
 
     @Test
-    public void remove_wipesPhraseOnlyWhenItIsTheLastImage() throws Exception {
+    public void remove_sendsTheSameUrlForTheLastImage() throws Exception {
         imageCount.set(1);
         postFlag("banana", 0, null);
 
@@ -202,11 +203,14 @@ public class FlagImageControllerTests {
                         .content("{\"phrase\":\"banana\",\"imageIndex\":0}")))
                 .andExpect(status().isNoContent());
 
-        assertThat(postsTo("/verify/verified"), hasSize(0));
-        var removed = postsTo("/verify/remove");
+        var removed = postsTo("/image/remove");
         assertThat(removed, hasSize(1));
         assertThat(removed.get(0).apiKey(), is("test-key"));
-        assertThat(objectMapper.readTree(removed.get(0).body()).get("phrase").asText(), is("banana"));
+        JsonNode body = objectMapper.readTree(removed.get(0).body());
+        assertThat(body.get("phrase").asText(), is("banana"));
+        assertThat(body.get("imageIndex").asInt(), is(0));
+        assertThat(postsTo("/verify/remove"), hasSize(0));
+        assertThat(postsTo("/verify/verified"), hasSize(0));
         assertThat(rows(), hasSize(0));
     }
 
@@ -221,8 +225,9 @@ public class FlagImageControllerTests {
                         .content("{\"phrase\":\"apple\",\"imageIndex\":0}")))
                 .andExpect(status().isInternalServerError());
 
-        assertThat(postsTo("/verify/verified"), hasSize(1));
+        assertThat(postsTo("/image/remove"), hasSize(1));
         assertThat(postsTo("/verify/remove"), hasSize(0));
+        assertThat(postsTo("/verify/verified"), hasSize(0));
         assertThat(rows(), hasSize(1));
         assertThat(rows().get(0).getFlagCount(), is(1));
     }
