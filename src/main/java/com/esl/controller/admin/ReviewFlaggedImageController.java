@@ -2,7 +2,7 @@ package com.esl.controller.admin;
 
 import com.esl.controller.FlagImageController.FlagImageRequest;
 import com.esl.service.FlagImageService;
-import com.esl.service.FlagImageService.FlagImageGroup;
+import com.esl.service.FlagImageService.FlaggedImage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
@@ -40,8 +40,8 @@ public class ReviewFlaggedImageController {
     }
 
     @GetMapping("/list")
-    public List<FlagImageGroup> list() {
-        return flagImageService.openGroups();
+    public List<FlaggedImage> list() {
+        return flagImageService.list();
     }
 
     @PostMapping("/remove")

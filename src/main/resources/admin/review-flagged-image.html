@@ -68,22 +68,22 @@
           statusLine.textContent = 'Could not load flagged images (' + response.status + ').';
           return;
         }
-        const groups = await response.json();
-        if (groups.length === 0) {
+        const flaggedImages = await response.json();
+        if (flaggedImages.length === 0) {
           statusLine.textContent = 'No open flagged images.';
           return;
         }
-        groups.forEach(renderRow);
+        flaggedImages.forEach(renderRow);
       } catch (error) {
         statusLine.textContent = 'Could not load flagged images.';
       }
     }
 
-    function renderRow(group) {
+    function renderRow(flaggedImage) {
       const row = document.createElement('tr');
-      row.append(cell(group.phrase));
-      row.append(cell(String(group.imageIndex)));
-      row.append(cell(group.count > 1 ? String(group.count) : ''));
+      row.append(cell(flaggedImage.phrase));
+      row.append(cell(String(flaggedImage.imageIndex)));
+      row.append(cell(flaggedImage.count > 1 ? String(flaggedImage.count) : ''));
 
       const preview = document.createElement('td');
       const missing = document.createElement('span');
@@ -96,11 +96,11 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = 'Remove';
-      button.addEventListener('click', () => remove(group, button));
+      button.addEventListener('click', () => remove(flaggedImage, button));
       action.append(button);
       row.append(action);
       rows.append(row);
-      showPreview(group, preview, missing);
+      showPreview(flaggedImage, preview, missing);
     }
 
     function cell(text) {
@@ -109,18 +109,18 @@
       return td;
     }
 
-    async function showPreview(group, preview, missing) {
+    async function showPreview(flaggedImage, preview, missing) {
       try {
-        const response = await fetch(imageUrl(group.phrase));
+        const response = await fetch(imageUrl(flaggedImage.phrase));
         if (!response.ok) throw new Error('preview');
         const payload = await response.json();
-        const src = previewSrc(payload.images && payload.images[group.imageIndex]);
+        const src = previewSrc(payload.images && payload.images[flaggedImage.imageIndex]);
         if (!src) {
           missing.textContent = 'Preview unavailable';
           return;
         }
         const image = document.createElement('img');
-        image.alt = group.phrase + ' ' + group.imageIndex;
+        image.alt = flaggedImage.phrase + ' ' + flaggedImage.imageIndex;
         image.src = src;
         missing.replaceWith(image);
       } catch (error) {
@@ -142,13 +142,13 @@
       return host + '%2F' + folder + '%2F' + filename + '?alt=media';
     }
 
-    async function remove(group, button) {
+    async function remove(flaggedImage, button) {
       button.disabled = true;
       try {
         const response = await fetch(apiPath('/remove'), {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ phrase: group.phrase, imageIndex: group.imageIndex })
+          body: JSON.stringify({ phrase: flaggedImage.phrase, imageIndex: flaggedImage.imageIndex })
         });
         if (!response.ok) {
           button.disabled = false;

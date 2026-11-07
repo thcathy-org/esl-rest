@@ -125,7 +125,7 @@ public class FlagImageControllerTests {
     }
 
     @Test
-    public void adminList_groupsByPhraseAndIndexWithCount() throws Exception {
+    public void adminList_returnsEachFlaggedImageWithCount() throws Exception {
         postFlag("apple", 0, null);
         postFlag("apple", 0, null);
         postFlag("zoo", 1, null);

@@ -40,32 +40,32 @@ public class FlagImageService {
 
     @Transactional
     public FlagImage flag(String phrase, int imageIndex) {
-        var cleaned = requirePhrase(phrase);
+        var cleanedPhrase = requirePhrase(phrase);
         requireIndex(imageIndex);
-        repository.addFlag(cleaned, imageIndex, new Date());
-        var saved = repository.findByPhraseAndImageIndex(cleaned, imageIndex).orElseThrow();
-        logger.info("Flagged image id={} phrase='{}' index={} count={}", saved.getId(), cleaned, imageIndex, saved.getFlagCount());
-        return saved;
+        repository.addFlag(cleanedPhrase, imageIndex, new Date());
+        var flagImage = repository.findByPhraseAndImageIndex(cleanedPhrase, imageIndex).orElseThrow();
+        logger.info("Flagged image id={} phrase='{}' index={} count={}", flagImage.getId(), cleanedPhrase, imageIndex, flagImage.getFlagCount());
+        return flagImage;
     }
 
-    public List<FlagImageGroup> openGroups() {
-        var groups = new ArrayList<FlagImageGroup>();
-        repository.findAll().forEach(row -> groups.add(new FlagImageGroup(row.getPhrase(), row.getImageIndex(), row.getFlagCount())));
-        groups.sort(Comparator.comparingInt(FlagImageGroup::count).reversed()
-                .thenComparing(FlagImageGroup::phrase)
-                .thenComparingInt(FlagImageGroup::imageIndex));
-        return groups;
+    public List<FlaggedImage> list() {
+        var flaggedImages = new ArrayList<FlaggedImage>();
+        repository.findAll().forEach(flagImage -> flaggedImages.add(new FlaggedImage(flagImage.getPhrase(), flagImage.getImageIndex(), flagImage.getFlagCount())));
+        flaggedImages.sort(Comparator.comparingInt(FlaggedImage::count).reversed()
+                .thenComparing(FlaggedImage::phrase)
+                .thenComparingInt(FlaggedImage::imageIndex));
+        return flaggedImages;
     }
 
     public void remove(String phrase, int imageIndex) {
-        var cleaned = requirePhrase(phrase);
+        var cleanedPhrase = requirePhrase(phrase);
         requireIndex(imageIndex);
-        logger.info("Removing image phrase='{}' index={}", cleaned, imageIndex);
+        logger.info("Removing image phrase='{}' index={}", cleanedPhrase, imageIndex);
         imageGenerationService.postJson("/image/remove", json(Map.of(
-                "phrase", cleaned,
+                "phrase", cleanedPhrase,
                 "imageIndex", imageIndex
         )));
-        repository.deleteByPhraseAndImageIndex(cleaned, imageIndex);
+        repository.deleteByPhraseAndImageIndex(cleanedPhrase, imageIndex);
     }
 
     public String imagesHost() {
@@ -84,11 +84,11 @@ public class FlagImageService {
         if (phrase == null || phrase.isBlank()) {
             throw new IllegalArgumentException("phrase is required");
         }
-        var cleaned = phrase.trim();
-        if (cleaned.length() > MAX_PHRASE_LENGTH) {
+        var cleanedPhrase = phrase.trim();
+        if (cleanedPhrase.length() > MAX_PHRASE_LENGTH) {
             throw new IllegalArgumentException("phrase is too long");
         }
-        return cleaned;
+        return cleanedPhrase;
     }
 
     private static void requireIndex(int imageIndex) {
@@ -97,5 +97,5 @@ public class FlagImageService {
         }
     }
 
-    public record FlagImageGroup(String phrase, int imageIndex, int count) {}
+    public record FlaggedImage(String phrase, int imageIndex, int count) {}
 }
