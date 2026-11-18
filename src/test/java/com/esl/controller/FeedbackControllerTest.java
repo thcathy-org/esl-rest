@@ -9,7 +9,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
@@ -22,7 +21,7 @@ class FeedbackControllerTest {
     private static final String RECIPIENT = "contactfunfunspell@gmail.com";
 
     @Test
-    void submit_emailChannel_setsReplyToAndShowsChannelAndContact() {
+    void submit_emailChannel_showsChannelAndContact() {
         var sender = mock(JavaMailSender.class);
         var controller = new FeedbackController(sender, RECIPIENT);
 
@@ -33,7 +32,6 @@ class FeedbackControllerTest {
         var mail = sentMail(sender);
         assertEquals(RECIPIENT, mail.getTo()[0]);
         assertEquals(1, mail.getTo().length);
-        assertEquals("parent@email.com", mail.getReplyTo());
         assertEquals("FunFunSpell Feedback from parent@email.com", mail.getSubject());
         assertTrue(mail.getText().contains("Channel: Email"));
         assertTrue(mail.getText().contains("Contact: parent@email.com"));
@@ -42,7 +40,7 @@ class FeedbackControllerTest {
     }
 
     @Test
-    void submit_whatsapp_namesTheChannelAndDoesNotEmailTheSender() {
+    void submit_whatsapp_namesTheChannelAndContact() {
         var sender = mock(JavaMailSender.class);
         var controller = new FeedbackController(sender, RECIPIENT);
 
@@ -52,7 +50,6 @@ class FeedbackControllerTest {
         assertEquals(200, response.getStatusCode().value());
         var mail = sentMail(sender);
         assertEquals(RECIPIENT, mail.getTo()[0]);
-        assertNull(mail.getReplyTo());
         assertEquals("FunFunSpell Feedback via WhatsApp", mail.getSubject());
         assertTrue(mail.getText().contains("Channel: WhatsApp"));
         assertTrue(mail.getText().contains("Contact: +852 9123 4567"));
@@ -71,7 +68,6 @@ class FeedbackControllerTest {
         assertTrue(wechat.getSubject().contains("WeChat"));
         assertTrue(wechat.getText().contains("Channel: WeChat"));
         assertTrue(wechat.getText().contains("Contact: wxid_learner"));
-        assertNull(wechat.getReplyTo());
 
         controller.submit(new FeedbackController.FeedbackRequest(
                 "messenger", "https://m.me/jane", null, "Hi"));
@@ -79,7 +75,6 @@ class FeedbackControllerTest {
         assertTrue(messenger.getSubject().contains("Messenger"));
         assertTrue(messenger.getText().contains("Channel: Messenger"));
         assertTrue(messenger.getText().contains("Contact: https://m.me/jane"));
-        assertNull(messenger.getReplyTo());
     }
 
     @Test
@@ -92,7 +87,6 @@ class FeedbackControllerTest {
 
         assertEquals(200, response.getStatusCode().value());
         var mail = sentMail(sender);
-        assertEquals("learner@example.com", mail.getReplyTo());
         assertTrue(mail.getText().contains("Channel: Email"));
         assertTrue(mail.getText().contains("Contact: learner@example.com"));
         verify(sender, times(1)).send(mail);

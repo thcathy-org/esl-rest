@@ -47,9 +47,6 @@ public class FeedbackController {
         try {
             var mail = new SimpleMailMessage();
             mail.setTo(recipient);
-            if (replyByEmail(request)) {
-                mail.setReplyTo(request.contact());
-            }
             mail.setSubject(subject(request));
             mail.setText(body(request));
             mailSender.send(mail);
@@ -126,12 +123,8 @@ public class FeedbackController {
         return EMAIL.matcher(value).matches();
     }
 
-    private static boolean replyByEmail(FeedbackRequest request) {
-        return "email".equals(request.channel());
-    }
-
     private static String subject(FeedbackRequest request) {
-        if (replyByEmail(request)) {
+        if ("email".equals(request.channel())) {
             return "FunFunSpell Feedback from " + request.contact();
         }
         return "FunFunSpell Feedback via " + label(request.channel());
