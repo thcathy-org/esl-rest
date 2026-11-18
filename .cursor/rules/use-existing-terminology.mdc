@@ -1,11 +1,11 @@
 ---
-description: Reuse existing esl-rest code when it fits
+description: Prefer terminology esl-rest already uses
 globs: **/*.java
 alwaysApply: true
 ---
 
-# Reuse existing code
+# Use existing terminology
 
-Before adding a helper or a name, look for code in this repo that already does the job. Use it when it fits.
+When you name a method, field, or variable, look for a term this repo already uses for the same thing. Use that term when it fits.
 
-A new name is fine when nothing existing fits and the name says what the code does. Do not force an existing word onto a different job.
+A new term is fine when no existing term fits.
