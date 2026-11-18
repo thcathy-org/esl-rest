@@ -108,6 +108,8 @@ class FeedbackControllerTest {
         assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
                 "email", "not-an-email", null, "Hello")).getStatusCode().value());
         assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
+                "email", "parent@email.com,attacker@evil.com", null, "Hello")).getStatusCode().value());
+        assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
                 "line", "learner", null, "Hello")).getStatusCode().value());
         assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
                 "messenger", "Jane", null, "   ")).getStatusCode().value());

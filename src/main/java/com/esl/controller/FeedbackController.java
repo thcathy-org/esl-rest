@@ -12,12 +12,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/feedback")
 public class FeedbackController {
 
     private static final Logger log = LoggerFactory.getLogger(FeedbackController.class);
+    private static final Pattern EMAIL = Pattern.compile(
+            "[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+");
 
     private final JavaMailSender mailSender;
     private final String recipient;
@@ -120,7 +123,7 @@ public class FeedbackController {
     }
 
     private static boolean isEmail(String value) {
-        return value.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+");
+        return EMAIL.matcher(value).matches();
     }
 
     record ResolvedFeedback(String channel, String label, String contact, String message) {
