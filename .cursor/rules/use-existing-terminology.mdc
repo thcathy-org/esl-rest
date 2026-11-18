@@ -1,32 +1,11 @@
 ---
-description: Name new code with words esl-rest already uses
+description: Reuse existing esl-rest code when it fits
 globs: **/*.java
 alwaysApply: true
 ---
 
-# Use existing terminology
+# Reuse existing code
 
-Before adding a method, field, or variable name, search this repo for the same idea. Use a word that already means that thing.
+Before adding a helper or a name, look for code in this repo that already does the job. Use it when it fits.
 
-## Use words already here
-
-- `trimToNull` / `trimmed` — blank becomes null (`StringUtils.trimToNull`)
-- `parse` — read a raw value into a known value (`parseClaims`, `fromJson`)
-- `normalize` — trim text and collapse whitespace, and return a string (`TtsTextUtil.normalize`, `InterpretationService.normalize`)
-- `sanitize` — make one string safe for its storage key (`sanitizeSlug`)
-- The field's own name when the value is that field: `request`, `channel`, `contact`, `email`, `message`
-
-## Do not
-
-- Invent a new metaphor for an idea that already has a word (`oneLine`, `resolved`, `contactChannel` when the field is `channel`)
-- Call a different job `normalize`. In this repo `normalize` does not reject a request and does not return null
-
-```java
-// ❌ new metaphor; normalize in this repo does not reject a request
-request = normalize(request);
-var contact = oneLine(request.contact());
-
-// ✅ same words the repo already uses
-var contact = StringUtils.trimToNull(request.contact());
-var channel = parseChannel(request.channel());
-```
+A new name is fine when nothing existing fits and the name says what the code does. Do not force an existing word onto a different job.

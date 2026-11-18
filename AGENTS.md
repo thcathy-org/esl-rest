@@ -34,7 +34,7 @@ Single test: `./gradlew test --tests "com.esl.service.tts.TtsPublisherServiceTes
 - Bump `TtsPublisherService.Version` for Kokoro-only engine swaps (see CLAUDE.md TTS decisions)
 - Add or extend `esl-speech-worker` integration — deprecated
 - Include Claude attribution in commit messages
-- Invent a new name for an idea this repo already has a word for (see `.cursor/rules/use-existing-terminology.mdc`)
+- Add a new helper when an existing one already does the job (see `.cursor/rules/use-existing-terminology.mdc`)
 
 ## Cursor agents & rules
 
