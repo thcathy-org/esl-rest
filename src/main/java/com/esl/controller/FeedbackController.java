@@ -46,8 +46,8 @@ public class FeedbackController {
         }
         var message = request.message().trim();
         var channel = parseChannel(request.channel());
-        var contact = trimToNull(request.contact());
-        var email = trimToNull(request.email());
+        var contact = flatten(request.contact());
+        var email = flatten(request.email());
         if (channel == null) {
             if (StringUtils.isNotBlank(request.channel()) || email == null) {
                 return ResponseEntity.badRequest().build();
@@ -98,7 +98,7 @@ public class FeedbackController {
         };
     }
 
-    private static String trimToNull(String value) {
+    private static String flatten(String value) {
         if (value == null) {
             return null;
         }
