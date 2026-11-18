@@ -44,32 +44,36 @@ public class FeedbackController {
         if (request == null || StringUtils.isBlank(request.message())) {
             return ResponseEntity.badRequest().build();
         }
-        var message = request.message().trim();
         var channel = parseChannel(request.channel());
-        var contact = flatten(request.contact());
-        var email = flatten(request.email());
-        if (channel == null) {
-            if (StringUtils.isNotBlank(request.channel()) || email == null) {
-                return ResponseEntity.badRequest().build();
-            }
-            channel = "email";
-            contact = email;
-        } else if (contact == null && "email".equals(channel)) {
-            contact = email;
-        }
-        if (contact == null || ("email".equals(channel) && !isEmail(contact))) {
+        if (channel == null && StringUtils.isNotBlank(request.channel())) {
             return ResponseEntity.badRequest().build();
         }
-        request = new FeedbackRequest(channel, contact, email, message);
+        var contact = flatten(request.contact());
+        var email = flatten(request.email());
+        if (contact == null && (channel == null || "email".equals(channel))) {
+            contact = email;
+            if (contact != null) {
+                channel = "email";
+            }
+        }
+        if (contact != null && (channel == null || ("email".equals(channel) && !isEmail(contact)))) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (contact == null) {
+            channel = null;
+        }
+        var message = request.message().trim();
+        var loggedChannel = channel == null ? "none" : channel;
+        var loggedContact = contact == null ? "none" : contact;
         try {
             var mail = new SimpleMailMessage();
             mail.setTo(recipient);
-            mail.setSubject(subject(request));
-            mail.setText(body(request));
+            mail.setSubject(subject(channel, contact));
+            mail.setText(body(channel, contact, message));
             mailSender.send(mail);
-            log.info("Feedback email sent via {} contact {}", request.channel(), request.contact());
+            log.info("Feedback email sent via {} contact {}", loggedChannel, loggedContact);
         } catch (Exception e) {
-            log.error("Failed to send feedback email via {} contact {}", request.channel(), request.contact(), e);
+            log.error("Failed to send feedback email via {} contact {}", loggedChannel, loggedContact, e);
             return ResponseEntity.internalServerError().build();
         }
         return ResponseEntity.ok().build();
@@ -99,14 +103,20 @@ public class FeedbackController {
         return EMAIL.matcher(value).matches();
     }
 
-    private static String subject(FeedbackRequest request) {
-        if ("email".equals(request.channel())) {
-            return "FunFunSpell Feedback from " + request.contact();
+    private static String subject(String channel, String contact) {
+        if (contact == null) {
+            return "FunFunSpell Feedback";
         }
-        return "FunFunSpell Feedback via " + request.channel();
+        if ("email".equals(channel)) {
+            return "FunFunSpell Feedback from " + contact;
+        }
+        return "FunFunSpell Feedback via " + channel;
     }
 
-    private static String body(FeedbackRequest request) {
-        return "Channel: " + request.channel() + "\nContact: " + request.contact() + "\n\n" + request.message();
+    private static String body(String channel, String contact, String message) {
+        if (contact == null) {
+            return "No contact given.\n\n" + message;
+        }
+        return "Channel: " + channel + "\nContact: " + contact + "\n\n" + message;
     }
 }

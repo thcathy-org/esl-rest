@@ -93,18 +93,41 @@ class FeedbackControllerTest {
     }
 
     @Test
-    void submit_rejectsMissingContactBadEmailAndUnknownChannel() {
+    void submit_messageOnly_sendsWithoutAContact() {
         var sender = mock(JavaMailSender.class);
         var controller = new FeedbackController(sender, RECIPIENT);
 
-        assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
-                "whatsapp", "  ", null, "Hello")).getStatusCode().value());
+        assertEquals(200, controller.submit(new FeedbackController.FeedbackRequest(
+                null, null, null, "  Hello  ")).getStatusCode().value());
+
+        var response = controller.submit(new FeedbackController.FeedbackRequest(
+                "whatsapp", "  ", null, "Hello"));
+
+        assertEquals(200, response.getStatusCode().value());
+        var mails = sentMails(sender);
+        assertEquals(2, mails.size());
+        for (var mail : mails) {
+            assertEquals("FunFunSpell Feedback", mail.getSubject());
+            assertTrue(mail.getText().startsWith("No contact given."));
+            assertTrue(mail.getText().contains("Hello"));
+            assertFalse(mail.getText().contains("Channel:"));
+        }
+        verify(sender, times(2)).send(org.mockito.ArgumentMatchers.<SimpleMailMessage>any());
+    }
+
+    @Test
+    void submit_rejectsBadEmailUnknownChannelAndContactWithoutChannel() {
+        var sender = mock(JavaMailSender.class);
+        var controller = new FeedbackController(sender, RECIPIENT);
+
         assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
                 "email", "not-an-email", null, "Hello")).getStatusCode().value());
         assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
                 "email", "parent@email.com,attacker@evil.com", null, "Hello")).getStatusCode().value());
         assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
                 "line", "learner", null, "Hello")).getStatusCode().value());
+        assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
+                "line", "  ", null, "Hello")).getStatusCode().value());
         assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
                 "messenger", "Jane", null, "   ")).getStatusCode().value());
         assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
