@@ -88,16 +88,6 @@ public class FeedbackController {
         };
     }
 
-    private static String channelName(String channel) {
-        return switch (channel) {
-            case "email" -> "Email";
-            case "whatsapp" -> "WhatsApp";
-            case "wechat" -> "WeChat";
-            case "messenger" -> "Messenger";
-            default -> channel;
-        };
-    }
-
     private static String flatten(String value) {
         if (value == null) {
             return null;
@@ -113,10 +103,10 @@ public class FeedbackController {
         if ("email".equals(request.channel())) {
             return "FunFunSpell Feedback from " + request.contact();
         }
-        return "FunFunSpell Feedback via " + channelName(request.channel());
+        return "FunFunSpell Feedback via " + request.channel();
     }
 
     private static String body(FeedbackRequest request) {
-        return "Channel: " + channelName(request.channel()) + "\nContact: " + request.contact() + "\n\n" + request.message();
+        return "Channel: " + request.channel() + "\nContact: " + request.contact() + "\n\n" + request.message();
     }
 }

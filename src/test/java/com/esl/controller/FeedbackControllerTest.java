@@ -33,7 +33,7 @@ class FeedbackControllerTest {
         assertEquals(RECIPIENT, mail.getTo()[0]);
         assertEquals(1, mail.getTo().length);
         assertEquals("FunFunSpell Feedback from parent@email.com", mail.getSubject());
-        assertTrue(mail.getText().contains("Channel: Email"));
+        assertTrue(mail.getText().contains("Channel: email"));
         assertTrue(mail.getText().contains("Contact: parent@email.com"));
         assertTrue(mail.getText().contains("The audio was quiet."));
         verify(sender, times(1)).send(mail);
@@ -50,8 +50,8 @@ class FeedbackControllerTest {
         assertEquals(200, response.getStatusCode().value());
         var mail = sentMail(sender);
         assertEquals(RECIPIENT, mail.getTo()[0]);
-        assertEquals("FunFunSpell Feedback via WhatsApp", mail.getSubject());
-        assertTrue(mail.getText().contains("Channel: WhatsApp"));
+        assertEquals("FunFunSpell Feedback via whatsapp", mail.getSubject());
+        assertTrue(mail.getText().contains("Channel: whatsapp"));
         assertTrue(mail.getText().contains("Contact: +852 9123 4567"));
         assertTrue(mail.getText().contains("Please check lesson 3."));
         verify(sender, times(1)).send(mail);
@@ -65,15 +65,15 @@ class FeedbackControllerTest {
         controller.submit(new FeedbackController.FeedbackRequest(
                 "wechat", "wxid_learner", null, "Hi"));
         var wechat = sentMail(sender);
-        assertTrue(wechat.getSubject().contains("WeChat"));
-        assertTrue(wechat.getText().contains("Channel: WeChat"));
+        assertTrue(wechat.getSubject().contains("wechat"));
+        assertTrue(wechat.getText().contains("Channel: wechat"));
         assertTrue(wechat.getText().contains("Contact: wxid_learner"));
 
         controller.submit(new FeedbackController.FeedbackRequest(
                 "messenger", "https://m.me/jane", null, "Hi"));
         var messenger = sentMails(sender).get(1);
-        assertTrue(messenger.getSubject().contains("Messenger"));
-        assertTrue(messenger.getText().contains("Channel: Messenger"));
+        assertTrue(messenger.getSubject().contains("messenger"));
+        assertTrue(messenger.getText().contains("Channel: messenger"));
         assertTrue(messenger.getText().contains("Contact: https://m.me/jane"));
     }
 
@@ -87,7 +87,7 @@ class FeedbackControllerTest {
 
         assertEquals(200, response.getStatusCode().value());
         var mail = sentMail(sender);
-        assertTrue(mail.getText().contains("Channel: Email"));
+        assertTrue(mail.getText().contains("Channel: email"));
         assertTrue(mail.getText().contains("Contact: learner@example.com"));
         verify(sender, times(1)).send(mail);
     }
