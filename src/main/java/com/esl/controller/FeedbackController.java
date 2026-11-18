@@ -12,16 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Locale;
-import java.util.regex.Pattern;
-
 @RestController
 @RequestMapping("/feedback")
 public class FeedbackController {
 
     private static final Logger log = LoggerFactory.getLogger(FeedbackController.class);
-    private static final Pattern EMAIL = Pattern.compile(
-            "[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+");
 
     private final JavaMailSender mailSender;
     private final String recipient;
@@ -44,48 +39,27 @@ public class FeedbackController {
         if (request == null || StringUtils.isBlank(request.message())) {
             return ResponseEntity.badRequest().build();
         }
-        var message = request.message().trim();
-        var channel = parseChannel(request.channel());
+        var channel = flatten(request.channel());
         var contact = flatten(request.contact());
-        var email = flatten(request.email());
-        if (channel == null) {
-            if (StringUtils.isNotBlank(request.channel()) || email == null) {
-                return ResponseEntity.badRequest().build();
+        if (contact == null) {
+            contact = flatten(request.email());
+            if (contact != null && channel == null) {
+                channel = "email";
             }
-            channel = "email";
-            contact = email;
-        } else if (contact == null && "email".equals(channel)) {
-            contact = email;
         }
-        if (contact == null || ("email".equals(channel) && !isEmail(contact))) {
-            return ResponseEntity.badRequest().build();
-        }
-        request = new FeedbackRequest(channel, contact, email, message);
+        var message = request.message().trim();
         try {
             var mail = new SimpleMailMessage();
             mail.setTo(recipient);
-            mail.setSubject(subject(request));
-            mail.setText(body(request));
+            mail.setSubject(subject(channel, contact));
+            mail.setText(body(channel, contact, message));
             mailSender.send(mail);
-            log.info("Feedback email sent via {} contact {}", request.channel(), request.contact());
+            log.info("Feedback email sent via {} contact {}", channel, contact);
         } catch (Exception e) {
-            log.error("Failed to send feedback email via {} contact {}", request.channel(), request.contact(), e);
+            log.error("Failed to send feedback email via {} contact {}", channel, contact, e);
             return ResponseEntity.internalServerError().build();
         }
         return ResponseEntity.ok().build();
-    }
-
-    private static String parseChannel(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        return switch (raw.trim().toLowerCase(Locale.ROOT)) {
-            case "email" -> "email";
-            case "whatsapp" -> "whatsapp";
-            case "wechat" -> "wechat";
-            case "messenger" -> "messenger";
-            default -> null;
-        };
     }
 
     private static String flatten(String value) {
@@ -95,18 +69,28 @@ public class FeedbackController {
         return StringUtils.trimToNull(value.replaceAll("[\\r\\n]+", " "));
     }
 
-    private static boolean isEmail(String value) {
-        return EMAIL.matcher(value).matches();
-    }
-
-    private static String subject(FeedbackRequest request) {
-        if ("email".equals(request.channel())) {
-            return "FunFunSpell Feedback from " + request.contact();
+    private static String subject(String channel, String contact) {
+        if ("email".equals(channel) && contact != null) {
+            return "FunFunSpell Feedback from " + contact;
         }
-        return "FunFunSpell Feedback via " + request.channel();
+        if (channel != null) {
+            return "FunFunSpell Feedback via " + channel;
+        }
+        return "FunFunSpell Feedback";
     }
 
-    private static String body(FeedbackRequest request) {
-        return "Channel: " + request.channel() + "\nContact: " + request.contact() + "\n\n" + request.message();
+    private static String body(String channel, String contact, String message) {
+        if (channel == null && contact == null) {
+            return "No contact given.\n\n" + message;
+        }
+        var text = new StringBuilder();
+        if (channel != null) {
+            text.append("Channel: ").append(channel).append('\n');
+        }
+        if (contact != null) {
+            text.append("Contact: ").append(contact).append('\n');
+        }
+        text.append('\n').append(message);
+        return text.toString();
     }
 }
