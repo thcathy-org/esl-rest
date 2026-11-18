@@ -40,28 +40,28 @@ public class FeedbackController {
 
     @PostMapping
     public ResponseEntity<Void> submit(@RequestBody FeedbackRequest request) {
-        var resolved = resolve(request);
-        if (resolved == null) {
+        request = normalize(request);
+        if (request == null) {
             return ResponseEntity.badRequest().build();
         }
         try {
             var mail = new SimpleMailMessage();
             mail.setTo(recipient);
-            if (resolved.replyByEmail()) {
-                mail.setReplyTo(resolved.contact());
+            if (replyByEmail(request)) {
+                mail.setReplyTo(request.contact());
             }
-            mail.setSubject(resolved.subject());
-            mail.setText(resolved.body());
+            mail.setSubject(subject(request));
+            mail.setText(body(request));
             mailSender.send(mail);
-            log.info("Feedback email sent via {}", resolved.channel());
+            log.info("Feedback email sent via {}", request.channel());
         } catch (Exception e) {
-            log.error("Failed to send feedback email via {}", resolved.channel(), e);
+            log.error("Failed to send feedback email via {}", request.channel(), e);
             return ResponseEntity.internalServerError().build();
         }
         return ResponseEntity.ok().build();
     }
 
-    static ResolvedFeedback resolve(FeedbackRequest request) {
+    private static FeedbackRequest normalize(FeedbackRequest request) {
         if (request == null || request.message() == null || request.message().isBlank()) {
             return null;
         }
@@ -88,7 +88,7 @@ public class FeedbackController {
         if ("email".equals(channel) && !isEmail(contact)) {
             return null;
         }
-        return new ResolvedFeedback(channel, label(channel), contact, message);
+        return new FeedbackRequest(channel, contact, email, message);
     }
 
     private static String normalizeChannel(String raw) {
@@ -126,20 +126,18 @@ public class FeedbackController {
         return EMAIL.matcher(value).matches();
     }
 
-    record ResolvedFeedback(String channel, String label, String contact, String message) {
-        boolean replyByEmail() {
-            return "email".equals(channel);
-        }
+    private static boolean replyByEmail(FeedbackRequest request) {
+        return "email".equals(request.channel());
+    }
 
-        String subject() {
-            if (replyByEmail()) {
-                return "FunFunSpell Feedback from " + contact;
-            }
-            return "FunFunSpell Feedback via " + label;
+    private static String subject(FeedbackRequest request) {
+        if (replyByEmail(request)) {
+            return "FunFunSpell Feedback from " + request.contact();
         }
+        return "FunFunSpell Feedback via " + label(request.channel());
+    }
 
-        String body() {
-            return "Channel: " + label + "\nContact: " + contact + "\n\n" + message;
-        }
+    private static String body(FeedbackRequest request) {
+        return "Channel: " + label(request.channel()) + "\nContact: " + request.contact() + "\n\n" + request.message();
     }
 }
