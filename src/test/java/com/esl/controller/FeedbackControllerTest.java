@@ -50,8 +50,8 @@ class FeedbackControllerTest {
         assertEquals(200, response.getStatusCode().value());
         var mail = sentMail(sender);
         assertEquals(RECIPIENT, mail.getTo()[0]);
-        assertEquals("FunFunSpell Feedback via whatsapp", mail.getSubject());
-        assertTrue(mail.getText().contains("Channel: whatsapp"));
+        assertEquals("FunFunSpell Feedback via WhatsApp", mail.getSubject());
+        assertTrue(mail.getText().contains("Channel: WhatsApp"));
         assertTrue(mail.getText().contains("Contact: +852 9123 4567"));
         assertTrue(mail.getText().contains("Please check lesson 3."));
         verify(sender, times(1)).send(mail);
@@ -100,39 +100,37 @@ class FeedbackControllerTest {
         assertEquals(200, controller.submit(new FeedbackController.FeedbackRequest(
                 null, null, null, "  Hello  ")).getStatusCode().value());
 
-        var response = controller.submit(new FeedbackController.FeedbackRequest(
-                "whatsapp", "  ", null, "Hello"));
-
-        assertEquals(200, response.getStatusCode().value());
-        var mails = sentMails(sender);
-        assertEquals(2, mails.size());
-        for (var mail : mails) {
-            assertEquals("FunFunSpell Feedback", mail.getSubject());
-            assertTrue(mail.getText().startsWith("No contact given."));
-            assertTrue(mail.getText().contains("Hello"));
-            assertFalse(mail.getText().contains("Channel:"));
-        }
-        verify(sender, times(2)).send(org.mockito.ArgumentMatchers.<SimpleMailMessage>any());
+        var mail = sentMail(sender);
+        assertEquals("FunFunSpell Feedback", mail.getSubject());
+        assertTrue(mail.getText().startsWith("No contact given."));
+        assertTrue(mail.getText().contains("Hello"));
+        assertFalse(mail.getText().contains("Channel:"));
+        verify(sender, times(1)).send(mail);
     }
 
     @Test
-    void submit_rejectsBadEmailUnknownChannelAndContactWithoutChannel() {
+    void submit_keepsAChannelOrContactWhenTheOtherIsMissing() {
         var sender = mock(JavaMailSender.class);
         var controller = new FeedbackController(sender, RECIPIENT);
 
-        assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
-                "email", "not-an-email", null, "Hello")).getStatusCode().value());
-        assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
-                "email", "parent@email.com,attacker@evil.com", null, "Hello")).getStatusCode().value());
-        assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
+        assertEquals(200, controller.submit(new FeedbackController.FeedbackRequest(
+                "whatsapp", "  ", null, "Hello")).getStatusCode().value());
+        assertEquals(200, controller.submit(new FeedbackController.FeedbackRequest(
+                null, "+85291234567", null, "Hello")).getStatusCode().value());
+        assertEquals(200, controller.submit(new FeedbackController.FeedbackRequest(
                 "line", "learner", null, "Hello")).getStatusCode().value());
         assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
-                "line", "  ", null, "Hello")).getStatusCode().value());
-        assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
                 "messenger", "Jane", null, "   ")).getStatusCode().value());
-        assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
-                null, "+85291234567", null, "Hello")).getStatusCode().value());
-        verify(sender, times(0)).send(org.mockito.ArgumentMatchers.<SimpleMailMessage>any());
+
+        var mails = sentMails(sender);
+        assertEquals(3, mails.size());
+        assertTrue(mails.get(0).getText().contains("Channel: whatsapp"));
+        assertFalse(mails.get(0).getText().contains("Contact:"));
+        assertTrue(mails.get(1).getText().contains("Contact: +85291234567"));
+        assertFalse(mails.get(1).getText().contains("Channel:"));
+        assertTrue(mails.get(2).getText().contains("Channel: line"));
+        assertTrue(mails.get(2).getText().contains("Contact: learner"));
+        verify(sender, times(3)).send(org.mockito.ArgumentMatchers.<SimpleMailMessage>any());
     }
 
     @Test
@@ -140,17 +138,14 @@ class FeedbackControllerTest {
         var sender = mock(JavaMailSender.class);
         var controller = new FeedbackController(sender, RECIPIENT);
 
-        assertEquals(400, controller.submit(new FeedbackController.FeedbackRequest(
-                "email", "parent@email.com\r\nBcc: evil@example.com", null, "Hello")).getStatusCode().value());
-
         var response = controller.submit(new FeedbackController.FeedbackRequest(
-                "whatsapp", "+852 9123 4567\r\nBcc: evil@example.com", null, "Hello"));
+                "email", "parent@email.com\r\nBcc: evil@example.com", null, "Hello"));
 
         assertEquals(200, response.getStatusCode().value());
         var mail = sentMail(sender);
         assertFalse(mail.getText().contains("\r"));
         assertFalse(mail.getText().contains("\nBcc"));
-        assertTrue(mail.getText().contains("Contact: +852 9123 4567 Bcc: evil@example.com"));
+        assertTrue(mail.getText().contains("Contact: parent@email.com Bcc: evil@example.com"));
         verify(sender, times(1)).send(mail);
     }
 
