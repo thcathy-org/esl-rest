@@ -1,0 +1,11 @@
+---
+description: Prefer terminology esl-rest already uses
+globs: **/*.java
+alwaysApply: true
+---
+
+# Use existing terminology
+
+When you name a method, field, or variable, look for a term this repo already uses for the same thing. Use that term when it fits.
+
+A new term is fine when no existing term fits.

@@ -1,8 +1,6 @@
 package com.esl.controller;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,11 +12,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Locale;
+import java.util.regex.Pattern;
+
 @RestController
 @RequestMapping("/feedback")
 public class FeedbackController {
 
     private static final Logger log = LoggerFactory.getLogger(FeedbackController.class);
+    private static final Pattern EMAIL = Pattern.compile(
+            "[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+");
 
     private final JavaMailSender mailSender;
     private final String recipient;
@@ -30,24 +33,80 @@ public class FeedbackController {
     }
 
     public record FeedbackRequest(
-        @Email @NotBlank String email,
-        @NotBlank String message
+        String channel,
+        String contact,
+        String email,
+        String message
     ) {}
 
     @PostMapping
-    public ResponseEntity<Void> submit(@Valid @RequestBody FeedbackRequest request) {
+    public ResponseEntity<Void> submit(@RequestBody FeedbackRequest request) {
+        if (request == null || StringUtils.isBlank(request.message())) {
+            return ResponseEntity.badRequest().build();
+        }
+        var message = request.message().trim();
+        var channel = parseChannel(request.channel());
+        var contact = flatten(request.contact());
+        var email = flatten(request.email());
+        if (channel == null) {
+            if (StringUtils.isNotBlank(request.channel()) || email == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            channel = "email";
+            contact = email;
+        } else if (contact == null && "email".equals(channel)) {
+            contact = email;
+        }
+        if (contact == null || ("email".equals(channel) && !isEmail(contact))) {
+            return ResponseEntity.badRequest().build();
+        }
+        request = new FeedbackRequest(channel, contact, email, message);
         try {
-            SimpleMailMessage mail = new SimpleMailMessage();
+            var mail = new SimpleMailMessage();
             mail.setTo(recipient);
-            mail.setReplyTo(request.email());
-            mail.setSubject("FunFunSpell Feedback from " + request.email());
-            mail.setText("From: " + request.email() + "\n\n" + request.message());
+            mail.setSubject(subject(request));
+            mail.setText(body(request));
             mailSender.send(mail);
-            log.info("Feedback email sent from {}", request.email());
+            log.info("Feedback email sent via {} contact {}", request.channel(), request.contact());
         } catch (Exception e) {
-            log.error("Failed to send feedback email from {}", request.email(), e);
+            log.error("Failed to send feedback email via {} contact {}", request.channel(), request.contact(), e);
             return ResponseEntity.internalServerError().build();
         }
         return ResponseEntity.ok().build();
+    }
+
+    private static String parseChannel(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+            case "email" -> "email";
+            case "whatsapp" -> "whatsapp";
+            case "wechat" -> "wechat";
+            case "messenger" -> "messenger";
+            default -> null;
+        };
+    }
+
+    private static String flatten(String value) {
+        if (value == null) {
+            return null;
+        }
+        return StringUtils.trimToNull(value.replaceAll("[\\r\\n]+", " "));
+    }
+
+    private static boolean isEmail(String value) {
+        return EMAIL.matcher(value).matches();
+    }
+
+    private static String subject(FeedbackRequest request) {
+        if ("email".equals(request.channel())) {
+            return "FunFunSpell Feedback from " + request.contact();
+        }
+        return "FunFunSpell Feedback via " + request.channel();
+    }
+
+    private static String body(FeedbackRequest request) {
+        return "Channel: " + request.channel() + "\nContact: " + request.contact() + "\n\n" + request.message();
     }
 }
