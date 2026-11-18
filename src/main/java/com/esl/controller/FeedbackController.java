@@ -50,9 +50,9 @@ public class FeedbackController {
             mail.setSubject(subject(request));
             mail.setText(body(request));
             mailSender.send(mail);
-            log.info("Feedback email sent via {}", request.channel());
+            log.info("Feedback email sent via {} contact {}", request.channel(), request.contact());
         } catch (Exception e) {
-            log.error("Failed to send feedback email via {}", request.channel(), e);
+            log.error("Failed to send feedback email via {} contact {}", request.channel(), request.contact(), e);
             return ResponseEntity.internalServerError().build();
         }
         return ResponseEntity.ok().build();
