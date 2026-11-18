@@ -1,5 +1,6 @@
 package com.esl.controller;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,10 +41,26 @@ public class FeedbackController {
 
     @PostMapping
     public ResponseEntity<Void> submit(@RequestBody FeedbackRequest request) {
-        request = normalize(request);
-        if (request == null) {
+        if (request == null || StringUtils.isBlank(request.message())) {
             return ResponseEntity.badRequest().build();
         }
+        var message = request.message().trim();
+        var channel = parseChannel(request.channel());
+        var contact = trimToNull(request.contact());
+        var email = trimToNull(request.email());
+        if (channel == null) {
+            if (StringUtils.isNotBlank(request.channel()) || email == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            channel = "email";
+            contact = email;
+        } else if (contact == null && "email".equals(channel)) {
+            contact = email;
+        }
+        if (contact == null || ("email".equals(channel) && !isEmail(contact))) {
+            return ResponseEntity.badRequest().build();
+        }
+        request = new FeedbackRequest(channel, contact, email, message);
         try {
             var mail = new SimpleMailMessage();
             mail.setTo(recipient);
@@ -58,37 +75,7 @@ public class FeedbackController {
         return ResponseEntity.ok().build();
     }
 
-    private static FeedbackRequest normalize(FeedbackRequest request) {
-        if (request == null || request.message() == null || request.message().isBlank()) {
-            return null;
-        }
-        var message = request.message().trim();
-        var channel = normalizeChannel(request.channel());
-        var contact = oneLine(request.contact());
-        var email = oneLine(request.email());
-
-        if (channel == null) {
-            if (request.channel() != null && !request.channel().isBlank()) {
-                return null;
-            }
-            if (email == null) {
-                return null;
-            }
-            channel = "email";
-            contact = email;
-        } else if (contact == null && "email".equals(channel)) {
-            contact = email;
-        }
-        if (contact == null) {
-            return null;
-        }
-        if ("email".equals(channel) && !isEmail(contact)) {
-            return null;
-        }
-        return new FeedbackRequest(channel, contact, email, message);
-    }
-
-    private static String normalizeChannel(String raw) {
+    private static String parseChannel(String raw) {
         if (raw == null || raw.isBlank()) {
             return null;
         }
@@ -101,7 +88,7 @@ public class FeedbackController {
         };
     }
 
-    private static String label(String channel) {
+    private static String channelName(String channel) {
         return switch (channel) {
             case "email" -> "Email";
             case "whatsapp" -> "WhatsApp";
@@ -111,12 +98,11 @@ public class FeedbackController {
         };
     }
 
-    private static String oneLine(String value) {
+    private static String trimToNull(String value) {
         if (value == null) {
             return null;
         }
-        var collapsed = value.replaceAll("[\\r\\n]+", " ").trim();
-        return collapsed.isEmpty() ? null : collapsed;
+        return StringUtils.trimToNull(value.replaceAll("[\\r\\n]+", " "));
     }
 
     private static boolean isEmail(String value) {
@@ -127,10 +113,10 @@ public class FeedbackController {
         if ("email".equals(request.channel())) {
             return "FunFunSpell Feedback from " + request.contact();
         }
-        return "FunFunSpell Feedback via " + label(request.channel());
+        return "FunFunSpell Feedback via " + channelName(request.channel());
     }
 
     private static String body(FeedbackRequest request) {
-        return "Channel: " + label(request.channel()) + "\nContact: " + request.contact() + "\n\n" + request.message();
+        return "Channel: " + channelName(request.channel()) + "\nContact: " + request.contact() + "\n\n" + request.message();
     }
 }
