@@ -48,17 +48,15 @@ public class FeedbackController {
             }
         }
         var message = request.message().trim();
-        var loggedChannel = channel == null ? "none" : channel;
-        var loggedContact = contact == null ? "none" : contact;
         try {
             var mail = new SimpleMailMessage();
             mail.setTo(recipient);
             mail.setSubject(subject(channel, contact));
             mail.setText(body(channel, contact, message));
             mailSender.send(mail);
-            log.info("Feedback email sent via {} contact {}", loggedChannel, loggedContact);
+            log.info("Feedback email sent via {} contact {}", channel, contact);
         } catch (Exception e) {
-            log.error("Failed to send feedback email via {} contact {}", loggedChannel, loggedContact, e);
+            log.error("Failed to send feedback email via {} contact {}", channel, contact, e);
             return ResponseEntity.internalServerError().build();
         }
         return ResponseEntity.ok().build();
